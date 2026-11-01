@@ -115,3 +115,14 @@ body.app-mapa { overflow: hidden; }
   .be-prefs { margin-left: 0; }
   .panel-medida { left: 12px; top: auto; bottom: 12px; width: calc(100% - 24px); }
 }
+
+/* Aviso de diagnóstico de capas */
+.aviso { position: absolute; z-index: 1002; left: 50%; top: 12px; transform: translateX(-50%); width: min(520px, calc(100% - 24px)); background: var(--superficie); border: 1px solid var(--linea-2); border-left: 4px solid var(--aviso); border-radius: 8px; box-shadow: var(--sombra); padding: 12px 16px; font-size: 13.5px; }
+.aviso-error { border-left-color: var(--error); }
+.aviso .av-tit { font-weight: 600; margin-bottom: 6px; }
+.aviso ul { margin: 0 0 8px; padding-left: 18px; color: var(--tinta-2); }
+.aviso li { margin: 3px 0; }
+.aviso .av-acc { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.aviso .av-acc a, .aviso .av-acc button { border: 1px solid var(--linea-2); background: var(--hundido); border-radius: var(--radio); padding: 5px 10px; font-size: 12.5px; color: var(--tinta); text-decoration: none; cursor: pointer; }
+.aviso .av-acc a { background: var(--noche); color: #fff; border-color: var(--noche); }
+.aviso .av-nota { margin-top: 8px; font-size: 12px; color: var(--gris); }

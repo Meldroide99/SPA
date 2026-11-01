@@ -141,6 +141,15 @@ docs/                    esta especificación e informe de precisión
   pero todos los números (coordenadas, cuadrícula, distancias, rumbos) los
   calcula el motor sobre el elipsoide. La cuadrícula MGRS la dibuja SPA,
   punto a punto, con el motor verificado (prueba: desviación < 1 µm).
+- **Rutas alternativas y diagnóstico:** si un fondo no carga ninguna tesela,
+  el mapa avisa con las causas probables y un enlace a una tesela de prueba.
+  La ortofoto pasa sola a la misma imagen por el **WMS del IGN**
+  (`wms-inspire/pnoa-ma`) y, si tampoco, a **Esri World Imagery**
+  (condiciones de uso de Esri por revisar antes de un uso real).
+- **Google:** su servicio de teselas (Map Tiles API) **no sirve satélite
+  2D a proyectos facturados en el EEE desde el 8-7-2025** (responde 403).
+  La única vía sería su API JavaScript completa (clave y facturación), que
+  sustituiría a Leaflet: descartado de momento.
 - **Exportar el mapa a imagen** (fase 5): requiere que los servicios del IGN
   permitan uso entre orígenes (CORS). Pendiente de comprobar; por eso las
   capas se cargan hoy sin `crossOrigin`.

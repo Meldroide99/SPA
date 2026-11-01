@@ -39,6 +39,9 @@ export const FONDOS = [
     detalle: 'PNOA máxima actualidad',
     url: wmts('https://www.ign.es/wmts/pnoa-ma', 'OI.OrthoimageCoverage', 'image/jpeg'),
     atribucion: ATRIB_IGN, maxNativo: 19, max: 20,
+    // Si el WMTS no responde, se prueba la MISMA ortofoto por el servicio WMS
+    // del IGN, y como último recurso la imagen de satélite de Esri.
+    alternativas: ['ortofoto-wms', 'satelite-esri'],
   },
   {
     id: 'base',
@@ -53,6 +56,28 @@ export const FONDOS = [
     detalle: 'Sombreado del Modelo Digital del Terreno',
     url: wmts('https://servicios.idee.es/wmts/mdt', 'Relieve', 'image/png'),
     atribucion: ATRIB_IDEE, maxNativo: 17, max: 19,
+  },
+];
+
+/**
+ * Rutas alternativas (no salen en el selector; se usan si la principal falla
+ * o si el usuario las elige desde el aviso de diagnóstico).
+ */
+export const ALTERNATIVAS = [
+  {
+    id: 'ortofoto-wms',
+    nombre: 'Ortofoto (IGN, vía WMS)',
+    detalle: 'PNOA máxima actualidad por el servicio WMS del IGN',
+    tipo: 'wms', url: 'https://www.ign.es/wms-inspire/pnoa-ma', capas: 'OI.OrthoimageCoverage',
+    formato: 'image/jpeg', transparente: false, atribucion: ATRIB_IGN,
+  },
+  {
+    id: 'satelite-esri',
+    nombre: 'Satélite (Esri)',
+    detalle: 'Esri World Imagery. Útil fuera de España o si el IGN no responde',
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    atribucion: 'Imágenes: Esri, Maxar, Earthstar Geographics y colaboradores · Powered by Esri',
+    maxNativo: 19, max: 20,
   },
 ];
 
@@ -96,7 +121,7 @@ export const ZONA_PILOTO = {
 export function crearCapa(L, def) {
   if (def.tipo === 'wms') {
     return L.tileLayer.wms(def.url, {
-      layers: def.capas, format: 'image/png', transparent: true, version: '1.3.0',
+      layers: def.capas, format: def.formato ?? 'image/png', transparent: def.transparente ?? true, version: '1.3.0',
       opacity: def.opacidad ?? 1, minZoom: def.zoomMin ?? 0, maxZoom: 20,
       attribution: def.atribucion,
     });

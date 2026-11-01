@@ -4,7 +4,7 @@ import {
   geoAMgrs, formatearPosicion, leerPosicion, geoAUtm, medir, puntosGeodesica,
   formatearRumbo, gradosAMilesimas, bandaLatitud,
 } from '../geo/index.js';
-import { FONDOS, SUPERPUESTAS, ZONA_PILOTO, crearCapa } from '../mapa/capas.js';
+import { FONDOS, SUPERPUESTAS, ALTERNATIVAS, ZONA_PILOTO, crearCapa } from '../mapa/capas.js';
 import { capaCuadricula } from '../mapa/cuadricula.js';
 
 const L = window.L;
@@ -41,16 +41,77 @@ else mapa.fitBounds(piloto, { padding: [20, 20] });
 new ResizeObserver(() => mapa.invalidateSize({ pan: false })).observe($('mapa'));
 mapa.on('moveend', () => { const c = mapa.getCenter(); estado.vista = { centro: [c.lat, c.lng], zoom: mapa.getZoom() }; guardar(); });
 
-// Fondos
-const capasFondo = Object.fromEntries(FONDOS.map((f) => [f.id, crearCapa(L, f)]));
+// ---------------------------------------------------------------- diagnóstico de capas
+// Cuenta teselas cargadas y fallidas de cada capa. Si una capa no carga
+// ninguna, se avisa con la causa probable y, si tiene ruta alternativa,
+// se cambia a ella automáticamente.
+const diag = {};
+const enVistaPrevia = (() => { try { return window.top !== window.self; } catch { return true; } })();
+function vigilar(id, capa) {
+  diag[id] = { ok: 0, err: 0, url: '' };
+  capa.on('tileload', () => { diag[id].ok++; });
+  capa.on('tileerror', (e) => { diag[id].err++; diag[id].url = e.tile?.src || diag[id].url; setTimeout(revisarCapas, 0); });
+  return capa;
+}
+
+// Fondos (los del selector + las rutas alternativas)
+const defsFondo = [...FONDOS, ...ALTERNATIVAS];
+const capasFondo = Object.fromEntries(defsFondo.map((f) => [f.id, vigilar(f.id, crearCapa(L, f))]));
 let fondoActual = null;
-function ponerFondo(id) {
+let fondoElegido = null;            // el que eligió el usuario (aunque se use una alternativa)
+const alternativasProbadas = new Set();
+function ponerFondo(id, { automatico = false } = {}) {
   if (!capasFondo[id]) id = FONDOS[0].id;
   if (fondoActual) mapa.removeLayer(fondoActual);
   fondoActual = capasFondo[id].addTo(mapa);
   fondoActual.bringToBack();
-  estado.fondo = id; guardar();
-  document.querySelectorAll('.fondo').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.id === id)));
+  fondoActual.idSpa = id;
+  if (!automatico) { fondoElegido = id; alternativasProbadas.clear(); ocultarAviso(); }
+  estado.fondo = FONDOS.some((f) => f.id === id) ? id : estado.fondo; guardar();
+  document.querySelectorAll('.fondo').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.id === (FONDOS.some((f) => f.id === id) ? id : fondoElegido))));
+}
+
+function revisarCapas() {
+  const id = fondoActual?.idSpa; if (!id) return;
+  const d = diag[id];
+  if (d.ok > 0 || d.err < 4) return;
+  // El fondo no ha cargado ni una tesela: ¿hay alternativa sin probar?
+  const def = defsFondo.find((f) => f.id === (fondoElegido || id));
+  const sig = (def?.alternativas || []).find((a) => !alternativasProbadas.has(a) && a !== id);
+  if (sig) {
+    alternativasProbadas.add(sig);
+    const alt = ALTERNATIVAS.find((a) => a.id === sig);
+    ponerFondo(sig, { automatico: true });
+    mostrarAviso('aviso', `«${def.nombre}» no responde por su vía principal. Se está probando: <b>${esc(alt.nombre)}</b>.`, d.url);
+    return;
+  }
+  mostrarAviso('error', `No llega ninguna imagen de «${esc(defsFondo.find((f) => f.id === id)?.nombre || id)}».`, d.url);
+}
+
+function mostrarAviso(tipo, texto, urlPrueba) {
+  const causas = enVistaPrevia
+    ? '<li><b>Estás viendo el mapa dentro de una vista previa</b> (la app de Claude, el correo, Drive…). Esas vistas bloquean internet. <b>Descarga el archivo y ábrelo con Chrome o Edge.</b></li>'
+    : '';
+  $('aviso').className = `aviso aviso-${tipo}`;
+  $('aviso').innerHTML = `<div class="av-tit">${texto}</div>
+    <ul>${causas}
+      <li>Si lo abres desde un visor (móvil, correo, app), descárgalo y ábrelo con <b>Chrome o Edge</b> en el ordenador.</li>
+      <li>La red puede estar bloqueando <code>ign.es</code> (redes corporativas o de Defensa). Prueba con otra conexión.</li>
+    </ul>
+    <div class="av-acc">${urlPrueba ? `<a href="${esc(urlPrueba)}" target="_blank" rel="noopener">Abrir una tesela de prueba</a>` : ''}
+      <button type="button" data-fondo-alt="satelite-esri">Usar satélite de Esri</button>
+      <button type="button" id="aviso-cerrar">Cerrar</button></div>
+    <div class="av-nota">Si la tesela de prueba se abre y se ve una imagen, el IGN funciona y el problema es el visor. Si da error, dime qué mensaje sale.</div>`;
+  $('aviso').hidden = false;
+}
+function ocultarAviso() { $('aviso').hidden = true; }
+$('aviso').addEventListener('click', (ev) => {
+  if (ev.target.id === 'aviso-cerrar') ocultarAviso();
+  const b = ev.target.closest('[data-fondo-alt]');
+  if (b) { ponerFondo(b.dataset.fondoAlt, { automatico: true }); alternativasProbadas.add(b.dataset.fondoAlt); ocultarAviso(); }
+});
+if (enVistaPrevia) {
+  setTimeout(() => { if (!Object.values(diag).some((d) => d.ok > 0)) mostrarAviso('aviso', 'Parece que el mapa se está viendo dentro de una vista previa.', ''); }, 4000);
 }
 $('fondos').innerHTML = FONDOS.map((f) => `<button type="button" class="fondo" data-id="${f.id}" title="${esc(f.detalle)}" aria-pressed="false">
   <span class="muestra muestra-${f.id}"></span><span class="nom">${esc(f.nombre)}</span></button>`).join('');
@@ -65,7 +126,7 @@ const zonaPiloto = L.layerGroup([
 ]);
 const listaSup = [
   { id: 'cuadricula', nombre: 'Cuadrícula MGRS', detalle: 'Calculada por SPA (100 km → 100 m según zoom)', capa: cuadricula },
-  ...SUPERPUESTAS.map((s) => ({ ...s, capa: crearCapa(L, s) })),
+  ...SUPERPUESTAS.map((s) => ({ ...s, capa: vigilar(s.id, crearCapa(L, s)) })),
   { id: 'piloto', nombre: 'Zona piloto', detalle: 'Guadarrama, unos 20 × 20 km', capa: zonaPiloto },
 ];
 $('superpuestas').innerHTML = listaSup.map((s) => `<label class="sup"><input type="checkbox" data-id="${s.id}">
@@ -232,4 +293,4 @@ $('buscar-txt').addEventListener('input', () => $('buscar-error').classList.remo
 
 elegirHerramienta('consultar');
 // Para pruebas automáticas
-window.__spa = { mapa, estado, medida, pintarMedida };
+window.__spa = { mapa, estado, medida, pintarMedida, diag };
