@@ -1,0 +1,13 @@
+{
+  "name": "spa",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Herramienta de planeamiento sobre mapa (S3 · Lauria)",
+  "type": "module",
+  "scripts": {
+    "test": "node --test pruebas/unitarias.test.mjs && node pruebas/banco.mjs",
+    "informe": "node pruebas/banco.mjs --informe",
+    "empaquetar": "node herramientas/empaquetar.mjs calculadora.html",
+    "servidor": "node herramientas/servidor.mjs"
+  }
+}

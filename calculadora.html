@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SPA · Calculadora de coordenadas</title>
+<link rel="stylesheet" href="assets/css/base.css">
+</head>
+<body>
+<header class="cabecera">
+  <div class="cabecera-in">
+    <div class="etiqueta">SPA · Fase 1 · Motor geodésico</div>
+    <h1>Calculadora de coordenadas</h1>
+    <p>Convierte posiciones, mide distancias y rumbos y calcula puntos de destino. Es el mismo motor que usará el mapa de planeamiento. Escribe la posición como quieras: MGRS, UTM o geográficas.</p>
+  </div>
+</header>
+
+<div class="prefs" role="region" aria-label="Opciones de presentación">
+  <div class="prefs-in">
+    <div class="pref">Rumbos en
+      <div class="seg" data-pref="angulo">
+        <button type="button" data-v="grados">Grados</button>
+        <button type="button" data-v="milesimas">Milésimas</button>
+        <button type="button" data-v="gms">G° M' S"</button>
+      </div>
+    </div>
+    <div class="pref">MGRS a
+      <div class="seg" data-pref="precision">
+        <button type="button" data-v="5">1 m</button>
+        <button type="button" data-v="4">10 m</button>
+        <button type="button" data-v="3">100 m</button>
+        <button type="button" data-v="2">1 km</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<main>
+  <!-- 1. Convertir -->
+  <section class="tarjeta" aria-labelledby="t1">
+    <h2 id="t1"><span class="num-paso">01</span>Convertir una posición</h2>
+    <p class="ayuda">Admite MGRS (<code>30TVK4029074257</code>, con o sin espacios), UTM (<code>30T 440290 4474257</code>) y geográficas en grados (<code>40.4168, -3.7038</code>) o en grados, minutos y segundos (<code>40°25'00"N 3°42'14"W</code>, también con O de oeste).</p>
+    <div class="campo">
+      <label for="pos">Posición</label>
+      <input id="pos" autocomplete="off" spellcheck="false" placeholder="Escribe o pega una posición">
+      <div class="error" id="pos-error"></div>
+    </div>
+    <div class="ejemplos" id="ejemplos"></div>
+    <div class="resultados" id="pos-res" hidden></div>
+  </section>
+
+  <!-- 2. Medir -->
+  <section class="tarjeta" aria-labelledby="t2">
+    <h2 id="t2"><span class="num-paso">02</span>Medir entre dos puntos</h2>
+    <p class="ayuda">La <b>distancia real</b> se mide sobre el elipsoide WGS84. La <b>distancia sobre el mapa</b> es la que daría una regla en una carta UTM: en esta zona es algo menor, porque la proyección encoge el terreno cerca del meridiano central.</p>
+    <div class="fila">
+      <div class="campo"><label for="a">Origen (A)</label><input id="a" autocomplete="off" spellcheck="false"><div class="error" id="a-error"></div></div>
+      <div class="campo"><label for="b">Destino (B)</label><input id="b" autocomplete="off" spellcheck="false"><div class="error" id="b-error"></div></div>
+    </div>
+    <div class="resultados" id="med-res" hidden></div>
+  </section>
+
+  <!-- 3. Destino -->
+  <section class="tarjeta" aria-labelledby="t3">
+    <h2 id="t3"><span class="num-paso">03</span>Punto a un rumbo y una distancia</h2>
+    <p class="ayuda">Desde un punto, con un rumbo y una distancia, calcula dónde se llega. El rumbo se escribe en la unidad elegida arriba.</p>
+    <div class="fila">
+      <div class="campo"><label for="d-ori">Desde</label><input id="d-ori" autocomplete="off" spellcheck="false"><div class="error" id="d-ori-error"></div></div>
+      <div class="campo"><label for="d-rumbo" id="d-rumbo-et">Rumbo (grados)</label><input id="d-rumbo" autocomplete="off" spellcheck="false" inputmode="decimal"><div class="error" id="d-rumbo-error"></div></div>
+      <div class="campo"><label for="d-norte">Referido al norte</label>
+        <select id="d-norte"><option value="geografico">Geográfico</option><option value="cuadricula">De cuadrícula</option></select><div class="error"></div></div>
+      <div class="campo"><label for="d-dist">Distancia (m)</label><input id="d-dist" autocomplete="off" spellcheck="false" inputmode="decimal"><div class="error" id="d-dist-error"></div></div>
+    </div>
+    <div class="resultados" id="des-res" hidden></div>
+  </section>
+
+  <div class="verificado">
+    <div class="sello">✓</div>
+    <div><strong>Motor verificado contra GeographicLib</strong> (Karney, referencia mundial en geodesia): más de 18 000 casos en la zona piloto, toda España y Canarias, y en los bordes de husos, bandas y cuadrículas. Error máximo en posiciones: una centésima de micra. Las referencias MGRS salen idénticas letra a letra. Detalle en <code>docs/PRECISION.md</code>.</div>
+  </div>
+</main>
+<footer>SPA · Sistema de planeamiento · Datum WGS84 / ETRS89. Rumbo magnético y conversión ED50 pendientes (siguiente paso de la fase 1).</footer>
+
+<script type="module" src="src/ui/calculadora.js"></script>
+</body>
+</html>
