@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SPA · Mapa piloto</title>
+<link rel="stylesheet" href="src/vendor/leaflet/leaflet.css">
+<link rel="stylesheet" href="assets/css/base.css">
+<link rel="stylesheet" href="assets/css/mapa.css">
+</head>
+<body class="app-mapa">
+<div id="app">
+  <header class="barra-sup">
+    <div class="marca"><span class="sello-spa">SPA</span><span class="marca-txt"><strong>Mapa piloto</strong><small>Fase 2 · Guadarrama</small></span></div>
+    <form class="buscar" id="buscar" autocomplete="off">
+      <input id="buscar-txt" spellcheck="false" placeholder="Ir a… MGRS, UTM o geográficas" aria-label="Ir a una posición">
+      <button type="submit">Ir</button>
+      <div class="buscar-error" id="buscar-error" role="alert"></div>
+    </form>
+    <nav class="enlaces"><a href="calculadora.html">Calculadora</a></nav>
+  </header>
+
+  <div id="contenido">
+    <div id="mapa" aria-label="Mapa"></div>
+
+    <div class="herramientas" role="toolbar" aria-label="Herramientas">
+      <button type="button" data-herr="consultar" aria-pressed="true" title="Consultar un punto">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M12 2v5M12 17v5M2 12h5M17 12h5"/></svg><span>Punto</span></button>
+      <button type="button" data-herr="medir" aria-pressed="false" title="Medir distancias y rumbos">
+        <svg viewBox="0 0 24 24"><path d="M3 17 17 3l4 4L7 21z"/><path d="M7 13l2 2M10 10l2 2M13 7l2 2"/></svg><span>Medir</span></button>
+      <button type="button" id="limpiar" title="Borrar marcas y medidas">
+        <svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg><span>Borrar</span></button>
+      <button type="button" id="ir-piloto" title="Volver a la zona piloto">
+        <svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z" stroke-dasharray="3 2"/><circle cx="12" cy="12" r="2"/></svg><span>Zona</span></button>
+    </div>
+
+    <aside class="panel-capas" id="panel-capas">
+      <button type="button" class="panel-tit" id="capas-toggle" aria-expanded="true">
+        <svg viewBox="0 0 24 24"><path d="M12 3 2 8l10 5 10-5z"/><path d="m2 13 10 5 10-5"/></svg>Capas</button>
+      <div class="panel-cuerpo" id="capas-cuerpo">
+        <div class="grupo-tit">Fondo</div>
+        <div class="fondos" id="fondos"></div>
+        <div class="grupo-tit">Encima</div>
+        <div class="superpuestas" id="superpuestas"></div>
+      </div>
+    </aside>
+
+    <section class="panel-medida" id="panel-medida" hidden aria-live="polite">
+      <div class="pm-cab"><strong>Medida</strong><span id="pm-ayuda">Toca el mapa para añadir puntos</span></div>
+      <div id="pm-cuerpo"></div>
+      <div class="pm-acciones"><button type="button" id="pm-deshacer">Quitar último</button><button type="button" id="pm-nueva">Nueva medida</button></div>
+    </section>
+  </div>
+
+  <footer class="barra-estado">
+    <div class="be-pos">
+      <span class="be-et" id="be-et">Cursor</span>
+      <span class="be-mgrs" id="be-mgrs">—</span>
+      <button class="copiar" id="be-copiar" type="button">Copiar</button>
+    </div>
+    <div class="be-sec" id="be-sec"></div>
+    <div class="be-prefs">
+      <div class="seg" data-pref="angulo" title="Unidad de los rumbos">
+        <button type="button" data-v="grados">°</button><button type="button" data-v="milesimas">mils</button><button type="button" data-v="gms">G M S</button>
+      </div>
+      <div class="seg" data-pref="precision" title="Precisión MGRS">
+        <button type="button" data-v="5">1 m</button><button type="button" data-v="4">10 m</button><button type="button" data-v="3">100 m</button>
+      </div>
+    </div>
+  </footer>
+</div>
+<script src="src/vendor/leaflet/leaflet.js"></script>
+<script type="module" src="src/ui/mapa.js"></script>
+</body>
+</html>

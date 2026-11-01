@@ -4,15 +4,22 @@ Herramienta de planeamiento sobre mapa para la sección S3 de la web Lauria:
 mapa con capas, símbolos APP-6 georreferenciados en MGRS y OPORD que se
 rellenan solos con lo dibujado. Se desarrolla aquí y se migrará a S3.
 
-**Estado:** fase 1 — motor geodésico (coordenadas, distancias y rumbos)
-terminado y verificado. Especificación en
-[docs/ESPECIFICACION.md](docs/ESPECIFICACION.md).
+**Estado:**
+- Fase 1 — motor geodésico (coordenadas, distancias y rumbos): núcleo
+  terminado y verificado.
+- Fase 2 — mapa piloto: mapas del IGN (topográfico MTN, ortofoto PNOA, mapa
+  base, relieve, curvas de nivel), cuadrícula MGRS propia, coordenada bajo
+  el cursor, consulta de puntos, búsqueda y regla de medida.
+
+Especificación en [docs/ESPECIFICACION.md](docs/ESPECIFICACION.md).
 
 ## Probarlo
 
-- **Con doble clic:** abre `dist/calculadora.html`. Funciona sin conexión.
+- **Con doble clic:** abre `dist/mapa.html` o `dist/calculadora.html`.
+  La calculadora funciona sin conexión; el mapa necesita internet para
+  descargar las teselas del IGN.
 - **Para desarrollar:** `node herramientas/servidor.mjs` y abre
-  <http://localhost:8080/>.
+  <http://localhost:8080/mapa.html>.
 
 ## Comprobar la precisión
 
@@ -37,4 +44,6 @@ npm run empaquetar
 ## Licencias de terceros
 
 - GeographicLib (C. F. F. Karney), MIT — `src/vendor/LICENSE-geographiclib.txt`
+- Leaflet 1.9.4, BSD-2 — `src/vendor/leaflet/LICENSE-leaflet.txt`
+- Cartografía: © Instituto Geográfico Nacional / IDEE, CC BY 4.0 (scne.es). El navegador la pide directamente a sus servicios; no se copia en el repositorio.
 - EB Garamond, Manrope e IBM Plex Mono, SIL OFL — `assets/fonts/` (falta copiar aquí el texto de licencia de Plex Mono)

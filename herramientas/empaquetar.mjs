@@ -24,8 +24,8 @@ const MIME = { '.woff': 'font/woff', '.woff2': 'font/woff2', '.png': 'image/png'
 // ---------------------------------------------------------------- CSS
 function incrustarCss(rutaCss) {
   const css = readFileSync(rutaCss, 'utf8');
-  return css.replace(/url\('([^')]+)'\)/g, (m, rel) => {
-    if (rel.startsWith('data:')) return m;
+  return css.replace(/url\((['"]?)([^'")]+)\1\)/g, (m, q, rel) => {
+    if (rel.startsWith('data:') || rel.startsWith('#') || /^https?:/.test(rel)) return m;
     const f = resolve(dirname(rutaCss), rel);
     const tipo = MIME[extname(f)];
     if (!tipo) throw new Error(`No sé incrustar ${f}`);
@@ -101,6 +101,9 @@ html = html.replace(/<link rel="stylesheet" href="([^"]+)">/g, (m, href) =>
   `<style>\n${incrustarCss(resolve(dirname(rutaHtml), href))}\n</style>`);
 html = html.replace(/<script type="module" src="([^"]+)"><\/script>/g, (m, src) =>
   `<script>\n${empaquetarJs(resolve(dirname(rutaHtml), src))}\n</script>`);
+// Scripts clásicos (p. ej. Leaflet): se copian tal cual.
+html = html.replace(/<script src="([^"]+)"><\/script>/g, (m, src) =>
+  `<script>\n${readFileSync(resolve(dirname(rutaHtml), src), 'utf8').replace(/<\/script/gi, '<\\/script')}\n</script>`);
 
 mkdirSync(join(RAIZ, 'dist'), { recursive: true });
 const salida = join(RAIZ, 'dist', relative(RAIZ, rutaHtml));

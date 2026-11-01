@@ -124,3 +124,26 @@ test('medidas: cuadrícula frente a elipsoide y tres nortes', () => {
   assert.ok(medir(d1, b).distancia < 1e-6);
   assert.ok(medir(d2, b).distancia < 1e-6);
 });
+
+test('cuadrícula MGRS: cada punto de cada línea cae en su coordenada exacta', async () => {
+  const { calcularCuadricula, textoEtiqueta, pasoCuadricula } = await import('../src/mapa/cuadricula.js');
+  const vista = { sur: 40.70, norte: 40.88, oeste: -4.15, este: -3.91 }; // zona piloto
+  const { lineas } = calcularCuadricula(vista, 1000);
+  assert.ok(lineas.length > 40);
+  let peor = 0;
+  for (const l of lineas) {
+    assert.equal(l.valor % 1000, 0);
+    for (const [lat, lon] of l.puntos) {
+      const u = geoAUtm(lat, lon, { zona: 30 });
+      peor = Math.max(peor, Math.abs((l.eje === 'E' ? u.este : u.norte) - l.valor));
+    }
+  }
+  assert.ok(peor < 1e-6, `desviación máxima ${peor} m`);
+  assert.equal(textoEtiqueta(414000, 1000), '14');
+  assert.equal(textoEtiqueta(400000, 1000), '00');
+  assert.equal(textoEtiqueta(4516100, 100), '161');
+  assert.equal(pasoCuadricula(12), 1000);
+  // Vista que cruza del huso 29 al 30 (meridiano −6°): dos cuadrículas y el límite marcado
+  const cruce = calcularCuadricula({ sur: 40.3, norte: 40.5, oeste: -6.2, este: -5.8 }, 10000);
+  assert.deepEqual(cruce.husos, [-6]);
+});

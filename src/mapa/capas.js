@@ -1,0 +1,110 @@
+// Catálogo de capas cartográficas (servicios públicos del IGN y la IDEE).
+//
+// Fuentes de los nombres de servicio y de capa:
+//   - IGN, "API de Google Maps con servicios IDE" (ign.es/web/ign/portal/ide-api-google):
+//     pnoa-ma → OI.OrthoimageCoverage; mapa-raster → MTN; TileMatrixSet
+//     GoogleMapsCompatible; formato image/jpeg.
+//   - Catálogo de proveedores del paquete mapSpain (rOpenSpain), que recoge
+//     ign-base (IGNBaseTodo), servicios.idee.es/wmts/mdt (Relieve) y
+//     wms-inspire/mdt (EL.ContourLine).
+// Todos son servicios WMTS/WMS oficiales y gratuitos. El navegador del usuario
+// los pide directamente al IGN; la aplicación no guarda ni copia teselas.
+//
+// IMPORTANTE (precisión): el mapa se PINTA en la proyección web (EPSG:3857),
+// pero TODAS las coordenadas, la cuadrícula MGRS, distancias y rumbos se
+// calculan con el motor geodésico sobre el elipsoide WGS84. La proyección de
+// pantalla no afecta a ningún número que se muestre.
+
+const ATRIB_IGN = '© <a href="https://www.ign.es" target="_blank" rel="noopener">Instituto Geográfico Nacional</a> · CC BY 4.0 scne.es';
+const ATRIB_IDEE = '© <a href="https://www.idee.es" target="_blank" rel="noopener">IGN · IDEE</a> · CC BY 4.0 scne.es';
+
+/** URL de tesela WMTS en modo KVP (formato de petición GetTile). */
+function wmts(base, capa, formato) {
+  return `${base}?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=${capa}&STYLE=default`
+    + `&TILEMATRIXSET=GoogleMapsCompatible&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}&FORMAT=${encodeURIComponent(formato)}`;
+}
+
+/** Mapas de fondo (se elige uno). */
+export const FONDOS = [
+  {
+    id: 'mtn',
+    nombre: 'Topográfico',
+    detalle: 'Mapa Topográfico Nacional (MTN25 en zoom alto)',
+    url: wmts('https://www.ign.es/wmts/mapa-raster', 'MTN', 'image/jpeg'),
+    atribucion: ATRIB_IGN, maxNativo: 17, max: 19,
+  },
+  {
+    id: 'ortofoto',
+    nombre: 'Ortofoto',
+    detalle: 'PNOA máxima actualidad',
+    url: wmts('https://www.ign.es/wmts/pnoa-ma', 'OI.OrthoimageCoverage', 'image/jpeg'),
+    atribucion: ATRIB_IGN, maxNativo: 19, max: 20,
+  },
+  {
+    id: 'base',
+    nombre: 'Mapa base',
+    detalle: 'IGN Base: callejero y topografía vectorial',
+    url: wmts('https://www.ign.es/wmts/ign-base', 'IGNBaseTodo', 'image/png'),
+    atribucion: ATRIB_IGN, maxNativo: 17, max: 19,
+  },
+  {
+    id: 'relieve',
+    nombre: 'Relieve',
+    detalle: 'Sombreado del Modelo Digital del Terreno',
+    url: wmts('https://servicios.idee.es/wmts/mdt', 'Relieve', 'image/png'),
+    atribucion: ATRIB_IDEE, maxNativo: 17, max: 19,
+  },
+];
+
+/** Capas superpuestas (se pueden activar varias). */
+export const SUPERPUESTAS = [
+  {
+    id: 'sombreado',
+    nombre: 'Sombreado',
+    detalle: 'Relieve semitransparente sobre el fondo',
+    tipo: 'wmts',
+    url: wmts('https://servicios.idee.es/wmts/mdt', 'Relieve', 'image/png'),
+    atribucion: ATRIB_IDEE, opacidad: 0.35, mezcla: 'multiply', maxNativo: 17,
+  },
+  {
+    id: 'curvas',
+    nombre: 'Curvas de nivel',
+    detalle: 'MDT del IGN (visibles desde zoom 12)',
+    tipo: 'wms',
+    url: 'https://servicios.idee.es/wms-inspire/mdt',
+    capas: 'EL.ContourLine',
+    atribucion: ATRIB_IDEE, opacidad: 0.9, zoomMin: 12,
+  },
+  {
+    id: 'vertices',
+    nombre: 'Vértices geodésicos',
+    detalle: 'Red REGENTE del IGN (en pruebas)',
+    tipo: 'wms',
+    url: 'https://www.ign.es/wms-inspire/redes-geodesicas',
+    capas: 'RED_REGENTE',
+    atribucion: ATRIB_IGN, opacidad: 1, zoomMin: 9,
+  },
+];
+
+/** Zona piloto A — Sierra de Guadarrama (Cercedilla–Navacerrada). */
+export const ZONA_PILOTO = {
+  nombre: 'Zona piloto A · Guadarrama',
+  sur: 40.70, norte: 40.88, oeste: -4.15, este: -3.91,
+};
+
+/** Crea la capa Leaflet de un fondo o de una superpuesta. */
+export function crearCapa(L, def) {
+  if (def.tipo === 'wms') {
+    return L.tileLayer.wms(def.url, {
+      layers: def.capas, format: 'image/png', transparent: true, version: '1.3.0',
+      opacity: def.opacidad ?? 1, minZoom: def.zoomMin ?? 0, maxZoom: 20,
+      attribution: def.atribucion,
+    });
+  }
+  const capa = L.tileLayer(def.url, {
+    maxNativeZoom: def.maxNativo ?? 18, maxZoom: def.max ?? 20, minZoom: 5,
+    opacity: def.opacidad ?? 1, attribution: def.atribucion,
+    className: def.mezcla ? `mezcla-${def.mezcla}` : '',
+  });
+  return capa;
+}

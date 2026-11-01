@@ -124,7 +124,28 @@ docs/                    esta especificación e informe de precisión
   cometidos tácticos más usados y sus nombres en castellano: base del
   catálogo corto.
 
-## 7. Pendiente de esta fase
+## 7. Mapa (fase 2)
+
+- **Librería:** Leaflet 1.9.4 (copiada en `src/vendor/leaflet`).
+- **Capas** (`src/mapa/capas.js`), servicios WMTS/WMS oficiales, malla
+  `GoogleMapsCompatible`:
+  | Capa | Servicio | Nombre de capa |
+  |---|---|---|
+  | Topográfico | `ign.es/wmts/mapa-raster` | `MTN` |
+  | Ortofoto | `ign.es/wmts/pnoa-ma` | `OI.OrthoimageCoverage` |
+  | Mapa base | `ign.es/wmts/ign-base` | `IGNBaseTodo` |
+  | Relieve / sombreado | `servicios.idee.es/wmts/mdt` | `Relieve` |
+  | Curvas de nivel | `servicios.idee.es/wms-inspire/mdt` | `EL.ContourLine` |
+  | Vértices geodésicos (en pruebas) | `ign.es/wms-inspire/redes-geodesicas` | `RED_REGENTE` |
+- **Pantalla y precisión:** el mapa se pinta en proyección web (EPSG:3857),
+  pero todos los números (coordenadas, cuadrícula, distancias, rumbos) los
+  calcula el motor sobre el elipsoide. La cuadrícula MGRS la dibuja SPA,
+  punto a punto, con el motor verificado (prueba: desviación < 1 µm).
+- **Exportar el mapa a imagen** (fase 5): requiere que los servicios del IGN
+  permitan uso entre orígenes (CORS). Pendiente de comprobar; por eso las
+  capas se cargan hoy sin `crossOrigin`.
+
+## 8. Pendiente
 
 - Conversión ED50 ↔ ETRS89 con la rejilla del IGN.
 - Rumbo magnético (modelo WMM).
