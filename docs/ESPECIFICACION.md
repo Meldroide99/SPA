@@ -1,4 +1,4 @@
-# SPA — Especificación (Fase 0)
+# SPA — Especificación
 
 Herramienta de planeamiento para la sección S3 de la web Lauria. Se desarrolla
 en este repositorio y se migrará a S3 cuando esté lista. Seguimiento del
@@ -154,7 +154,45 @@ docs/                    esta especificación e informe de precisión
   permitan uso entre orígenes (CORS). Pendiente de comprobar; por eso las
   capas se cargan hoy sin `crossOrigin`.
 
-## 8. Pendiente
+- **Cuadrícula:** muy tenue por defecto (intensidad 35 %, ajustable de
+  10 a 100 % en el panel de capas). Las cifras de los márgenes esquivan los
+  paneles y controles abiertos.
+- **Fondo automático (opcional):** casilla «Ortofoto al acercarte». Al
+  cruzar el zoom 17 hacia dentro pasa a la ortofoto; al alejarse vuelve al
+  mapa elegido. Si el usuario cambia de mapa a mano, se respeta.
+- **Copiar coordenadas:** se copia la **última posición del cursor** (al
+  salir del mapa no se sustituye por el centro). Tecla **C** sobre el mapa:
+  copia la coordenada bajo el cursor sin moverlo.
+
+## 8. Medir y dibujar (fase 3)
+
+- **Elementos:** punto, línea, área y círculo (`src/plan/plan.js`, sin
+  dependencias del mapa; `src/ui/dibujo.js`, la parte visual).
+- **Cómo se dibuja:** clic para cada vértice; termina con doble clic, Intro,
+  el botón «Terminar» o tocando el último vértice (línea) o el primero
+  (área). Retroceso quita el último vértice; Esc cancela. El círculo: centro
+  y borde, o centro y **radio escrito** en metros.
+- **Exactitud:** las líneas siguen la geodésica entre vértices; el círculo es
+  un polígono cuyos vértices están exactamente a la distancia del radio
+  (prueba: < 1 mm). Medidas: longitud real y sobre el mapa, rumbos de cada
+  tramo (geográfico y de cuadrícula), superficie y perímetro.
+- **Propiedades:** nombre, **bando** con los colores de APP-6 (propio azul,
+  enemigo rojo, neutral verde, desconocido amarillo) y **estado** (presente:
+  trazo continuo; previsto: discontinuo). El siguiente elemento toma el
+  último bando y estado usados.
+- **Editar:** clic en un elemento (o en la lista «Plan» del panel de capas)
+  para seleccionarlo. Arrastrar vértices; clic en un punto medio para añadir
+  uno; clic derecho (o × en la lista de vértices) para quitarlo. Supr borra.
+- **Deshacer / rehacer:** botones y Ctrl+Z / Ctrl+Y (Ctrl+Mayús+Z). Hasta
+  200 pasos.
+- **Guardado provisional:** el plan se guarda en el navegador
+  (`localStorage`). Guardar en archivo y exportar: fase 5.
+- **Pruebas:** `pruebas/plan.test.mjs` (medidas frente a GeographicLib, un
+  cuadrado de 1 km de cuadrícula mide 1 km²/k², historial) y
+  `pruebas/navegador.mjs` (21 comprobaciones en Chromium: dibujar, editar,
+  deshacer, copiar, cuadrícula, fondo automático).
+
+## 9. Pendiente
 
 - Conversión ED50 ↔ ETRS89 con la rejilla del IGN.
 - Rumbo magnético (modelo WMM).

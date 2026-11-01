@@ -120,7 +120,9 @@ export function textoEtiqueta(valor, paso) {
  * Las etiquetas de línea se colocan pegadas a los bordes izquierdo e inferior
  * de la pantalla, como en el margen de una carta.
  */
-export function capaCuadricula(L, mapa) {
+export function capaCuadricula(L, mapa, opc = {}) {
+  const intensidad = opc.intensidad ?? (() => 1);   // 0–1: multiplica la opacidad de las líneas
+  const obstaculos = opc.obstaculos ?? (() => []);  // rectángulos {x0,y0,x1,y1} que las etiquetas no deben tapar
   const grupo = L.layerGroup();
   const panel = 'cuadricula';
   if (!mapa.getPane(panel)) {
@@ -136,13 +138,15 @@ export function capaCuadricula(L, mapa) {
       { sur: b.getSouth(), norte: b.getNorth(), oeste: b.getWest(), este: b.getEast() }, paso);
     for (const l of lineas) {
       const est = ESTILO[Math.min(l.paso, 100000)] ?? ESTILO[paso];
-      L.polyline(l.puntos, { ...est, pane: panel, interactive: false, smoothFactor: 0 }).addTo(grupo);
+      L.polyline(l.puntos, { ...est, opacity: est.opacity * intensidad(), pane: panel, interactive: false, smoothFactor: 0 }).addTo(grupo);
     }
     for (const lon of husos) {
       L.polyline([[b.getSouth(), lon], [b.getNorth(), lon]], { color: '#A3362B', weight: 2, dashArray: '8 6', pane: panel, interactive: false }).addTo(grupo);
     }
     // Etiquetas en los márgenes de la pantalla
     const tam = mapa.getSize();
+    const rects = obstaculos();
+    const tapa = (p, ax, ay) => rects.some((r) => p.x + ax > r.x0 && p.x - ax < r.x1 && p.y + ay > r.y0 && p.y - ay < r.y1);
     for (const et of etiquetas) {
       if (et.eje === 'cuadrado') {
         L.marker(et.punto, { pane: panel, interactive: false, icon: L.divIcon({ className: 'etq-ancla', html: `<span class="cuad-100k">${et.texto}</span>`, iconSize: null }) }).addTo(grupo);
@@ -166,10 +170,9 @@ export function capaCuadricula(L, mapa) {
         }
       }
       if (!pos) continue;
-      // No tapar los controles: herramientas (arriba izq.), zoom (abajo izq.),
-      // escala y atribución (abajo der.).
-      if (et.eje === 'E' && (pos.x < 56 || pos.x > tam.x - 340)) continue;
-      if (et.eje === 'N' && (pos.y < 320 || pos.y > tam.y - 80)) continue;
+      // No tapar los controles ni los paneles abiertos
+      if (pos.x < 4 || pos.x > tam.x - 4 || pos.y < 4 || pos.y > tam.y - 4) continue;
+      if (tapa(pos, 18, 9)) continue;
       L.marker(mapa.containerPointToLatLng(pos), {
         pane: panel, interactive: false,
         icon: L.divIcon({ className: 'etq-ancla', html: `<span class="etq-cuad etq-${et.eje}">${texto}</span>`, iconSize: null }),

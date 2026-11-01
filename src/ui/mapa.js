@@ -1,11 +1,13 @@
-// Mapa piloto (fase 2): capas del IGN, cuadrícula MGRS, coordenadas,
-// consulta de puntos y regla de medida. Usa Leaflet (global L).
+// Mapa piloto: capas del IGN, cuadrícula MGRS, coordenadas, consulta de
+// puntos, regla de medida (fase 2) y dibujo de elementos (fase 3, en
+// dibujo.js). Usa Leaflet (global L).
 import {
   geoAMgrs, formatearPosicion, leerPosicion, geoAUtm, medir, puntosGeodesica,
   formatearRumbo, gradosAMilesimas, bandaLatitud,
 } from '../geo/index.js';
 import { FONDOS, SUPERPUESTAS, ALTERNATIVAS, ZONA_PILOTO, crearCapa } from '../mapa/capas.js';
 import { capaCuadricula } from '../mapa/cuadricula.js';
+import { iniciarDibujo, HERRAMIENTAS_DIBUJO } from './dibujo.js';
 
 const L = window.L;
 const $ = (id) => document.getElementById(id);
@@ -14,7 +16,7 @@ const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&l
 // ---------------------------------------------------------------- estado y preferencias
 const CLAVE = 'spa.mapa.estado';
 const estado = {
-  angulo: 'grados', precision: 5, fondo: 'mtn',
+  angulo: 'grados', precision: 5, fondo: 'mtn', fondoAuto: false, intensidadCuadricula: 35,
   superpuestas: { cuadricula: true, piloto: true },
   vista: null,
 };
@@ -66,10 +68,33 @@ function ponerFondo(id, { automatico = false } = {}) {
   fondoActual = capasFondo[id].addTo(mapa);
   fondoActual.bringToBack();
   fondoActual.idSpa = id;
-  if (!automatico) { fondoElegido = id; alternativasProbadas.clear(); ocultarAviso(); }
-  estado.fondo = FONDOS.some((f) => f.id === id) ? id : estado.fondo; guardar();
-  document.querySelectorAll('.fondo').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.id === (FONDOS.some((f) => f.id === id) ? id : fondoElegido))));
+  if (!automatico) { fondoElegido = id; alternativasProbadas.clear(); ocultarAviso(); estado.fondo = id; guardar(); }
+  const visible = FONDOS.some((f) => f.id === id) ? id : fondoElegido;
+  document.querySelectorAll('.fondo').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.id === visible)));
 }
+
+// Cambio automático de fondo con el zoom (opcional): al cruzar el umbral
+// hacia dentro se pasa a la ortofoto; hacia fuera se vuelve al mapa elegido.
+const ZOOM_ORTOFOTO = 17;
+let zoomPrevio = null;
+function fondoPorZoom({ forzar = false } = {}) {
+  const z = mapa.getZoom();
+  const cerca = z >= ZOOM_ORTOFOTO, antes = zoomPrevio !== null && zoomPrevio >= ZOOM_ORTOFOTO;
+  zoomPrevio = z;
+  if (!estado.fondoAuto || (!forzar && cerca === antes)) return;
+  const objetivo = cerca ? 'ortofoto' : estado.fondo;
+  if (fondoActual?.idSpa === objetivo) return;
+  ponerFondo(objetivo, { automatico: true });
+  fondoElegido = objetivo; alternativasProbadas.clear();
+}
+mapa.on('zoomend', () => fondoPorZoom());
+$('fondo-auto').checked = Boolean(estado.fondoAuto);
+$('fondo-auto').addEventListener('change', (ev) => {
+  estado.fondoAuto = ev.target.checked; guardar();
+  if (estado.fondoAuto) fondoPorZoom({ forzar: true });
+  else if (fondoActual?.idSpa !== estado.fondo) ponerFondo(estado.fondo);
+fondoPorZoom({ forzar: true });
+});
 
 function revisarCapas() {
   const id = fondoActual?.idSpa; if (!id) return;
@@ -117,9 +142,19 @@ $('fondos').innerHTML = FONDOS.map((f) => `<button type="button" class="fondo" d
   <span class="muestra muestra-${f.id}"></span><span class="nom">${esc(f.nombre)}</span></button>`).join('');
 $('fondos').addEventListener('click', (ev) => { const b = ev.target.closest('.fondo'); if (b) ponerFondo(b.dataset.id); });
 ponerFondo(estado.fondo);
+fondoPorZoom({ forzar: true });
 
 // Superpuestas: las del IGN + cuadrícula MGRS + zona piloto
-const cuadricula = capaCuadricula(L, mapa);
+// Rectángulos (en píxeles del mapa) que las etiquetas de la cuadrícula no deben tapar
+const SELECTORES_OBSTACULO = '.herramientas, .panel-capas, .panel-medida, .aviso, .aviso-breve, .leaflet-control-zoom, .leaflet-control-scale, .leaflet-control-attribution';
+function obstaculos() {
+  const base = $('mapa').getBoundingClientRect();
+  return [...document.querySelectorAll(SELECTORES_OBSTACULO)].map((el) => el.getBoundingClientRect())
+    .filter((r) => r.width && r.height)
+    .map((r) => ({ x0: r.left - base.left - 4, y0: r.top - base.top - 4, x1: r.right - base.left + 4, y1: r.bottom - base.top + 4 }));
+}
+const cuadricula = capaCuadricula(L, mapa, { intensidad: () => estado.intensidadCuadricula / 100, obstaculos });
+const recolocarEtiquetas = () => requestAnimationFrame(() => { if (mapa.hasLayer(cuadricula)) cuadricula.redibujar(); });
 const zonaPiloto = L.layerGroup([
   L.rectangle(piloto, { color: '#9A7642', weight: 2, dashArray: '7 5', fill: false, interactive: false }),
   L.marker([ZONA_PILOTO.norte, ZONA_PILOTO.oeste], { interactive: false, icon: L.divIcon({ className: 'zona-piloto-etq', html: esc(ZONA_PILOTO.nombre), iconSize: null, iconAnchor: [0, 28] }) }),
@@ -130,7 +165,13 @@ const listaSup = [
   { id: 'piloto', nombre: 'Zona piloto', detalle: 'Guadarrama, unos 20 × 20 km', capa: zonaPiloto },
 ];
 $('superpuestas').innerHTML = listaSup.map((s) => `<label class="sup"><input type="checkbox" data-id="${s.id}">
-  <span class="txt"><b>${esc(s.nombre)}</b><small>${esc(s.detalle)}</small></span></label>`).join('');
+  <span class="txt"><b>${esc(s.nombre)}</b><small>${esc(s.detalle)}</small></span></label>${s.id === 'cuadricula'
+  ? `<label class="intensidad" title="Intensidad de las líneas de la cuadrícula">Intensidad <input type="range" id="cuad-intensidad" min="10" max="100" step="5" value="${estado.intensidadCuadricula}"><output id="cuad-intensidad-v">${estado.intensidadCuadricula} %</output></label>` : ''}`).join('');
+$('cuad-intensidad').addEventListener('input', (ev) => {
+  estado.intensidadCuadricula = Number(ev.target.value); guardar();
+  $('cuad-intensidad-v').textContent = `${estado.intensidadCuadricula} %`;
+  cuadricula.redibujar();
+});
 function ponerSup(id, on) {
   const s = listaSup.find((x) => x.id === id); if (!s) return;
   if (on) s.capa.addTo(mapa); else mapa.removeLayer(s.capa);
@@ -143,8 +184,24 @@ for (const s of listaSup) ponerSup(s.id, Boolean(estado.superpuestas[s.id]));
 $('capas-toggle').addEventListener('click', () => {
   const p = $('panel-capas'); const cerrado = p.classList.toggle('cerrado');
   $('capas-toggle').setAttribute('aria-expanded', String(!cerrado));
+  recolocarEtiquetas();
 });
 if (window.matchMedia('(max-width: 760px)').matches) { $('panel-capas').classList.add('cerrado'); $('capas-toggle').setAttribute('aria-expanded', 'false'); }
+
+// ---------------------------------------------------------------- dibujo (fase 3)
+const dibujo = iniciarDibujo({
+  L, mapa,
+  herramienta: () => herramienta,
+  elegirHerramienta: (h) => elegirHerramienta(h),
+  alCambiarPaneles: () => recolocarEtiquetas(),
+  fmt: {
+    metros: (m) => metros(m),
+    rumbo: (g) => rumbo(g),
+    mgrs: (p) => geoAMgrs(p.lat, p.lon, estado.precision, { separado: true }),
+    secundaria: (p) => formatearPosicion(p, { formato: 'gms' }),
+    unidadAngulo: () => ({ grados: 'grados', milesimas: 'milésimas', gms: 'G M S' }[estado.angulo]),
+  },
+});
 
 // ---------------------------------------------------------------- barra de estado
 const tactil = window.matchMedia('(hover: none)').matches;
@@ -159,12 +216,36 @@ function mostrarPos(latlng, etiqueta) {
     $('be-sec').innerHTML = `<span>${formatearPosicion(ultimaPos, { formato: 'utm' })}</span><span>${formatearPosicion(ultimaPos, { formato: 'gms' })}</span><span>Conv. ${conv(u.convergencia)}</span>`;
   } catch { $('be-mgrs').textContent = '—'; $('be-sec').textContent = 'Fuera del ámbito UTM'; }
 }
-mapa.on('mousemove', (e) => { if (!tactil) mostrarPos(e.latlng, 'Cursor'); });
+// Al salir del mapa (por ejemplo, para pulsar «Copiar») se conserva la
+// última posición del cursor: es la que se copia.
+let cursorDentro = false;
+mapa.on('mousemove', (e) => { if (!tactil) { cursorDentro = true; mostrarPos(e.latlng, 'Cursor'); dibujo.moverCursor({ lat: e.latlng.lat, lon: e.latlng.lng }); } });
 mapa.on('moveend', () => { if (tactil || !ultimaPos) mostrarPos(mapa.getCenter(), 'Centro'); });
-mapa.on('mouseout', () => mostrarPos(mapa.getCenter(), 'Centro'));
+mapa.on('mouseout', () => { cursorDentro = false; if (ultimaPos) $('be-et').textContent = 'Última'; });
 mostrarPos(mapa.getCenter(), 'Centro');
-$('be-copiar').addEventListener('click', async () => {
-  try { await navigator.clipboard.writeText($('be-mgrs').textContent); $('be-copiar').textContent = 'Copiado'; setTimeout(() => { $('be-copiar').textContent = 'Copiar'; }, 1200); } catch { /* nada */ }
+
+/** Copia texto al portapapeles (con respaldo para navegadores sin permiso). */
+async function copiarTexto(texto) {
+  try { await navigator.clipboard.writeText(texto); return true; } catch { /* respaldo */ }
+  const t = document.createElement('textarea');
+  t.value = texto; t.setAttribute('readonly', ''); t.style.cssText = 'position:fixed;left:-9999px;top:0';
+  document.body.append(t); t.select();
+  let ok = false; try { ok = document.execCommand('copy'); } catch { /* nada */ }
+  t.remove(); return ok;
+}
+function avisarCopia(boton, ok, texto) {
+  const original = boton.dataset.original ?? boton.textContent; boton.dataset.original = original;
+  boton.textContent = ok ? 'Copiado' : 'No se pudo';
+  boton.title = ok ? `Copiado: ${texto}` : 'El navegador no deja copiar';
+  setTimeout(() => { boton.textContent = original; }, 1400);
+}
+const mgrsActual = () => (ultimaPos ? geoAMgrs(ultimaPos.lat, ultimaPos.lon, estado.precision, { separado: true }) : '');
+$('be-copiar').addEventListener('click', async () => { const t = mgrsActual(); if (t) avisarCopia($('be-copiar'), await copiarTexto(t), t); });
+// Tecla C con el ratón sobre el mapa: copia la coordenada del cursor sin moverlo
+document.addEventListener('keydown', async (e) => {
+  if (e.key.toLowerCase() !== 'c' || e.ctrlKey || e.metaKey || e.altKey || !cursorDentro) return;
+  if (/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement?.tagName)) return;
+  const t = mgrsActual(); if (t) avisarCopia($('be-copiar'), await copiarTexto(t), t);
 });
 
 for (const grupo of document.querySelectorAll('.seg[data-pref]')) {
@@ -177,6 +258,7 @@ for (const grupo of document.querySelectorAll('.seg[data-pref]')) {
     if (ultimaPos) mostrarPos({ lat: ultimaPos.lat, lng: ultimaPos.lon }, $('be-et').textContent);
     pintarMedida();
     if (fichaAbierta) fichaAbierta();
+    dibujo.refrescar();
   });
   pintar();
 }
@@ -209,7 +291,7 @@ function ponerMarca(p, titulo) {
 }
 document.addEventListener('click', async (ev) => {
   const c = ev.target.closest('[data-copiar]');
-  if (c) { try { await navigator.clipboard.writeText(c.dataset.copiar); c.textContent = 'Copiado'; } catch { /* nada */ } }
+  if (c) avisarCopia(c, await copiarTexto(c.dataset.copiar), c.dataset.copiar);
   const d = ev.target.closest('[data-medir-desde]');
   if (d) {
     const [lat, lon] = d.dataset.medirDesde.split(',').map(Number);
@@ -223,8 +305,10 @@ function elegirHerramienta(h) {
   herramienta = h;
   document.querySelectorAll('[data-herr]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.herr === h)));
   $('panel-medida').hidden = h !== 'medir';
-  mapa.getContainer().style.cursor = h === 'medir' ? 'crosshair' : '';
+  mapa.getContainer().style.cursor = h === 'medir' || HERRAMIENTAS_DIBUJO.includes(h) ? 'crosshair' : '';
   pintarMedida();
+  dibujo.herramientaCambiada(h);
+  recolocarEtiquetas();
 }
 document.querySelectorAll('[data-herr]').forEach((b) => b.addEventListener('click', () => elegirHerramienta(b.dataset.herr)));
 $('limpiar').addEventListener('click', () => { marcas.clearLayers(); medida.length = 0; pintarMedida(); });
@@ -233,8 +317,11 @@ $('ir-piloto').addEventListener('click', () => mapa.flyToBounds(piloto, { paddin
 mapa.on('click', (e) => {
   const p = { lat: e.latlng.lat, lon: e.latlng.lng };
   if (herramienta === 'medir') { medida.push(p); pintarMedida(); return; }
+  if (HERRAMIENTAS_DIBUJO.includes(herramienta)) { dibujo.clic(p); return; }
+  if (dibujo.quitarSeleccion()) return;   // primer clic fuera: solo deselecciona
   ponerMarca(p);
 });
+mapa.on('dblclick', () => { if (HERRAMIENTAS_DIBUJO.includes(herramienta)) dibujo.dobleClic(); });
 
 // ---------------------------------------------------------------- regla de medida
 const medida = [];
@@ -293,4 +380,4 @@ $('buscar-txt').addEventListener('input', () => $('buscar-error').classList.remo
 
 elegirHerramienta('consultar');
 // Para pruebas automáticas
-window.__spa = { mapa, estado, medida, pintarMedida, diag };
+window.__spa = { mapa, estado, medida, pintarMedida, diag, dibujo, cuadricula };

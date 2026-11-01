@@ -789,12 +789,15 @@ body.app-mapa { overflow: hidden; }
 .cuad-100k { font: 500 22px/1 var(--serif); color: rgba(12,46,75,.42); text-shadow: 0 0 3px rgba(255,255,255,.9); letter-spacing: .04em; }
 .zona-piloto-etq { font: 600 11px/1 var(--sans); letter-spacing: .08em; text-transform: uppercase; color: var(--oro-tinta); background: var(--oro-suave); border: 1px solid var(--oro-claro); padding: 4px 7px; border-radius: 3px; white-space: nowrap; width: auto !important; height: auto !important; }
 
-/* Herramientas (izquierda) */
-.herramientas { position: absolute; z-index: 1000; left: 12px; top: 12px; display: grid; gap: 6px; }
-.herramientas button { display: grid; justify-items: center; gap: 2px; width: 58px; padding: 8px 4px 6px; background: var(--superficie); border: 1px solid var(--linea-2); border-radius: 6px; box-shadow: var(--sombra); cursor: pointer; font-size: 11px; font-weight: 600; color: var(--tinta-2); }
-.herramientas svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
-.herramientas button:hover { border-color: var(--oro-claro); }
-.herramientas button[aria-pressed="true"] { background: var(--noche); color: #fff; border-color: var(--noche); }
+/* Herramientas (barra horizontal arriba a la izquierda) */
+.herramientas { position: absolute; z-index: 1000; left: 12px; top: 12px; display: flex; gap: 6px; max-width: calc(100% - 310px); overflow-x: auto; scrollbar-width: none; }
+.h-grupo { display: flex; background: var(--superficie); border: 1px solid var(--linea-2); border-radius: 7px; box-shadow: var(--sombra); overflow: hidden; flex: none; }
+.herramientas button { display: grid; justify-items: center; align-content: center; gap: 3px; width: 60px; height: 52px; padding: 6px 2px 5px; background: none; border: 0; border-left: 1px solid var(--linea); cursor: pointer; font-size: 10.5px; font-weight: 600; color: var(--tinta-2); }
+.herramientas button:first-child { border-left: 0; }
+.herramientas svg { width: 21px; height: 21px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.herramientas button:hover:not(:disabled) { background: var(--oro-suave); color: var(--oro-tinta); }
+.herramientas button[aria-pressed="true"] { background: var(--noche); color: #fff; }
+.herramientas button:disabled { color: var(--gris-2); opacity: .55; cursor: default; }
 .leaflet-top.leaflet-left { top: auto; bottom: 0; } /* zoom abajo a la izquierda */
 .leaflet-control-zoom a { color: var(--tinta-2) !important; }
 
@@ -822,12 +825,13 @@ body.app-mapa { overflow: hidden; }
 .sup .txt small { font-size: 11.5px; color: var(--gris); }
 
 /* Panel de medida */
-.panel-medida { position: absolute; z-index: 1000; left: 82px; top: 12px; width: min(340px, calc(100% - 100px)); background: var(--superficie); border: 1px solid var(--linea); border-radius: 8px; box-shadow: var(--sombra); padding: 12px 14px; }
+.panel-medida { position: absolute; z-index: 1000; left: 12px; top: 76px; width: min(360px, calc(100% - 24px)); max-height: calc(100% - 150px); overflow: auto; background: var(--superficie); border: 1px solid var(--linea); border-radius: 8px; box-shadow: var(--sombra); padding: 12px 14px; }
 .pm-cab { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
 .pm-cab strong { font: 400 20px/1 var(--serif); }
 .pm-cab span { font-size: 12px; color: var(--gris); }
 .pm-total { margin: 10px 0 6px; padding: 10px 12px; background: var(--oro-suave); border-radius: var(--radio); }
 .pm-total .grande { font: 400 28px/1 var(--mono); color: var(--oro-tinta); }
+.pm-total .grande.mgrs { font-size: 21px; }
 .pm-total .peq { font-size: 12px; color: var(--oro-tinta); margin-top: 4px; }
 .pm-tramos { width: 100%; border-collapse: collapse; font-size: 12.5px; }
 .pm-tramos th { text-align: left; font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--gris); font-weight: 600; padding: 4px 4px; border-bottom: 1px solid var(--linea); }
@@ -869,7 +873,9 @@ body.app-mapa { overflow: hidden; }
   .be-mgrs { font-size: 17px; min-width: 0; }
   .barra-estado { gap: 10px; flex-wrap: wrap; }
   .be-prefs { margin-left: 0; }
-  .panel-medida { left: 12px; top: auto; bottom: 12px; width: calc(100% - 24px); }
+  .panel-medida { left: 12px; top: auto; bottom: 12px; width: calc(100% - 24px); max-height: 52%; }
+  .herramientas { max-width: calc(100% - 140px); }
+  .herramientas button { width: 52px; }
 }
 
 /* Aviso de diagnóstico de capas */
@@ -883,12 +889,83 @@ body.app-mapa { overflow: hidden; }
 .aviso .av-acc a { background: var(--noche); color: #fff; border-color: var(--noche); }
 .aviso .av-nota { margin-top: 8px; font-size: 12px; color: var(--gris); }
 
+/* Cuadrícula: intensidad */
+.intensidad { display: flex; align-items: center; gap: 8px; padding: 0 4px 8px 30px; font-size: 11.5px; color: var(--gris); }
+.intensidad input { flex: 1; accent-color: var(--noche); min-width: 0; }
+.intensidad output { font: 11.5px var(--mono); width: 4ch; text-align: right; }
+.sup-auto { border-top: 0; margin-top: 4px; }
+
+/* Plan: lista de elementos */
+.plan-lista { display: grid; gap: 2px; }
+.plan-vacio, .plan-nota { font-size: 11.5px; color: var(--gris); margin: 4px 2px; }
+.plan-nota { margin-top: 8px; }
+.plan-el { display: grid; grid-template-columns: 22px 1fr auto; align-items: center; gap: 8px; width: 100%; border: 1px solid transparent; background: none; border-radius: var(--radio); padding: 5px 6px; cursor: pointer; text-align: left; font-size: 13px; }
+.plan-el:hover { background: var(--hundido); }
+.plan-el[aria-pressed="true"] { background: var(--oro-suave); border-color: var(--oro-claro); }
+.plan-el svg { width: 20px; height: 20px; fill: none; stroke: var(--c); stroke-width: 2; stroke-linejoin: round; }
+.plan-el svg.previsto { stroke-dasharray: 3 2; }
+.pe-nom { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pe-med { font: 11.5px var(--mono); color: var(--gris); white-space: nowrap; }
+
+/* Elementos dibujados sobre el mapa */
+.etq-elem { font: 700 12px/1 var(--sans); color: var(--c); background: rgba(255,255,255,.92); border: 1px solid var(--c); padding: 3px 6px; border-radius: 3px; letter-spacing: .02em; text-transform: uppercase; }
+.pto-elem { display: flex; align-items: center; gap: 6px; transform: translate(-7px, -50%) !important; }
+.pto-elem i { flex: none; width: 14px; height: 14px; border-radius: 50%; background: var(--c); border: 2.5px solid #fff; box-shadow: 0 0 0 1px var(--c), 0 1px 3px rgba(0,0,0,.35); }
+.pto-elem.previsto i { background: #fff; border: 2.5px dashed var(--c); box-shadow: none; }
+.pto-elem.sel i { box-shadow: 0 0 0 3px #E0B252, 0 1px 3px rgba(0,0,0,.35); }
+.pto-elem b { font: 700 12px/1 var(--sans); color: var(--c); background: rgba(255,255,255,.92); padding: 3px 5px; border-radius: 3px; text-transform: uppercase; letter-spacing: .02em; }
+.leaflet-marker-draggable .pto-elem { cursor: move; }
+
+/* Asas de edición */
+.asa { border-radius: 2px; background: #fff; border: 2px solid var(--noche); box-shadow: 0 1px 3px rgba(0,0,0,.35); cursor: move; }
+.asa-media { border-radius: 50%; border-width: 1.5px; background: rgba(255,255,255,.75); opacity: .85; cursor: copy; }
+.asa-centro { border-radius: 50%; background: var(--noche); border-color: #fff; }
+.asa-radio { border-radius: 50%; border-color: var(--oro); cursor: ew-resize; }
+
+/* Panel del elemento */
+.panel-elemento .pm-cab strong { display: flex; align-items: center; gap: 8px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.muestra-bando { width: 12px; height: 12px; border-radius: 50%; background: var(--c); flex: none; }
+.el-ayuda { font-size: 12.5px; color: var(--tinta-2); margin: 8px 0; }
+.el-nombre { display: grid; gap: 4px; font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--gris); margin: 10px 0 8px; }
+.el-nombre input, .el-radio input { font: 14px var(--sans); padding: 7px 10px; border: 1px solid var(--linea-2); border-radius: var(--radio); background: var(--papel); color: var(--tinta); text-transform: none; letter-spacing: 0; }
+.el-nombre input:focus, .el-radio input:focus { outline: 2px solid var(--oro-claro); outline-offset: 0; border-color: var(--oro-claro); }
+.el-fila { display: flex; align-items: center; gap: 10px; margin: 6px 0; flex-wrap: wrap; }
+.el-bando button { display: inline-flex; align-items: center; gap: 5px; padding: 4px 9px; font-size: 12px; }
+.el-bando button i { width: 9px; height: 9px; border-radius: 50%; background: var(--c); }
+.el-bando button[aria-pressed="true"] { background: var(--c); }
+.el-bando button[aria-pressed="true"] i { background: #fff; }
+.el-fila .seg button { font-size: 12px; padding: 4px 10px; }
+.el-trazo { width: 46px; height: 0; border-top: 3px solid var(--c); }
+.el-trazo.previsto { border-top-style: dashed; }
+.el-radio { display: flex; align-items: flex-end; gap: 8px; margin: 8px 0; font-size: 12px; color: var(--gris); }
+.el-radio label { display: grid; gap: 4px; flex: 1; font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
+.el-radio input { font-family: var(--mono); width: 100%; }
+.el-radio > span { padding-bottom: 9px; }
+.el-radio button { border: 1px solid var(--noche); background: var(--noche); color: #fff; border-radius: var(--radio); padding: 7px 12px; font-size: 12.5px; font-weight: 600; cursor: pointer; }
+.el-datos { display: grid; grid-template-columns: auto 1fr; gap: 3px 12px; margin: 6px 0; font-size: 12.5px; }
+.el-datos dt { color: var(--gris); }
+.el-datos dd { margin: 0; font-family: var(--mono); }
+.el-vert { margin: 8px 0 4px; font-size: 12.5px; }
+.el-vert summary { cursor: pointer; font-weight: 600; color: var(--tinta-2); }
+.el-vert ol { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 2px; }
+.el-vert li { display: grid; grid-template-columns: 18px 1fr auto; align-items: center; gap: 6px; padding: 2px 0; border-bottom: 1px solid var(--linea); }
+.el-vert code { font: 12.5px var(--mono); }
+.v-letra { font: 600 11px var(--mono); color: var(--gris); }
+.el-vert li button { border: 0; background: none; color: var(--gris); font-size: 16px; line-height: 1; cursor: pointer; padding: 0 4px; }
+.el-vert li button:hover { color: var(--error); }
+.pm-nota { font-size: 11.5px; color: var(--gris); margin: 6px 0 0; }
+.pm-acciones button.peligro { color: var(--error); }
+.pm-acciones button.peligro:hover { border-color: var(--error); background: var(--error-suave); }
+
+/* Aviso breve (abajo, centrado) */
+.aviso-breve { position: absolute; z-index: 1003; left: 50%; bottom: 18px; transform: translateX(-50%); background: var(--noche); color: #fff; padding: 8px 14px; border-radius: 999px; font-size: 13px; box-shadow: var(--sombra); white-space: nowrap; max-width: calc(100% - 24px); overflow: hidden; text-overflow: ellipsis; }
+
 </style>
 </head>
 <body class="app-mapa">
 <div id="app">
   <header class="barra-sup">
-    <div class="marca"><span class="sello-spa">SPA</span><span class="marca-txt"><strong>Mapa piloto</strong><small>Fase 2 · Guadarrama</small></span></div>
+    <div class="marca"><span class="sello-spa">SPA</span><span class="marca-txt"><strong>Mapa piloto</strong><small>Fase 3 · Guadarrama</small></span></div>
     <form class="buscar" id="buscar" autocomplete="off">
       <input id="buscar-txt" spellcheck="false" placeholder="Ir a… MGRS, UTM o geográficas" aria-label="Ir a una posición">
       <button type="submit">Ir</button>
@@ -901,14 +978,36 @@ body.app-mapa { overflow: hidden; }
     <div id="mapa" aria-label="Mapa"></div>
 
     <div class="herramientas" role="toolbar" aria-label="Herramientas">
-      <button type="button" data-herr="consultar" aria-pressed="true" title="Consultar un punto">
-        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M12 2v5M12 17v5M2 12h5M17 12h5"/></svg><span>Punto</span></button>
-      <button type="button" data-herr="medir" aria-pressed="false" title="Medir distancias y rumbos">
-        <svg viewBox="0 0 24 24"><path d="M3 17 17 3l4 4L7 21z"/><path d="M7 13l2 2M10 10l2 2M13 7l2 2"/></svg><span>Medir</span></button>
-      <button type="button" id="limpiar" title="Borrar marcas y medidas">
-        <svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg><span>Borrar</span></button>
-      <button type="button" id="ir-piloto" title="Volver a la zona piloto">
-        <svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z" stroke-dasharray="3 2"/><circle cx="12" cy="12" r="2"/></svg><span>Zona</span></button>
+      <div class="h-grupo">
+        <button type="button" data-herr="consultar" aria-pressed="true" title="Consultar: toca el mapa para ver la coordenada o un elemento para editarlo">
+          <svg viewBox="0 0 24 24"><path d="M5 3l13 8-6 1.5L9 19z"/></svg><span>Consultar</span></button>
+      </div>
+      <div class="h-grupo" aria-label="Dibujar">
+        <button type="button" data-herr="punto" aria-pressed="false" title="Dibujar un punto">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/></svg><span>Punto</span></button>
+        <button type="button" data-herr="linea" aria-pressed="false" title="Dibujar una línea (doble clic o Intro para terminar)">
+          <svg viewBox="0 0 24 24"><path d="M3 18 9 9l6 5 6-9"/><circle cx="3" cy="18" r="1.4"/><circle cx="9" cy="9" r="1.4"/><circle cx="15" cy="14" r="1.4"/><circle cx="21" cy="5" r="1.4"/></svg><span>Línea</span></button>
+        <button type="button" data-herr="area" aria-pressed="false" title="Dibujar un área (toca el primer vértice para cerrar)">
+          <svg viewBox="0 0 24 24"><path d="M4 7 12 3l8 6-3 11H7z"/></svg><span>Área</span></button>
+        <button type="button" data-herr="circulo" aria-pressed="false" title="Dibujar un círculo: centro y radio">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 12h8"/><circle cx="12" cy="12" r="1.2"/></svg><span>Círculo</span></button>
+      </div>
+      <div class="h-grupo">
+        <button type="button" data-herr="medir" aria-pressed="false" title="Regla: medir distancias y rumbos sin guardar">
+          <svg viewBox="0 0 24 24"><path d="M3 17 17 3l4 4L7 21z"/><path d="M7 13l2 2M10 10l2 2M13 7l2 2"/></svg><span>Medir</span></button>
+      </div>
+      <div class="h-grupo">
+        <button type="button" id="deshacer" disabled title="Deshacer (Ctrl+Z)">
+          <svg viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg><span>Deshacer</span></button>
+        <button type="button" id="rehacer" disabled title="Rehacer (Ctrl+Y)">
+          <svg viewBox="0 0 24 24"><path d="m15 14 5-5-5-5"/><path d="M20 9H10a6 6 0 0 0 0 12h3"/></svg><span>Rehacer</span></button>
+      </div>
+      <div class="h-grupo">
+        <button type="button" id="limpiar" title="Quitar las marcas de consulta y la regla (no borra lo dibujado)">
+          <svg viewBox="0 0 24 24"><path d="m7 21-4-4L14 6l7 7-8 8z"/><path d="M9 12l6 6M3 21h18"/></svg><span>Limpiar</span></button>
+        <button type="button" id="ir-piloto" title="Volver a la zona piloto">
+          <svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z" stroke-dasharray="3 2"/><circle cx="12" cy="12" r="2"/></svg><span>Zona</span></button>
+      </div>
     </div>
 
     <aside class="panel-capas" id="panel-capas">
@@ -917,12 +1016,21 @@ body.app-mapa { overflow: hidden; }
       <div class="panel-cuerpo" id="capas-cuerpo">
         <div class="grupo-tit">Fondo</div>
         <div class="fondos" id="fondos"></div>
+        <label class="sup sup-auto"><input type="checkbox" id="fondo-auto">
+          <span class="txt"><b>Ortofoto al acercarte</b><small>Desde zoom 17 pasa a ortofoto y al alejarte vuelve a tu mapa</small></span></label>
         <div class="grupo-tit">Encima</div>
         <div class="superpuestas" id="superpuestas"></div>
+        <div class="grupo-tit">Plan <span id="plan-cuenta"></span></div>
+        <div class="plan-lista" id="plan-lista"></div>
+        <p class="plan-nota">Se guarda solo en este navegador. Guardar en archivo y exportar llegan en la fase 5.</p>
       </div>
     </aside>
 
     <div class="aviso" id="aviso" hidden role="alert"></div>
+
+    <div class="aviso-breve" id="aviso-breve" hidden role="status"></div>
+
+    <section class="panel-medida panel-elemento" id="panel-elemento" hidden aria-live="polite"></section>
 
     <section class="panel-medida" id="panel-medida" hidden aria-live="polite">
       <div class="pm-cab"><strong>Medida</strong><span id="pm-ayuda">Toca el mapa para añadir puntos</span></div>
@@ -4651,7 +4759,9 @@ function textoEtiqueta(valor, paso) {
  * Las etiquetas de línea se colocan pegadas a los bordes izquierdo e inferior
  * de la pantalla, como en el margen de una carta.
  */
-function capaCuadricula(L, mapa) {
+function capaCuadricula(L, mapa, opc = {}) {
+  const intensidad = opc.intensidad ?? (() => 1);   // 0–1: multiplica la opacidad de las líneas
+  const obstaculos = opc.obstaculos ?? (() => []);  // rectángulos {x0,y0,x1,y1} que las etiquetas no deben tapar
   const grupo = L.layerGroup();
   const panel = 'cuadricula';
   if (!mapa.getPane(panel)) {
@@ -4667,13 +4777,15 @@ function capaCuadricula(L, mapa) {
       { sur: b.getSouth(), norte: b.getNorth(), oeste: b.getWest(), este: b.getEast() }, paso);
     for (const l of lineas) {
       const est = ESTILO[Math.min(l.paso, 100000)] ?? ESTILO[paso];
-      L.polyline(l.puntos, { ...est, pane: panel, interactive: false, smoothFactor: 0 }).addTo(grupo);
+      L.polyline(l.puntos, { ...est, opacity: est.opacity * intensidad(), pane: panel, interactive: false, smoothFactor: 0 }).addTo(grupo);
     }
     for (const lon of husos) {
       L.polyline([[b.getSouth(), lon], [b.getNorth(), lon]], { color: '#A3362B', weight: 2, dashArray: '8 6', pane: panel, interactive: false }).addTo(grupo);
     }
     // Etiquetas en los márgenes de la pantalla
     const tam = mapa.getSize();
+    const rects = obstaculos();
+    const tapa = (p, ax, ay) => rects.some((r) => p.x + ax > r.x0 && p.x - ax < r.x1 && p.y + ay > r.y0 && p.y - ay < r.y1);
     for (const et of etiquetas) {
       if (et.eje === 'cuadrado') {
         L.marker(et.punto, { pane: panel, interactive: false, icon: L.divIcon({ className: 'etq-ancla', html: `<span class="cuad-100k">${et.texto}</span>`, iconSize: null }) }).addTo(grupo);
@@ -4697,10 +4809,9 @@ function capaCuadricula(L, mapa) {
         }
       }
       if (!pos) continue;
-      // No tapar los controles: herramientas (arriba izq.), zoom (abajo izq.),
-      // escala y atribución (abajo der.).
-      if (et.eje === 'E' && (pos.x < 56 || pos.x > tam.x - 340)) continue;
-      if (et.eje === 'N' && (pos.y < 320 || pos.y > tam.y - 80)) continue;
+      // No tapar los controles ni los paneles abiertos
+      if (pos.x < 4 || pos.x > tam.x - 4 || pos.y < 4 || pos.y > tam.y - 4) continue;
+      if (tapa(pos, 18, 9)) continue;
       L.marker(mapa.containerPointToLatLng(pos), {
         pane: panel, interactive: false,
         icon: L.divIcon({ className: 'etq-ancla', html: `<span class="etq-cuad etq-${et.eje}">${texto}</span>`, iconSize: null }),
@@ -4716,14 +4827,754 @@ function capaCuadricula(L, mapa) {
 return { pasoCuadricula, calcularCuadricula, textoEtiqueta, capaCuadricula };
 })();
 
+// ── src/plan/plan.js
+__mods["src/plan/plan.js"] = (function () {
+'use strict';
+// Modelo del plan (fase 3): elementos dibujados, sus medidas e historial.
+//
+// No depende del mapa ni de la página: se prueba en Node.
+// Formato según docs/ESPECIFICACION.md §4. Las geometrías son GeoJSON
+// (orden [longitud, latitud]); el círculo se guarda como un Point con
+// `propiedades.radio` en metros (GeoJSON no tiene círculos), y al dibujarlo
+// o exportarlo se convierte en polígono geodésico.
+//
+// Todas las medidas salen del motor geodésico verificado (src/geo).
+
+const { longitudLinea, areaPoligono, medir, destino } = __req("src/geo/index.js");
+
+const TIPOS = Object.freeze({
+  punto: { nombre: 'Punto', min: 1 },
+  linea: { nombre: 'Línea', min: 2 },
+  area: { nombre: 'Área', min: 3 },
+  circulo: { nombre: 'Círculo', min: 1 },
+});
+
+/** Bandos (colores de afiliación de APP-6 para gráficos tácticos). */
+const BANDOS = Object.freeze({
+  propio: { nombre: 'Propio', color: '#1F5FA8' },
+  enemigo: { nombre: 'Enemigo', color: '#C0392B' },
+  neutral: { nombre: 'Neutral', color: '#2E7D32' },
+  desconocido: { nombre: 'Desconocido', color: '#B8860B' },
+});
+
+/** Estado: presente (trazo continuo) o previsto (discontinuo), como en APP-6. */
+const ESTADOS = Object.freeze({
+  presente: { nombre: 'Presente' },
+  previsto: { nombre: 'Previsto' },
+});
+
+const ahora = () => new Date().toISOString();
+const uuid = () => (globalThis.crypto?.randomUUID?.()
+  ?? 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = Math.random() * 16 | 0; return (c === 'x' ? r : (r & 3 | 8)).toString(16);
+  }));
+
+/** Plan vacío. */
+function crearPlan(nombre = 'Plan sin nombre') {
+  const t = ahora();
+  return {
+    formato: 'spa-plan', version: 1, id: uuid(), nombre,
+    creado: t, modificado: t, datum: 'WGS84',
+    capas: [{ id: 'principal', nombre: 'Principal', visible: true, orden: 0 }],
+    elementos: [], opord: {},
+  };
+}
+
+/** Convierte puntos {lat,lon} en geometría GeoJSON del tipo dado. */
+function geometria(tipo, puntos) {
+  const c = puntos.map((p) => [p.lon, p.lat]);
+  if (tipo === 'punto' || tipo === 'circulo') return { type: 'Point', coordinates: c[0] };
+  if (tipo === 'linea') return { type: 'LineString', coordinates: c };
+  if (tipo === 'area') return { type: 'Polygon', coordinates: [[...c, c[0]]] }; // anillo cerrado
+  throw new Error(`Tipo desconocido: ${tipo}`);
+}
+
+/** Puntos {lat,lon} de un elemento (sin repetir el cierre del área). */
+function puntosDe(el) {
+  const g = el.geometria;
+  if (g.type === 'Point') return [{ lat: g.coordinates[1], lon: g.coordinates[0] }];
+  if (g.type === 'LineString') return g.coordinates.map(([lon, lat]) => ({ lat, lon }));
+  if (g.type === 'Polygon') return g.coordinates[0].slice(0, -1).map(([lon, lat]) => ({ lat, lon }));
+  return [];
+}
+
+/** Nuevo elemento. `puntos` en {lat,lon}; para el círculo, el centro y `radio`. */
+function nuevoElemento(tipo, puntos, opc = {}) {
+  if (!TIPOS[tipo]) throw new Error(`Tipo desconocido: ${tipo}`);
+  if (puntos.length < TIPOS[tipo].min) throw new Error(`${TIPOS[tipo].nombre}: hacen falta al menos ${TIPOS[tipo].min} puntos`);
+  const t = ahora();
+  const propiedades = {
+    nombre: opc.nombre ?? '', notas: '',
+    bando: opc.bando ?? 'propio', estado: opc.estado ?? 'presente',
+  };
+  if (tipo === 'circulo') {
+    if (!(opc.radio > 0)) throw new Error('Círculo: el radio debe ser mayor que 0');
+    propiedades.radio = opc.radio;
+  }
+  return {
+    id: uuid(), tipo, geometria: geometria(tipo, puntos), simbolo: null, propiedades,
+    capa: 'principal', creado: t, modificado: t, autor: '', fuente: 'manual', hora: null, version: 1,
+  };
+}
+
+/** Cambia los puntos de un elemento (mismo tipo). */
+function moverPuntos(el, puntos) {
+  if (puntos.length < TIPOS[el.tipo].min) throw new Error(`${TIPOS[el.tipo].nombre}: hacen falta al menos ${TIPOS[el.tipo].min} puntos`);
+  el.geometria = geometria(el.tipo, puntos);
+  tocar(el);
+}
+
+/** Marca un elemento como modificado. */
+function tocar(el) { el.modificado = ahora(); el.version = (el.version || 1) + 1; }
+
+/**
+ * Polígono geodésico que representa un círculo: cada vértice está
+ * exactamente a `radio` metros del centro (sobre el elipsoide).
+ */
+function puntosCirculo(centro, radio, n = 180) {
+  const pts = [];
+  for (let i = 0; i < n; i++) {
+    const d = destino(centro, (360 * i) / n, radio);
+    pts.push({ lat: d.lat, lon: d.lon });
+  }
+  return pts;
+}
+
+/**
+ * Medidas de un elemento, con el motor geodésico.
+ * - línea: longitud (elipsoide) y longitud sobre el mapa (cuadrícula UTM), tramos
+ * - área: superficie y perímetro (lados geodésicos)
+ * - círculo: radio, diámetro, superficie y perímetro
+ */
+function medidasDe(el) {
+  const pts = puntosDe(el);
+  if (el.tipo === 'punto') return { tipo: 'punto', posicion: pts[0] };
+  if (el.tipo === 'circulo') {
+    const r = el.propiedades.radio;
+    const { area, perimetro } = areaPoligono(puntosCirculo(pts[0], r, 720));
+    return { tipo: 'circulo', centro: pts[0], radio: r, diametro: 2 * r, area, perimetro };
+  }
+  const tramos = [];
+  const cerrado = el.tipo === 'area' ? [...pts, pts[0]] : pts;
+  let mapaTotal = 0;
+  for (let i = 1; i < cerrado.length; i++) {
+    const m = medir(cerrado[i - 1], cerrado[i]);
+    tramos.push({ de: i - 1, a: i % pts.length, distancia: m.distancia, rumbo: m.rumbo, rumboCuadricula: m.rumboCuadricula, distanciaCuadricula: m.distanciaCuadricula });
+    mapaTotal += m.distanciaCuadricula;
+  }
+  if (el.tipo === 'linea') return { tipo: 'linea', longitud: longitudLinea(pts), longitudMapa: mapaTotal, tramos };
+  const { area, perimetro } = areaPoligono(pts);
+  return { tipo: 'area', area, perimetro, perimetroMapa: mapaTotal, tramos };
+}
+
+/** Superficie legible: m², ha o km². */
+function formatearArea(m2) {
+  const n = (v, d) => v.toLocaleString('es-ES', { minimumFractionDigits: d, maximumFractionDigits: d });
+  if (m2 < 10000) return `${n(m2, 0)} m²`;
+  if (m2 < 1e6) return `${n(m2 / 10000, 2)} ha`;
+  return `${n(m2 / 1e6, 3)} km² (${n(m2 / 10000, 0)} ha)`;
+}
+
+/**
+ * Historial de cambios del plan, con deshacer y rehacer.
+ * Guarda copias de la lista de elementos (los planes tácticos son pequeños).
+ */
+class Historial {
+  constructor(plan, { limite = 200, alCambiar = () => {} } = {}) {
+    this.plan = plan; this.limite = limite; this.alCambiar = alCambiar;
+    this.atras = []; this.adelante = [];
+  }
+
+  /** Ejecuta `fn(plan)` como un cambio que se puede deshacer. */
+  hacer(descripcion, fn) {
+    const antes = JSON.stringify(this.plan.elementos);
+    const r = fn(this.plan);
+    if (JSON.stringify(this.plan.elementos) === antes) return r; // nada cambió
+    this.atras.push({ descripcion, elementos: antes });
+    if (this.atras.length > this.limite) this.atras.shift();
+    this.adelante.length = 0;
+    this.plan.modificado = ahora();
+    this.alCambiar(this);
+    return r;
+  }
+
+  get puedeDeshacer() { return this.atras.length > 0; }
+  get puedeRehacer() { return this.adelante.length > 0; }
+  get ultimo() { return this.atras.at(-1)?.descripcion ?? ''; }
+  get siguiente() { return this.adelante.at(-1)?.descripcion ?? ''; }
+
+  deshacer() {
+    const paso = this.atras.pop(); if (!paso) return false;
+    this.adelante.push({ descripcion: paso.descripcion, elementos: JSON.stringify(this.plan.elementos) });
+    this.plan.elementos = JSON.parse(paso.elementos);
+    this.alCambiar(this);
+    return paso.descripcion;
+  }
+
+  rehacer() {
+    const paso = this.adelante.pop(); if (!paso) return false;
+    this.atras.push({ descripcion: paso.descripcion, elementos: JSON.stringify(this.plan.elementos) });
+    this.plan.elementos = JSON.parse(paso.elementos);
+    this.alCambiar(this);
+    return paso.descripcion;
+  }
+}
+
+/** Comprueba que un objeto tiene forma de plan (al leerlo del almacenamiento). */
+function esPlan(o) {
+  return Boolean(o && o.formato === 'spa-plan' && Array.isArray(o.elementos));
+}
+
+return { TIPOS, BANDOS, ESTADOS, crearPlan, geometria, puntosDe, nuevoElemento, moverPuntos, tocar, puntosCirculo, medidasDe, formatearArea, Historial, esPlan };
+})();
+
+// ── src/ui/dibujo.js
+__mods["src/ui/dibujo.js"] = (function () {
+'use strict';
+// Fase 3: dibujar y editar sobre el mapa (punto, línea, área, círculo).
+//
+// Todo lo que se ve se calcula con el motor geodésico: las líneas siguen la
+// geodésica entre vértices, el círculo es un polígono cuyos vértices están
+// exactamente a la distancia del radio y las medidas salen de src/plan.
+// Usa Leaflet (global L).
+
+const { puntosGeodesica, destino, medir } = __req("src/geo/index.js");
+const { crearPlan, nuevoElemento, puntosDe, moverPuntos, medidasDe, puntosCirculo, Historial, formatearArea, esPlan, tocar, TIPOS, BANDOS, ESTADOS } = __req("src/plan/plan.js");
+
+const CLAVE_PLAN = 'spa.plan.actual';
+const HERRAMIENTAS_DIBUJO = ['punto', 'linea', 'area', 'circulo'];
+
+/**
+ * @param {object} o
+ * @param {*} o.L Leaflet
+ * @param {*} o.mapa mapa Leaflet
+ * @param {() => string} o.herramienta herramienta activa
+ * @param {(h:string) => void} o.elegirHerramienta
+ * @param {{metros, rumbo, mgrs, unidadAngulo}} o.fmt formatos (según preferencias)
+ * @param {() => void} o.alCambiarPaneles para recolocar etiquetas de cuadrícula
+ */
+function iniciarDibujo({ L, mapa, herramienta, elegirHerramienta, fmt, alCambiarPaneles = () => {} }) {
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const px = (p) => mapa.latLngToContainerPoint([p.lat, p.lon]);
+
+  // ---------------------------------------------------------- plan y guardado local
+  let plan = null;
+  try { const g = JSON.parse(localStorage.getItem(CLAVE_PLAN) || 'null'); if (esPlan(g)) plan = g; } catch { /* sin almacenamiento */ }
+  plan ??= crearPlan('Plan de trabajo');
+  const historial = new Historial(plan, {
+    alCambiar: () => {
+      try { localStorage.setItem(CLAVE_PLAN, JSON.stringify(plan)); } catch { /* nada */ }
+      if (seleccion && !buscar(seleccion)) seleccion = null;
+      pintarTodo(); pintarPanel(); pintarLista(); pintarBotones();
+    },
+  });
+  const buscar = (id) => plan.elementos.find((e) => e.id === id);
+  const cambio = (desc, fn) => historial.hacer(desc, fn);
+
+  // ---------------------------------------------------------- capas
+  for (const [nombre, z] of [['elementos', 460], ['borrador', 470]]) {
+    if (!mapa.getPane(nombre)) mapa.createPane(nombre).style.zIndex = z;
+  }
+  const capaElementos = L.layerGroup().addTo(mapa);
+  const capaAsas = L.layerGroup().addTo(mapa);
+  const capaBorrador = L.layerGroup().addTo(mapa);
+  const capasDe = new Map(); // id → layerGroup
+
+  let seleccion = null;      // id del elemento seleccionado
+  let borrador = null;       // { tipo, puntos, cursor }
+  let preferencias = { bando: 'propio', estado: 'presente' };
+  let verticesAbiertos = false;
+
+  const color = (el) => BANDOS[el.propiedades.bando]?.color ?? BANDOS.propio.color;
+  const discontinuo = (el) => (el.propiedades.estado === 'previsto' ? '10 7' : null);
+  const numero = (el) => plan.elementos.filter((e) => e.tipo === el.tipo).indexOf(el) + 1;
+  const titulo = (el) => el.propiedades.nombre || `${TIPOS[el.tipo].nombre} ${numero(el)}`;
+
+  /** Coordenadas de dibujo (siguiendo la geodésica) de una lista de puntos. */
+  function trazo(puntos, cerrar = false) {
+    const pts = cerrar ? [...puntos, puntos[0]] : puntos;
+    const out = [];
+    for (let i = 1; i < pts.length; i++) {
+      const seg = puntosGeodesica(pts[i - 1], pts[i], 16);
+      (i === 1 ? seg : seg.slice(1)).forEach((q) => out.push([q.lat, q.lon]));
+    }
+    if (pts.length === 1) out.push([pts[0].lat, pts[0].lon]);
+    return out;
+  }
+
+  /** Mitad del tramo más largo de una línea: ahí va el nombre, lejos de los vértices. */
+  function centroTramoLargo(puntos) {
+    let mejor = 1, max = -1;
+    for (let i = 1; i < puntos.length; i++) {
+      const d = medir(puntos[i - 1], puntos[i]).distancia;
+      if (d > max) { max = d; mejor = i; }
+    }
+    const m = puntosGeodesica(puntos[mejor - 1], puntos[mejor], 2)[1];
+    return [m.lat, m.lon];
+  }
+
+  function etiqueta(pos, texto, el) {
+    return L.marker(pos, {
+      pane: 'elementos', interactive: false, keyboard: false,
+      icon: L.divIcon({ className: 'etq-ancla', html: `<span class="etq-elem" style="--c:${color(el)}">${esc(texto)}</span>`, iconSize: null }),
+    });
+  }
+
+  /** Dibuja un elemento con los puntos dados (los del elemento o los provisionales al arrastrar). */
+  function pintarElemento(el, puntos = puntosDe(el), radio = el.propiedades.radio) {
+    capasDe.get(el.id)?.remove();
+    const g = L.layerGroup();
+    const sel = el.id === seleccion;
+    const c = color(el);
+    const base = { pane: 'elementos', color: c, weight: sel ? 4 : 3, opacity: 1, dashArray: discontinuo(el), lineJoin: 'round', bubblingMouseEvents: true };
+    const halo = { pane: 'elementos', color: sel ? '#E0B252' : '#ffffff', weight: sel ? 9 : 7, opacity: sel ? 0.95 : 0.7, interactive: false, lineJoin: 'round' };
+
+    if (el.tipo === 'punto') {
+      const m = L.marker([puntos[0].lat, puntos[0].lon], {
+        pane: 'elementos', bubblingMouseEvents: true, draggable: sel, keyboard: false,
+        icon: L.divIcon({
+          className: 'etq-ancla',
+          html: `<span class="pto-elem${sel ? ' sel' : ''}${el.propiedades.estado === 'previsto' ? ' previsto' : ''}" style="--c:${c}"><i></i>${el.propiedades.nombre ? `<b>${esc(el.propiedades.nombre)}</b>` : ''}</span>`,
+          iconSize: null,
+        }),
+      });
+      if (sel) {
+        m.on('drag', () => { const ll = m.getLatLng(); pintarPanel([{ lat: ll.lat, lon: ll.lng }]); });
+        m.on('dragend', () => { const ll = m.getLatLng(); cambio('Mover punto', () => moverPuntos(el, [{ lat: ll.lat, lon: ll.lng }])); });
+      }
+      engancharClic(m, el);
+      g.addLayer(m);
+    } else {
+      let coords;
+      if (el.tipo === 'circulo') coords = puntosCirculo(puntos[0], radio, 180).map((q) => [q.lat, q.lon]);
+      else coords = trazo(puntos, el.tipo === 'area');
+      const relleno = el.tipo !== 'linea';
+      g.addLayer(L.polyline(relleno ? [...coords, coords[0]] : coords, halo));
+      const forma = relleno
+        ? L.polygon(coords, { ...base, fillColor: c, fillOpacity: sel ? 0.18 : 0.1 })
+        : L.polyline(coords, base);
+      engancharClic(forma, el);
+      g.addLayer(forma);
+      if (el.tipo === 'circulo') g.addLayer(L.circleMarker([puntos[0].lat, puntos[0].lon], { pane: 'elementos', radius: 2.5, color: c, fillColor: c, fillOpacity: 1, weight: 1, interactive: false }));
+      if (el.propiedades.nombre) {
+        const pos = relleno ? (el.tipo === 'circulo' ? [puntos[0].lat, puntos[0].lon] : L.latLngBounds(coords).getCenter()) : centroTramoLargo(puntos);
+        g.addLayer(etiqueta(pos, el.propiedades.nombre, el));
+      }
+    }
+    g.addTo(capaElementos);
+    capasDe.set(el.id, g);
+  }
+
+  function engancharClic(capa, el) {
+    capa.on('click', (e) => {
+      if (herramienta() !== 'consultar') return;  // dibujando: el clic sigue al mapa
+      L.DomEvent.stopPropagation(e);
+      seleccionar(el.id);
+    });
+  }
+
+  function pintarTodo() {
+    capaElementos.clearLayers(); capasDe.clear();
+    for (const el of plan.elementos) pintarElemento(el);
+    pintarAsas();
+  }
+
+  // ---------------------------------------------------------- asas de edición
+  const asa = (cls) => L.divIcon({ className: `asa ${cls}`, iconSize: cls === 'asa-media' ? [11, 11] : [14, 14] });
+
+  function pintarAsas() {
+    capaAsas.clearLayers();
+    const el = seleccion && buscar(seleccion);
+    if (!el || el.tipo === 'punto') return;
+    const pts = puntosDe(el);
+
+    if (el.tipo === 'circulo') {
+      const centro = L.marker([pts[0].lat, pts[0].lon], { icon: asa('asa-centro'), draggable: true, title: 'Arrastra para mover el círculo' });
+      const borde = destino(pts[0], 90, el.propiedades.radio);
+      const radio = L.marker([borde.lat, borde.lon], { icon: asa('asa-radio'), draggable: true, title: 'Arrastra para cambiar el radio' });
+      centro.on('drag', () => {
+        const ll = centro.getLatLng(); const c = { lat: ll.lat, lon: ll.lng };
+        const b = destino(c, 90, el.propiedades.radio); radio.setLatLng([b.lat, b.lon]);
+        pintarElemento(el, [c]); pintarPanel([c]);
+      });
+      centro.on('dragend', () => { const ll = centro.getLatLng(); cambio('Mover círculo', () => moverPuntos(el, [{ lat: ll.lat, lon: ll.lng }])); });
+      radio.on('drag', () => {
+        const ll = radio.getLatLng(); const r = medir(pts[0], { lat: ll.lat, lon: ll.lng }).distancia;
+        pintarElemento(el, pts, r); pintarPanel(pts, r);
+      });
+      radio.on('dragend', () => {
+        const ll = radio.getLatLng(); const r = medir(pts[0], { lat: ll.lat, lon: ll.lng }).distancia;
+        cambio('Cambiar radio', () => { el.propiedades.radio = r; tocar(el); });
+      });
+      capaAsas.addLayer(centro).addLayer(radio);
+      return;
+    }
+
+    const actuales = pts.slice();
+    pts.forEach((p, i) => {
+      const m = L.marker([p.lat, p.lon], { icon: asa('asa-vert'), draggable: true, title: 'Arrastra para mover · clic derecho para quitar' });
+      m.on('drag', () => { const ll = m.getLatLng(); actuales[i] = { lat: ll.lat, lon: ll.lng }; pintarElemento(el, actuales); pintarPanel(actuales); });
+      m.on('dragend', () => cambio('Mover vértice', () => moverPuntos(el, actuales)));
+      m.on('contextmenu', (e) => { L.DomEvent.preventDefault(e.originalEvent); quitarVertice(el, i); });
+      capaAsas.addLayer(m);
+    });
+    // Puntos medios: clic para añadir un vértice, o arrastrar para colocarlo
+    const n = el.tipo === 'area' ? pts.length : pts.length - 1;
+    for (let i = 0; i < n; i++) {
+      const a = pts[i], b = pts[(i + 1) % pts.length];
+      const mid = puntosGeodesica(a, b, 2)[1];
+      const m = L.marker([mid.lat, mid.lon], { icon: asa('asa-media'), draggable: true, title: 'Clic o arrastra para añadir un vértice' });
+      const insertar = (q) => cambio('Añadir vértice', () => { const nuevos = pts.slice(); nuevos.splice(i + 1, 0, q); moverPuntos(el, nuevos); });
+      m.on('click', () => insertar(mid));
+      m.on('dragend', () => { const ll = m.getLatLng(); insertar({ lat: ll.lat, lon: ll.lng }); });
+      capaAsas.addLayer(m);
+    }
+  }
+
+  function quitarVertice(el, i) {
+    const pts = puntosDe(el);
+    if (pts.length <= TIPOS[el.tipo].min) { avisoBreve(`Una ${TIPOS[el.tipo].nombre.toLowerCase()} necesita al menos ${TIPOS[el.tipo].min} vértices`); return; }
+    pts.splice(i, 1);
+    cambio('Quitar vértice', () => moverPuntos(el, pts));
+  }
+
+  // ---------------------------------------------------------- selección
+  function seleccionar(id, { centrar = false } = {}) {
+    if (borrador) cancelarBorrador();
+    seleccion = id && buscar(id) ? id : null;
+    pintarTodo(); pintarPanel(); pintarLista();
+    const el = seleccion && buscar(seleccion);
+    if (el && centrar) {
+      const pts = el.tipo === 'circulo' ? puntosCirculo(puntosDe(el)[0], el.propiedades.radio, 36) : puntosDe(el);
+      const b = L.latLngBounds(pts.map((p) => [p.lat, p.lon]));
+      if (pts.length === 1) mapa.flyTo(b.getCenter(), Math.max(mapa.getZoom(), 14), { duration: 0.6 });
+      else mapa.flyToBounds(b, { padding: [80, 80], maxZoom: 16, duration: 0.6 });
+    }
+  }
+
+  // ---------------------------------------------------------- dibujar
+  function empezar(tipo) {
+    seleccion = null; pintarTodo(); pintarLista();
+    borrador = { tipo, puntos: [], cursor: null };
+    pintarBorrador(); pintarPanel();
+  }
+
+  function cancelarBorrador() {
+    borrador = null; capaBorrador.clearLayers(); pintarPanel();
+  }
+
+  /** Clic en el mapa con una herramienta de dibujo. */
+  function clic(p) {
+    if (!borrador) empezar(herramienta());
+    const b = borrador;
+    if (b.tipo === 'punto') { terminar([p]); return; }
+    if (b.tipo === 'circulo') {
+      if (!b.puntos.length) { b.puntos.push(p); pintarBorrador(); pintarPanel(); return; }
+      const r = medir(b.puntos[0], p).distancia;
+      if (r > 0) terminar(b.puntos, r);
+      return;
+    }
+    // Línea / área: clic sobre el último vértice (línea) o el primero (área) termina
+    const min = TIPOS[b.tipo].min;
+    if (b.puntos.length >= min) {
+      const q = px(p);
+      const fin = b.tipo === 'area' ? b.puntos[0] : b.puntos.at(-1);
+      if (q.distanceTo(px(fin)) < 9) { terminar(b.puntos); return; }
+    }
+    b.puntos.push(p);
+    pintarBorrador(); pintarPanel();
+  }
+
+  /** Doble clic: termina (Leaflet ya ha añadido los dos clics; se quitan duplicados). */
+  function dobleClic() {
+    if (!borrador || !['linea', 'area'].includes(borrador.tipo)) return;
+    terminar(borrador.puntos);
+  }
+
+  function sinDuplicados(pts) {
+    const out = [];
+    for (const p of pts) if (!out.length || px(p).distanceTo(px(out.at(-1))) >= 5) out.push(p);
+    return out;
+  }
+
+  function terminar(puntos, radio) {
+    const b = borrador; if (!b) return;
+    const pts = b.tipo === 'circulo' || b.tipo === 'punto' ? puntos : sinDuplicados(puntos);
+    if (pts.length < TIPOS[b.tipo].min) { avisoBreve(`Faltan puntos: una ${TIPOS[b.tipo].nombre.toLowerCase()} necesita al menos ${TIPOS[b.tipo].min}`); return; }
+    const el = cambio(`Dibujar ${TIPOS[b.tipo].nombre.toLowerCase()}`, (p) => {
+      const e = nuevoElemento(b.tipo, pts, { radio, bando: preferencias.bando, estado: preferencias.estado });
+      p.elementos.push(e); return e;
+    });
+    borrador = null; capaBorrador.clearLayers();
+    elegirHerramienta('consultar');
+    seleccionar(el.id);
+  }
+
+  function moverCursor(p) {
+    if (!borrador || !borrador.puntos.length) return;
+    borrador.cursor = p; pintarBorrador(); pintarPanel();
+  }
+
+  function pintarBorrador() {
+    capaBorrador.clearLayers();
+    const b = borrador; if (!b || !b.puntos.length) return;
+    const c = BANDOS[preferencias.bando].color;
+    const est = { pane: 'borrador', color: c, weight: 3, interactive: false, dashArray: preferencias.estado === 'previsto' ? '10 7' : null };
+    if (b.tipo === 'circulo') {
+      if (b.cursor) {
+        const r = medir(b.puntos[0], b.cursor).distancia;
+        if (r > 0) L.polygon(puntosCirculo(b.puntos[0], r, 120).map((q) => [q.lat, q.lon]), { ...est, fillColor: c, fillOpacity: 0.08 }).addTo(capaBorrador);
+        L.polyline(trazo([b.puntos[0], b.cursor]), { ...est, weight: 1.5, dashArray: '4 4' }).addTo(capaBorrador);
+      }
+    } else {
+      if (b.puntos.length > 1) L.polyline(trazo(b.puntos), est).addTo(capaBorrador);
+      if (b.cursor) {
+        L.polyline(trazo([b.puntos.at(-1), b.cursor]), { ...est, weight: 2, dashArray: '5 5', opacity: 0.8 }).addTo(capaBorrador);
+        if (b.tipo === 'area' && b.puntos.length > 1) L.polyline(trazo([b.cursor, b.puntos[0]]), { ...est, weight: 1.5, dashArray: '3 6', opacity: 0.6 }).addTo(capaBorrador);
+      }
+    }
+    b.puntos.forEach((p, i) => L.circleMarker([p.lat, p.lon], {
+      pane: 'borrador', radius: i === 0 && b.tipo === 'area' && b.puntos.length >= 3 ? 7 : 5,
+      color: '#fff', weight: 2, fillColor: c, fillOpacity: 1, interactive: false,
+    }).addTo(capaBorrador));
+  }
+
+  // ---------------------------------------------------------- panel lateral
+  const panel = $('panel-elemento');
+  function tablaTramos(tramos, cerrada) {
+    const letra = (i) => String.fromCharCode(65 + (i % 26));
+    return `<table class="pm-tramos"><thead><tr><th>Tramo</th><th>Distancia</th><th>Rumbo geo</th><th>Rumbo cuad.</th></tr></thead><tbody>${
+      tramos.map((t) => `<tr><td>${letra(t.de)}→${letra(cerrada && t.a === 0 ? 0 : t.a)}</td><td>${fmt.metros(t.distancia)}</td><td>${fmt.rumbo(t.rumbo)}</td><td>${fmt.rumbo(t.rumboCuadricula)}</td></tr>`).join('')
+    }</tbody></table><p class="pm-nota">Rumbos en ${fmt.unidadAngulo()}. Rumbo magnético: pendiente.</p>`;
+  }
+
+  function bloqueMedidas(m) {
+    if (m.tipo === 'punto') return `<div class="pm-total"><div class="grande mgrs">${fmt.mgrs(m.posicion)}</div><div class="peq">${esc(fmt.secundaria(m.posicion))}</div></div>`;
+    if (m.tipo === 'circulo') {
+      return `<div class="pm-total"><div class="grande">${fmt.metros(m.radio)}</div><div class="peq">Radio, sobre el elipsoide · Centro <b>${fmt.mgrs(m.centro)}</b></div></div>
+        <dl class="el-datos"><dt>Diámetro</dt><dd>${fmt.metros(m.diametro)}</dd><dt>Superficie</dt><dd>${formatearArea(m.area)}</dd><dt>Perímetro</dt><dd>${fmt.metros(m.perimetro)}</dd></dl>`;
+    }
+    if (m.tipo === 'linea') {
+      return `<div class="pm-total"><div class="grande">${fmt.metros(m.longitud)}</div><div class="peq">Real, sobre el elipsoide · Sobre el mapa: ${fmt.metros(m.longitudMapa)}</div></div>${tablaTramos(m.tramos, false)}`;
+    }
+    return `<div class="pm-total"><div class="grande">${formatearArea(m.area)}</div><div class="peq">Perímetro ${fmt.metros(m.perimetro)} · Sobre el mapa: ${fmt.metros(m.perimetroMapa)}</div></div>${tablaTramos(m.tramos, true)}`;
+  }
+
+  /** Repinta el panel. `puntos`/`radio` provisionales mientras se arrastra. */
+  function pintarPanel(puntos, radio) {
+    // 1) Dibujando
+    if (borrador) {
+      const b = borrador;
+      const ayuda = {
+        punto: 'Toca el mapa donde va el punto.',
+        linea: b.puntos.length ? 'Sigue tocando para añadir vértices. Doble clic, Intro o tocar el último vértice para terminar.' : 'Toca el mapa para el primer vértice.',
+        area: b.puntos.length >= 3 ? 'Toca el primer vértice, doble clic o Intro para cerrar el área.' : b.puntos.length ? 'Sigue tocando para añadir vértices.' : 'Toca el mapa para el primer vértice.',
+        circulo: b.puntos.length ? 'Toca el borde, o escribe el radio exacto.' : 'Toca el mapa en el centro del círculo.',
+      }[b.tipo];
+      let medidas = '';
+      const vivos = b.cursor ? [...b.puntos, b.cursor] : b.puntos;
+      if (b.tipo === 'circulo' && b.puntos.length) {
+        const r = b.cursor ? medir(b.puntos[0], b.cursor).distancia : 0;
+        medidas = `<div class="pm-total"><div class="grande">${r ? fmt.metros(r) : '—'}</div><div class="peq">Radio · Centro <b>${fmt.mgrs(b.puntos[0])}</b></div></div>
+          <form class="el-radio" id="dib-radio"><label>Radio exacto <input type="number" min="1" step="any" inputmode="decimal" placeholder="metros" id="dib-radio-m"></label><button type="submit">Crear</button></form>`;
+      } else if ((b.tipo === 'linea' || b.tipo === 'area') && vivos.length >= 2) {
+        const tmp = { tipo: b.tipo === 'area' && vivos.length >= 3 ? 'area' : 'linea', geometria: null, propiedades: {} };
+        tmp.geometria = { type: tmp.tipo === 'area' ? 'Polygon' : 'LineString', coordinates: tmp.tipo === 'area' ? [[...vivos, vivos[0]].map((p) => [p.lon, p.lat])] : vivos.map((p) => [p.lon, p.lat]) };
+        const m = medidasDe(tmp);
+        medidas = m.tipo === 'linea'
+          ? `<div class="pm-total"><div class="grande">${fmt.metros(m.longitud)}</div><div class="peq">${b.cursor ? 'Hasta el cursor · ' : ''}sobre el elipsoide</div></div>`
+          : `<div class="pm-total"><div class="grande">${formatearArea(m.area)}</div><div class="peq">Perímetro ${fmt.metros(m.perimetro)}${b.cursor ? ' · con el cursor' : ''}</div></div>`;
+      }
+      panel.innerHTML = `<div class="pm-cab"><strong>${{ punto: 'Punto nuevo', linea: 'Línea nueva', area: 'Área nueva', circulo: 'Círculo nuevo' }[b.tipo]}</strong><span>${b.puntos.length ? `${b.puntos.length} punto${b.puntos.length > 1 ? 's' : ''}` : ''}</span></div>
+        <p class="el-ayuda">${ayuda}</p>
+        ${selectorBando(preferencias.bando, preferencias.estado, 'pref')}
+        ${medidas}
+        <div class="pm-acciones">${b.tipo === 'linea' || b.tipo === 'area' ? '<button type="button" data-acc="terminar">Terminar</button><button type="button" data-acc="quitar-ultimo">Quitar último</button>' : ''}<button type="button" data-acc="cancelar">Cancelar</button></div>`;
+      mostrarPanel(true);
+      return;
+    }
+    // 2) Elemento seleccionado
+    const el = seleccion && buscar(seleccion);
+    if (!el) { mostrarPanel(false); return; }
+    let m;
+    if (puntos) {
+      const tmp = JSON.parse(JSON.stringify(el));
+      tmp.geometria = { type: el.geometria.type, coordinates: el.tipo === 'area' ? [[...puntos, puntos[0]].map((p) => [p.lon, p.lat])] : el.tipo === 'linea' ? puntos.map((p) => [p.lon, p.lat]) : [puntos[0].lon, puntos[0].lat] };
+      if (radio) tmp.propiedades.radio = radio;
+      m = medidasDe(tmp);
+    } else m = medidasDe(el);
+    const pts = puntos ?? puntosDe(el);
+    const nVert = el.tipo === 'linea' || el.tipo === 'area';
+    panel.innerHTML = `<div class="pm-cab"><strong><span class="muestra-bando" style="--c:${color(el)}"></span>${esc(titulo(el))}</strong><span>${TIPOS[el.tipo].nombre}</span></div>
+      <label class="el-nombre">Nombre <input id="el-nombre" value="${esc(el.propiedades.nombre)}" placeholder="Sin nombre (ej.: PL ROJA, OBJ 1)" maxlength="60"></label>
+      ${selectorBando(el.propiedades.bando, el.propiedades.estado, 'el')}
+      ${el.tipo === 'circulo' ? `<form class="el-radio" id="el-radio"><label>Radio <input type="number" min="1" step="any" inputmode="decimal" id="el-radio-m" value="${Number((radio ?? el.propiedades.radio).toFixed(2))}"></label><span>m</span><button type="submit">Aplicar</button></form>` : ''}
+      ${bloqueMedidas(m)}
+      ${nVert ? `<details class="el-vert" ${verticesAbiertos ? 'open' : ''}><summary>Vértices (${pts.length})</summary><ol>${pts.map((p, i) => `<li><span class="v-letra">${String.fromCharCode(65 + (i % 26))}</span><code>${fmt.mgrs(p)}</code><button type="button" data-quitar-v="${i}" title="Quitar vértice" aria-label="Quitar vértice">×</button></li>`).join('')}</ol></details>` : ''}
+      <p class="pm-nota">${el.tipo === 'punto' ? 'Arrastra el punto para moverlo.' : el.tipo === 'circulo' ? 'Arrastra el centro para moverlo y el asa del borde para cambiar el radio.' : 'Arrastra los vértices. Clic en un punto medio para añadir uno; clic derecho en un vértice para quitarlo.'}</p>
+      <div class="pm-acciones"><button type="button" data-acc="centrar">Centrar</button><button type="button" data-acc="borrar" class="peligro">Borrar</button><button type="button" data-acc="cerrar">Cerrar</button></div>`;
+    mostrarPanel(true);
+  }
+
+  function selectorBando(bando, estado, prefijo) {
+    return `<div class="el-fila"><div class="seg el-bando" data-campo="${prefijo}-bando">${Object.entries(BANDOS).map(([k, v]) => `<button type="button" data-v="${k}" aria-pressed="${k === bando}" title="${v.nombre}" style="--c:${v.color}"><i></i>${v.nombre}</button>`).join('')}</div></div>
+      <div class="el-fila"><div class="seg" data-campo="${prefijo}-estado">${Object.entries(ESTADOS).map(([k, v]) => `<button type="button" data-v="${k}" aria-pressed="${k === estado}">${v.nombre}</button>`).join('')}</div><span class="el-trazo ${estado}" style="--c:${BANDOS[bando].color}"></span></div>`;
+  }
+
+  function mostrarPanel(si) {
+    const antes = !panel.hidden;
+    panel.hidden = !si;
+    if (antes !== si) alCambiarPaneles();
+  }
+
+  panel.addEventListener('toggle', (ev) => { if (ev.target.matches('.el-vert')) verticesAbiertos = ev.target.open; }, true);
+  panel.addEventListener('click', (ev) => {
+    const el = seleccion && buscar(seleccion);
+    const seg = ev.target.closest('.seg[data-campo] button');
+    if (seg) {
+      const campo = seg.parentElement.dataset.campo; const v = seg.dataset.v;
+      if (campo.startsWith('pref')) { preferencias[campo.endsWith('bando') ? 'bando' : 'estado'] = v; pintarBorrador(); pintarPanel(); return; }
+      if (el) {
+        const prop = campo.endsWith('bando') ? 'bando' : 'estado';
+        preferencias[prop] = v;
+        cambio(prop === 'bando' ? 'Cambiar bando' : 'Cambiar estado', () => { el.propiedades[prop] = v; tocar(el); });
+      }
+      return;
+    }
+    const q = ev.target.closest('[data-quitar-v]');
+    if (q && el) { quitarVertice(el, Number(q.dataset.quitarV)); return; }
+    const acc = ev.target.closest('[data-acc]')?.dataset.acc;
+    if (!acc) return;
+    if (acc === 'cancelar') { cancelarBorrador(); elegirHerramienta('consultar'); }
+    if (acc === 'terminar' && borrador) terminar(borrador.puntos);
+    if (acc === 'quitar-ultimo' && borrador) { borrador.puntos.pop(); pintarBorrador(); pintarPanel(); }
+    if (acc === 'centrar' && el) seleccionar(el.id, { centrar: true });
+    if (acc === 'borrar' && el) borrarSeleccion();
+    if (acc === 'cerrar') seleccionar(null);
+  });
+  panel.addEventListener('change', (ev) => {
+    const el = seleccion && buscar(seleccion);
+    if (ev.target.id === 'el-nombre' && el) {
+      const v = ev.target.value.trim();
+      cambio('Cambiar nombre', () => { el.propiedades.nombre = v; tocar(el); });
+    }
+  });
+  panel.addEventListener('submit', (ev) => {
+    ev.preventDefault();
+    if (ev.target.id === 'dib-radio' && borrador?.tipo === 'circulo' && borrador.puntos.length) {
+      const r = Number(String($('dib-radio-m').value).replace(',', '.'));
+      if (r > 0) terminar(borrador.puntos, r); else avisoBreve('Escribe un radio mayor que 0');
+    }
+    if (ev.target.id === 'el-radio') {
+      const el = seleccion && buscar(seleccion);
+      const r = Number(String($('el-radio-m').value).replace(',', '.'));
+      if (el && r > 0) cambio('Cambiar radio', () => { el.propiedades.radio = r; tocar(el); });
+    }
+  });
+
+  function borrarSeleccion() {
+    const el = seleccion && buscar(seleccion); if (!el) return;
+    const nombre = titulo(el);
+    cambio(`Borrar ${nombre}`, (p) => { p.elementos = p.elementos.filter((e) => e.id !== el.id); });
+    seleccion = null; pintarTodo(); pintarPanel(); pintarLista();
+    avisoBreve(`«${nombre}» borrado. Ctrl+Z para recuperarlo.`);
+  }
+
+  // ---------------------------------------------------------- lista de elementos
+  const ICONOS = {
+    punto: '<circle cx="12" cy="12" r="4"/>',
+    linea: '<path d="M3 18 9 9l6 5 6-9"/>',
+    area: '<path d="M4 7 12 3l8 6-3 11H7z"/>',
+    circulo: '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="1"/>',
+  };
+  function resumen(el) {
+    const m = medidasDe(el);
+    if (m.tipo === 'punto') return fmt.mgrs(m.posicion);
+    if (m.tipo === 'linea') return fmt.metros(m.longitud);
+    if (m.tipo === 'area') return formatearArea(m.area);
+    return `r ${fmt.metros(m.radio)}`;
+  }
+  function pintarLista() {
+    const caja = $('plan-lista'); if (!caja) return;
+    $('plan-cuenta').textContent = plan.elementos.length ? `(${plan.elementos.length})` : '';
+    if (!plan.elementos.length) { caja.innerHTML = '<p class="plan-vacio">Aún no hay nada dibujado. Usa Punto, Línea, Área o Círculo.</p>'; return; }
+    caja.innerHTML = plan.elementos.map((el) => `<button type="button" class="plan-el" data-el="${el.id}" aria-pressed="${el.id === seleccion}">
+      <svg viewBox="0 0 24 24" style="--c:${color(el)}" ${el.propiedades.estado === 'previsto' ? 'class="previsto"' : ''}>${ICONOS[el.tipo]}</svg>
+      <span class="pe-nom">${esc(titulo(el))}</span><span class="pe-med">${esc(resumen(el))}</span></button>`).join('');
+  }
+  $('plan-lista')?.addEventListener('click', (ev) => { const b = ev.target.closest('[data-el]'); if (b) seleccionar(b.dataset.el, { centrar: true }); });
+
+  // ---------------------------------------------------------- deshacer / rehacer
+  function pintarBotones() {
+    const d = $('deshacer'), r = $('rehacer');
+    if (d) { d.disabled = !historial.puedeDeshacer; d.title = historial.puedeDeshacer ? `Deshacer: ${historial.ultimo} (Ctrl+Z)` : 'Nada que deshacer'; }
+    if (r) { r.disabled = !historial.puedeRehacer; r.title = historial.puedeRehacer ? `Rehacer: ${historial.siguiente} (Ctrl+Y)` : 'Nada que rehacer'; }
+  }
+  const deshacer = () => { if (borrador) { if (borrador.puntos.length) { borrador.puntos.pop(); pintarBorrador(); pintarPanel(); } return; } const d = historial.deshacer(); if (d) avisoBreve(`Deshecho: ${d}`); };
+  const rehacer = () => { const d = historial.rehacer(); if (d) avisoBreve(`Rehecho: ${d}`); };
+  $('deshacer')?.addEventListener('click', deshacer);
+  $('rehacer')?.addEventListener('click', rehacer);
+
+  // ---------------------------------------------------------- aviso breve
+  let tAviso = 0;
+  function avisoBreve(texto) {
+    const t = $('aviso-breve'); if (!t) return;
+    t.textContent = texto; t.hidden = false; clearTimeout(tAviso);
+    tAviso = setTimeout(() => { t.hidden = true; }, 2600);
+  }
+
+  // ---------------------------------------------------------- teclado
+  document.addEventListener('keydown', (e) => {
+    const escribiendo = /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement?.tagName);
+    const mod = e.ctrlKey || e.metaKey;
+    if (mod && !escribiendo && e.key.toLowerCase() === 'z') { e.preventDefault(); if (e.shiftKey) rehacer(); else deshacer(); return; }
+    if (mod && !escribiendo && e.key.toLowerCase() === 'y') { e.preventDefault(); rehacer(); return; }
+    if (escribiendo) return;
+    if (borrador) {
+      if (e.key === 'Enter') { e.preventDefault(); if (borrador.tipo === 'linea' || borrador.tipo === 'area') terminar(borrador.puntos); }
+      if (e.key === 'Escape') { cancelarBorrador(); elegirHerramienta('consultar'); }
+      if (e.key === 'Backspace') { e.preventDefault(); borrador.puntos.pop(); pintarBorrador(); pintarPanel(); }
+      return;
+    }
+    if (seleccion && (e.key === 'Delete' || e.key === 'Backspace')) { e.preventDefault(); borrarSeleccion(); }
+    if (seleccion && e.key === 'Escape') seleccionar(null);
+  });
+
+  // ---------------------------------------------------------- arranque
+  pintarTodo(); pintarLista(); pintarBotones();
+
+  return {
+    plan: () => plan, historial,
+    clic, dobleClic, moverCursor,
+    /** Se llama al cambiar de herramienta. */
+    herramientaCambiada(h) {
+      if (HERRAMIENTAS_DIBUJO.includes(h)) { empezar(h); return; }
+      if (borrador) cancelarBorrador();
+      if (h === 'medir' && seleccion) seleccionar(null);
+    },
+    /** Clic en el mapa vacío con «Consultar»: si hay selección, solo la quita. */
+    quitarSeleccion() { if (!seleccion) return false; seleccionar(null); return true; },
+    seleccionar,
+    refrescar() { pintarPanel(); pintarLista(); },
+    get dibujando() { return Boolean(borrador); },
+    get seleccion() { return seleccion; },
+  };
+}
+
+return { HERRAMIENTAS_DIBUJO, iniciarDibujo };
+})();
+
 // ── src/ui/mapa.js
 __mods["src/ui/mapa.js"] = (function () {
 'use strict';
-// Mapa piloto (fase 2): capas del IGN, cuadrícula MGRS, coordenadas,
-// consulta de puntos y regla de medida. Usa Leaflet (global L).
+// Mapa piloto: capas del IGN, cuadrícula MGRS, coordenadas, consulta de
+// puntos, regla de medida (fase 2) y dibujo de elementos (fase 3, en
+// dibujo.js). Usa Leaflet (global L).
 const { geoAMgrs, formatearPosicion, leerPosicion, geoAUtm, medir, puntosGeodesica, formatearRumbo, gradosAMilesimas, bandaLatitud } = __req("src/geo/index.js");
 const { FONDOS, SUPERPUESTAS, ALTERNATIVAS, ZONA_PILOTO, crearCapa } = __req("src/mapa/capas.js");
 const { capaCuadricula } = __req("src/mapa/cuadricula.js");
+const { iniciarDibujo, HERRAMIENTAS_DIBUJO } = __req("src/ui/dibujo.js");
 
 const L = window.L;
 const $ = (id) => document.getElementById(id);
@@ -4732,7 +5583,7 @@ const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&l
 // ---------------------------------------------------------------- estado y preferencias
 const CLAVE = 'spa.mapa.estado';
 const estado = {
-  angulo: 'grados', precision: 5, fondo: 'mtn',
+  angulo: 'grados', precision: 5, fondo: 'mtn', fondoAuto: false, intensidadCuadricula: 35,
   superpuestas: { cuadricula: true, piloto: true },
   vista: null,
 };
@@ -4784,10 +5635,33 @@ function ponerFondo(id, { automatico = false } = {}) {
   fondoActual = capasFondo[id].addTo(mapa);
   fondoActual.bringToBack();
   fondoActual.idSpa = id;
-  if (!automatico) { fondoElegido = id; alternativasProbadas.clear(); ocultarAviso(); }
-  estado.fondo = FONDOS.some((f) => f.id === id) ? id : estado.fondo; guardar();
-  document.querySelectorAll('.fondo').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.id === (FONDOS.some((f) => f.id === id) ? id : fondoElegido))));
+  if (!automatico) { fondoElegido = id; alternativasProbadas.clear(); ocultarAviso(); estado.fondo = id; guardar(); }
+  const visible = FONDOS.some((f) => f.id === id) ? id : fondoElegido;
+  document.querySelectorAll('.fondo').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.id === visible)));
 }
+
+// Cambio automático de fondo con el zoom (opcional): al cruzar el umbral
+// hacia dentro se pasa a la ortofoto; hacia fuera se vuelve al mapa elegido.
+const ZOOM_ORTOFOTO = 17;
+let zoomPrevio = null;
+function fondoPorZoom({ forzar = false } = {}) {
+  const z = mapa.getZoom();
+  const cerca = z >= ZOOM_ORTOFOTO, antes = zoomPrevio !== null && zoomPrevio >= ZOOM_ORTOFOTO;
+  zoomPrevio = z;
+  if (!estado.fondoAuto || (!forzar && cerca === antes)) return;
+  const objetivo = cerca ? 'ortofoto' : estado.fondo;
+  if (fondoActual?.idSpa === objetivo) return;
+  ponerFondo(objetivo, { automatico: true });
+  fondoElegido = objetivo; alternativasProbadas.clear();
+}
+mapa.on('zoomend', () => fondoPorZoom());
+$('fondo-auto').checked = Boolean(estado.fondoAuto);
+$('fondo-auto').addEventListener('change', (ev) => {
+  estado.fondoAuto = ev.target.checked; guardar();
+  if (estado.fondoAuto) fondoPorZoom({ forzar: true });
+  else if (fondoActual?.idSpa !== estado.fondo) ponerFondo(estado.fondo);
+fondoPorZoom({ forzar: true });
+});
 
 function revisarCapas() {
   const id = fondoActual?.idSpa; if (!id) return;
@@ -4835,9 +5709,19 @@ $('fondos').innerHTML = FONDOS.map((f) => `<button type="button" class="fondo" d
   <span class="muestra muestra-${f.id}"></span><span class="nom">${esc(f.nombre)}</span></button>`).join('');
 $('fondos').addEventListener('click', (ev) => { const b = ev.target.closest('.fondo'); if (b) ponerFondo(b.dataset.id); });
 ponerFondo(estado.fondo);
+fondoPorZoom({ forzar: true });
 
 // Superpuestas: las del IGN + cuadrícula MGRS + zona piloto
-const cuadricula = capaCuadricula(L, mapa);
+// Rectángulos (en píxeles del mapa) que las etiquetas de la cuadrícula no deben tapar
+const SELECTORES_OBSTACULO = '.herramientas, .panel-capas, .panel-medida, .aviso, .aviso-breve, .leaflet-control-zoom, .leaflet-control-scale, .leaflet-control-attribution';
+function obstaculos() {
+  const base = $('mapa').getBoundingClientRect();
+  return [...document.querySelectorAll(SELECTORES_OBSTACULO)].map((el) => el.getBoundingClientRect())
+    .filter((r) => r.width && r.height)
+    .map((r) => ({ x0: r.left - base.left - 4, y0: r.top - base.top - 4, x1: r.right - base.left + 4, y1: r.bottom - base.top + 4 }));
+}
+const cuadricula = capaCuadricula(L, mapa, { intensidad: () => estado.intensidadCuadricula / 100, obstaculos });
+const recolocarEtiquetas = () => requestAnimationFrame(() => { if (mapa.hasLayer(cuadricula)) cuadricula.redibujar(); });
 const zonaPiloto = L.layerGroup([
   L.rectangle(piloto, { color: '#9A7642', weight: 2, dashArray: '7 5', fill: false, interactive: false }),
   L.marker([ZONA_PILOTO.norte, ZONA_PILOTO.oeste], { interactive: false, icon: L.divIcon({ className: 'zona-piloto-etq', html: esc(ZONA_PILOTO.nombre), iconSize: null, iconAnchor: [0, 28] }) }),
@@ -4848,7 +5732,13 @@ const listaSup = [
   { id: 'piloto', nombre: 'Zona piloto', detalle: 'Guadarrama, unos 20 × 20 km', capa: zonaPiloto },
 ];
 $('superpuestas').innerHTML = listaSup.map((s) => `<label class="sup"><input type="checkbox" data-id="${s.id}">
-  <span class="txt"><b>${esc(s.nombre)}</b><small>${esc(s.detalle)}</small></span></label>`).join('');
+  <span class="txt"><b>${esc(s.nombre)}</b><small>${esc(s.detalle)}</small></span></label>${s.id === 'cuadricula'
+  ? `<label class="intensidad" title="Intensidad de las líneas de la cuadrícula">Intensidad <input type="range" id="cuad-intensidad" min="10" max="100" step="5" value="${estado.intensidadCuadricula}"><output id="cuad-intensidad-v">${estado.intensidadCuadricula} %</output></label>` : ''}`).join('');
+$('cuad-intensidad').addEventListener('input', (ev) => {
+  estado.intensidadCuadricula = Number(ev.target.value); guardar();
+  $('cuad-intensidad-v').textContent = `${estado.intensidadCuadricula} %`;
+  cuadricula.redibujar();
+});
 function ponerSup(id, on) {
   const s = listaSup.find((x) => x.id === id); if (!s) return;
   if (on) s.capa.addTo(mapa); else mapa.removeLayer(s.capa);
@@ -4861,8 +5751,24 @@ for (const s of listaSup) ponerSup(s.id, Boolean(estado.superpuestas[s.id]));
 $('capas-toggle').addEventListener('click', () => {
   const p = $('panel-capas'); const cerrado = p.classList.toggle('cerrado');
   $('capas-toggle').setAttribute('aria-expanded', String(!cerrado));
+  recolocarEtiquetas();
 });
 if (window.matchMedia('(max-width: 760px)').matches) { $('panel-capas').classList.add('cerrado'); $('capas-toggle').setAttribute('aria-expanded', 'false'); }
+
+// ---------------------------------------------------------------- dibujo (fase 3)
+const dibujo = iniciarDibujo({
+  L, mapa,
+  herramienta: () => herramienta,
+  elegirHerramienta: (h) => elegirHerramienta(h),
+  alCambiarPaneles: () => recolocarEtiquetas(),
+  fmt: {
+    metros: (m) => metros(m),
+    rumbo: (g) => rumbo(g),
+    mgrs: (p) => geoAMgrs(p.lat, p.lon, estado.precision, { separado: true }),
+    secundaria: (p) => formatearPosicion(p, { formato: 'gms' }),
+    unidadAngulo: () => ({ grados: 'grados', milesimas: 'milésimas', gms: 'G M S' }[estado.angulo]),
+  },
+});
 
 // ---------------------------------------------------------------- barra de estado
 const tactil = window.matchMedia('(hover: none)').matches;
@@ -4877,12 +5783,36 @@ function mostrarPos(latlng, etiqueta) {
     $('be-sec').innerHTML = `<span>${formatearPosicion(ultimaPos, { formato: 'utm' })}</span><span>${formatearPosicion(ultimaPos, { formato: 'gms' })}</span><span>Conv. ${conv(u.convergencia)}</span>`;
   } catch { $('be-mgrs').textContent = '—'; $('be-sec').textContent = 'Fuera del ámbito UTM'; }
 }
-mapa.on('mousemove', (e) => { if (!tactil) mostrarPos(e.latlng, 'Cursor'); });
+// Al salir del mapa (por ejemplo, para pulsar «Copiar») se conserva la
+// última posición del cursor: es la que se copia.
+let cursorDentro = false;
+mapa.on('mousemove', (e) => { if (!tactil) { cursorDentro = true; mostrarPos(e.latlng, 'Cursor'); dibujo.moverCursor({ lat: e.latlng.lat, lon: e.latlng.lng }); } });
 mapa.on('moveend', () => { if (tactil || !ultimaPos) mostrarPos(mapa.getCenter(), 'Centro'); });
-mapa.on('mouseout', () => mostrarPos(mapa.getCenter(), 'Centro'));
+mapa.on('mouseout', () => { cursorDentro = false; if (ultimaPos) $('be-et').textContent = 'Última'; });
 mostrarPos(mapa.getCenter(), 'Centro');
-$('be-copiar').addEventListener('click', async () => {
-  try { await navigator.clipboard.writeText($('be-mgrs').textContent); $('be-copiar').textContent = 'Copiado'; setTimeout(() => { $('be-copiar').textContent = 'Copiar'; }, 1200); } catch { /* nada */ }
+
+/** Copia texto al portapapeles (con respaldo para navegadores sin permiso). */
+async function copiarTexto(texto) {
+  try { await navigator.clipboard.writeText(texto); return true; } catch { /* respaldo */ }
+  const t = document.createElement('textarea');
+  t.value = texto; t.setAttribute('readonly', ''); t.style.cssText = 'position:fixed;left:-9999px;top:0';
+  document.body.append(t); t.select();
+  let ok = false; try { ok = document.execCommand('copy'); } catch { /* nada */ }
+  t.remove(); return ok;
+}
+function avisarCopia(boton, ok, texto) {
+  const original = boton.dataset.original ?? boton.textContent; boton.dataset.original = original;
+  boton.textContent = ok ? 'Copiado' : 'No se pudo';
+  boton.title = ok ? `Copiado: ${texto}` : 'El navegador no deja copiar';
+  setTimeout(() => { boton.textContent = original; }, 1400);
+}
+const mgrsActual = () => (ultimaPos ? geoAMgrs(ultimaPos.lat, ultimaPos.lon, estado.precision, { separado: true }) : '');
+$('be-copiar').addEventListener('click', async () => { const t = mgrsActual(); if (t) avisarCopia($('be-copiar'), await copiarTexto(t), t); });
+// Tecla C con el ratón sobre el mapa: copia la coordenada del cursor sin moverlo
+document.addEventListener('keydown', async (e) => {
+  if (e.key.toLowerCase() !== 'c' || e.ctrlKey || e.metaKey || e.altKey || !cursorDentro) return;
+  if (/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement?.tagName)) return;
+  const t = mgrsActual(); if (t) avisarCopia($('be-copiar'), await copiarTexto(t), t);
 });
 
 for (const grupo of document.querySelectorAll('.seg[data-pref]')) {
@@ -4895,6 +5825,7 @@ for (const grupo of document.querySelectorAll('.seg[data-pref]')) {
     if (ultimaPos) mostrarPos({ lat: ultimaPos.lat, lng: ultimaPos.lon }, $('be-et').textContent);
     pintarMedida();
     if (fichaAbierta) fichaAbierta();
+    dibujo.refrescar();
   });
   pintar();
 }
@@ -4927,7 +5858,7 @@ function ponerMarca(p, titulo) {
 }
 document.addEventListener('click', async (ev) => {
   const c = ev.target.closest('[data-copiar]');
-  if (c) { try { await navigator.clipboard.writeText(c.dataset.copiar); c.textContent = 'Copiado'; } catch { /* nada */ } }
+  if (c) avisarCopia(c, await copiarTexto(c.dataset.copiar), c.dataset.copiar);
   const d = ev.target.closest('[data-medir-desde]');
   if (d) {
     const [lat, lon] = d.dataset.medirDesde.split(',').map(Number);
@@ -4941,8 +5872,10 @@ function elegirHerramienta(h) {
   herramienta = h;
   document.querySelectorAll('[data-herr]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.herr === h)));
   $('panel-medida').hidden = h !== 'medir';
-  mapa.getContainer().style.cursor = h === 'medir' ? 'crosshair' : '';
+  mapa.getContainer().style.cursor = h === 'medir' || HERRAMIENTAS_DIBUJO.includes(h) ? 'crosshair' : '';
   pintarMedida();
+  dibujo.herramientaCambiada(h);
+  recolocarEtiquetas();
 }
 document.querySelectorAll('[data-herr]').forEach((b) => b.addEventListener('click', () => elegirHerramienta(b.dataset.herr)));
 $('limpiar').addEventListener('click', () => { marcas.clearLayers(); medida.length = 0; pintarMedida(); });
@@ -4951,8 +5884,11 @@ $('ir-piloto').addEventListener('click', () => mapa.flyToBounds(piloto, { paddin
 mapa.on('click', (e) => {
   const p = { lat: e.latlng.lat, lon: e.latlng.lng };
   if (herramienta === 'medir') { medida.push(p); pintarMedida(); return; }
+  if (HERRAMIENTAS_DIBUJO.includes(herramienta)) { dibujo.clic(p); return; }
+  if (dibujo.quitarSeleccion()) return;   // primer clic fuera: solo deselecciona
   ponerMarca(p);
 });
+mapa.on('dblclick', () => { if (HERRAMIENTAS_DIBUJO.includes(herramienta)) dibujo.dobleClic(); });
 
 // ---------------------------------------------------------------- regla de medida
 const medida = [];
@@ -5011,7 +5947,7 @@ $('buscar-txt').addEventListener('input', () => $('buscar-error').classList.remo
 
 elegirHerramienta('consultar');
 // Para pruebas automáticas
-window.__spa = { mapa, estado, medida, pintarMedida, diag };
+window.__spa = { mapa, estado, medida, pintarMedida, diag, dibujo, cuadricula };
 
 return {  };
 })();

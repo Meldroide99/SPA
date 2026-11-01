@@ -10,6 +10,8 @@ rellenan solos con lo dibujado. Se desarrolla aquí y se migrará a S3.
 - Fase 2 — mapa piloto: mapas del IGN (topográfico MTN, ortofoto PNOA, mapa
   base, relieve, curvas de nivel), cuadrícula MGRS propia, coordenada bajo
   el cursor, consulta de puntos, búsqueda y regla de medida.
+- Fase 3 — medir y dibujar: puntos, líneas, áreas y círculos con nombre,
+  bando y estado; medidas exactas; edición de vértices; deshacer y rehacer.
 
 Especificación en [docs/ESPECIFICACION.md](docs/ESPECIFICACION.md).
 
@@ -27,7 +29,7 @@ Especificación en [docs/ESPECIFICACION.md](docs/ESPECIFICACION.md).
 npm test
 ```
 
-Ejecuta las pruebas unitarias y el banco de precisión, que compara el motor
+Ejecuta las pruebas unitarias (motor y plan) y el banco de precisión, que compara el motor
 con GeographicLib en más de 18 000 casos. El resultado está en
 [docs/PRECISION.md](docs/PRECISION.md).
 
@@ -39,6 +41,12 @@ Para regenerar los datos de referencia hace falta compilar GeographicLib
 
 ```
 npm run empaquetar
+```
+
+Prueba en navegador (necesita Playwright instalado de forma global):
+
+```
+npm run prueba:navegador -- --capturas
 ```
 
 ## Licencias de terceros

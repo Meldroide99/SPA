@@ -11,7 +11,7 @@
 <body class="app-mapa">
 <div id="app">
   <header class="barra-sup">
-    <div class="marca"><span class="sello-spa">SPA</span><span class="marca-txt"><strong>Mapa piloto</strong><small>Fase 2 · Guadarrama</small></span></div>
+    <div class="marca"><span class="sello-spa">SPA</span><span class="marca-txt"><strong>Mapa piloto</strong><small>Fase 3 · Guadarrama</small></span></div>
     <form class="buscar" id="buscar" autocomplete="off">
       <input id="buscar-txt" spellcheck="false" placeholder="Ir a… MGRS, UTM o geográficas" aria-label="Ir a una posición">
       <button type="submit">Ir</button>
@@ -24,14 +24,36 @@
     <div id="mapa" aria-label="Mapa"></div>
 
     <div class="herramientas" role="toolbar" aria-label="Herramientas">
-      <button type="button" data-herr="consultar" aria-pressed="true" title="Consultar un punto">
-        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M12 2v5M12 17v5M2 12h5M17 12h5"/></svg><span>Punto</span></button>
-      <button type="button" data-herr="medir" aria-pressed="false" title="Medir distancias y rumbos">
-        <svg viewBox="0 0 24 24"><path d="M3 17 17 3l4 4L7 21z"/><path d="M7 13l2 2M10 10l2 2M13 7l2 2"/></svg><span>Medir</span></button>
-      <button type="button" id="limpiar" title="Borrar marcas y medidas">
-        <svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg><span>Borrar</span></button>
-      <button type="button" id="ir-piloto" title="Volver a la zona piloto">
-        <svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z" stroke-dasharray="3 2"/><circle cx="12" cy="12" r="2"/></svg><span>Zona</span></button>
+      <div class="h-grupo">
+        <button type="button" data-herr="consultar" aria-pressed="true" title="Consultar: toca el mapa para ver la coordenada o un elemento para editarlo">
+          <svg viewBox="0 0 24 24"><path d="M5 3l13 8-6 1.5L9 19z"/></svg><span>Consultar</span></button>
+      </div>
+      <div class="h-grupo" aria-label="Dibujar">
+        <button type="button" data-herr="punto" aria-pressed="false" title="Dibujar un punto">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/></svg><span>Punto</span></button>
+        <button type="button" data-herr="linea" aria-pressed="false" title="Dibujar una línea (doble clic o Intro para terminar)">
+          <svg viewBox="0 0 24 24"><path d="M3 18 9 9l6 5 6-9"/><circle cx="3" cy="18" r="1.4"/><circle cx="9" cy="9" r="1.4"/><circle cx="15" cy="14" r="1.4"/><circle cx="21" cy="5" r="1.4"/></svg><span>Línea</span></button>
+        <button type="button" data-herr="area" aria-pressed="false" title="Dibujar un área (toca el primer vértice para cerrar)">
+          <svg viewBox="0 0 24 24"><path d="M4 7 12 3l8 6-3 11H7z"/></svg><span>Área</span></button>
+        <button type="button" data-herr="circulo" aria-pressed="false" title="Dibujar un círculo: centro y radio">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 12h8"/><circle cx="12" cy="12" r="1.2"/></svg><span>Círculo</span></button>
+      </div>
+      <div class="h-grupo">
+        <button type="button" data-herr="medir" aria-pressed="false" title="Regla: medir distancias y rumbos sin guardar">
+          <svg viewBox="0 0 24 24"><path d="M3 17 17 3l4 4L7 21z"/><path d="M7 13l2 2M10 10l2 2M13 7l2 2"/></svg><span>Medir</span></button>
+      </div>
+      <div class="h-grupo">
+        <button type="button" id="deshacer" disabled title="Deshacer (Ctrl+Z)">
+          <svg viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg><span>Deshacer</span></button>
+        <button type="button" id="rehacer" disabled title="Rehacer (Ctrl+Y)">
+          <svg viewBox="0 0 24 24"><path d="m15 14 5-5-5-5"/><path d="M20 9H10a6 6 0 0 0 0 12h3"/></svg><span>Rehacer</span></button>
+      </div>
+      <div class="h-grupo">
+        <button type="button" id="limpiar" title="Quitar las marcas de consulta y la regla (no borra lo dibujado)">
+          <svg viewBox="0 0 24 24"><path d="m7 21-4-4L14 6l7 7-8 8z"/><path d="M9 12l6 6M3 21h18"/></svg><span>Limpiar</span></button>
+        <button type="button" id="ir-piloto" title="Volver a la zona piloto">
+          <svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z" stroke-dasharray="3 2"/><circle cx="12" cy="12" r="2"/></svg><span>Zona</span></button>
+      </div>
     </div>
 
     <aside class="panel-capas" id="panel-capas">
@@ -40,12 +62,21 @@
       <div class="panel-cuerpo" id="capas-cuerpo">
         <div class="grupo-tit">Fondo</div>
         <div class="fondos" id="fondos"></div>
+        <label class="sup sup-auto"><input type="checkbox" id="fondo-auto">
+          <span class="txt"><b>Ortofoto al acercarte</b><small>Desde zoom 17 pasa a ortofoto y al alejarte vuelve a tu mapa</small></span></label>
         <div class="grupo-tit">Encima</div>
         <div class="superpuestas" id="superpuestas"></div>
+        <div class="grupo-tit">Plan <span id="plan-cuenta"></span></div>
+        <div class="plan-lista" id="plan-lista"></div>
+        <p class="plan-nota">Se guarda solo en este navegador. Guardar en archivo y exportar llegan en la fase 5.</p>
       </div>
     </aside>
 
     <div class="aviso" id="aviso" hidden role="alert"></div>
+
+    <div class="aviso-breve" id="aviso-breve" hidden role="status"></div>
+
+    <section class="panel-medida panel-elemento" id="panel-elemento" hidden aria-live="polite"></section>
 
     <section class="panel-medida" id="panel-medida" hidden aria-live="polite">
       <div class="pm-cab"><strong>Medida</strong><span id="pm-ayuda">Toca el mapa para añadir puntos</span></div>
