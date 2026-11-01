@@ -8,7 +8,7 @@
 //
 // Todas las medidas salen del motor geodésico verificado (src/geo).
 
-import { longitudLinea, areaPoligono, medir, destino } from '../geo/index.js';
+import { longitudLinea, areaPoligono, medir, destino, puntosGeodesica } from '../geo/index.js';
 
 export const TIPOS = Object.freeze({
   punto: { nombre: 'Punto', min: 1 },
@@ -30,6 +30,27 @@ export const ESTADOS = Object.freeze({
   presente: { nombre: 'Presente' },
   previsto: { nombre: 'Previsto' },
 });
+
+/** Tipos de trazo de líneas, áreas y círculos. */
+export const TRAZOS = Object.freeze({
+  continuo: { nombre: 'Continua', patron: null },
+  discontinuo: { nombre: 'Discontinua', patron: (g) => `${g * 4} ${g * 2.6}` },
+  punteado: { nombre: 'Punteada', patron: (g) => `0.1 ${g * 2.4}` },
+});
+export const GROSORES = Object.freeze([2, 3, 5, 8]);
+
+/**
+ * Estilo efectivo de un elemento: color (el del bando salvo que se haya
+ * elegido otro), tipo de trazo y grosor.
+ */
+export function estiloDe(el) {
+  const p = el.propiedades;
+  return {
+    color: p.color || BANDOS[p.bando]?.color || BANDOS.propio.color,
+    trazo: p.trazo || (p.estado === 'previsto' ? 'discontinuo' : 'continuo'),
+    grosor: p.grosor || 3,
+  };
+}
 
 const ahora = () => new Date().toISOString();
 const uuid = () => (globalThis.crypto?.randomUUID?.()
@@ -72,8 +93,9 @@ export function nuevoElemento(tipo, puntos, opc = {}) {
   if (puntos.length < TIPOS[tipo].min) throw new Error(`${TIPOS[tipo].nombre}: hacen falta al menos ${TIPOS[tipo].min} puntos`);
   const t = ahora();
   const propiedades = {
-    nombre: opc.nombre ?? '', notas: '',
+    nombre: opc.nombre ?? '', notas: opc.notas ?? '',
     bando: opc.bando ?? 'propio', estado: opc.estado ?? 'presente',
+    color: opc.color ?? null, trazo: opc.trazo ?? null, grosor: opc.grosor ?? null,
   };
   if (tipo === 'circulo') {
     if (!(opc.radio > 0)) throw new Error('Círculo: el radio debe ser mayor que 0');
@@ -133,6 +155,27 @@ export function medidasDe(el) {
   if (el.tipo === 'linea') return { tipo: 'linea', longitud: longitudLinea(pts), longitudMapa: mapaTotal, tramos };
   const { area, perimetro } = areaPoligono(pts);
   return { tipo: 'area', area, perimetro, perimetroMapa: mapaTotal, tramos };
+}
+
+/**
+ * Puntos para el perfil de altura: a lo largo de la geodésica de cada tramo,
+ * cada `paso` metros como mucho (por defecto: longitud/600, entre 5 y 50 m).
+ * Devuelve [{d, lat, lon}] con la distancia acumulada desde el inicio.
+ */
+export function muestrasPerfil(puntos, paso) {
+  const total = longitudLinea(puntos);
+  const p = paso ?? Math.min(50, Math.max(5, total / 600));
+  const out = [{ d: 0, lat: puntos[0].lat, lon: puntos[0].lon }];
+  let acum = 0;
+  for (let i = 1; i < puntos.length; i++) {
+    const L = medir(puntos[i - 1], puntos[i]).distancia;
+    if (L === 0) continue;
+    const n = Math.max(1, Math.ceil(L / p));
+    const pts = puntosGeodesica(puntos[i - 1], puntos[i], n);
+    for (let k = 1; k <= n; k++) out.push({ d: acum + (L * k) / n, lat: pts[k].lat, lon: pts[k].lon });
+    acum += L;
+  }
+  return out;
 }
 
 /** Superficie legible: m², ha o km². */

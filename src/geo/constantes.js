@@ -3,8 +3,8 @@
 // Todo el motor trabaja sobre WGS84. En España, ETRS89 (sistema oficial,
 // RD 1071/2007) y WGS84 coinciden a efectos prácticos (diferencia
 // centimétrica), así que los datos del IGN en ETRS89 se usan directamente.
-// ED50 (mapas antiguos) es OTRO datum y se convierte aparte (ver ed50.js,
-// pendiente de la rejilla oficial del IGN).
+// ED50 (mapas antiguos) es OTRO datum (elipsoide internacional de 1924) y
+// se convierte con la rejilla oficial del IGN (ver rejillas.js).
 
 export const WGS84 = Object.freeze({
   nombre: 'WGS84',
@@ -17,6 +17,13 @@ export const GRS80 = Object.freeze({
   nombre: 'GRS80',
   a: 6378137,
   f: 1 / 298.257222101,
+});
+
+// Internacional de 1924 (Hayford): elipsoide de ED50.
+export const INTERNACIONAL_1924 = Object.freeze({
+  nombre: 'Internacional 1924',
+  a: 6378388,
+  f: 1 / 297,
 });
 
 export const UTM = Object.freeze({

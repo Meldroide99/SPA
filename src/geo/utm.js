@@ -44,10 +44,18 @@ function coeficientes(elipsoide) {
   return { a, e, e2: e * e, A, alfa, beta };
 }
 
-const C = coeficientes(WGS84);
+const CW = coeficientes(WGS84);
+const cacheCoef = new Map([[WGS84, CW]]);
+/** Coeficientes del elipsoide pedido (por defecto WGS84). */
+const coefDe = (el) => {
+  if (!el) return CW;
+  let c = cacheCoef.get(el);
+  if (!c) { c = coeficientes(el); cacheCoef.set(el, c); }
+  return c;
+};
 
 // e·atanh(e·x), con x = sen φ (función auxiliar de la latitud conforme)
-const eatanhe = (x) => C.e * Math.atanh(C.e * x);
+const eatanhe = (C, x) => C.e * Math.atanh(C.e * x);
 
 /** Meridiano central de una zona UTM (grados). */
 export const meridianoCentral = (zona) => (zona - 1) * 6 - 180 + 3;
@@ -73,6 +81,7 @@ export function zonaUTM(lat, lon) {
  * @param {number} lon grados
  * @param {object} [opc]
  * @param {number} [opc.zona] forzar zona (p. ej. para trabajar un plan entero en 30)
+ * @param {{a:number,f:number}} [opc.elipsoide] por defecto WGS84 (ED50 usa INTERNACIONAL_1924)
  * @returns {{zona:number, hemisferio:'N'|'S', este:number, norte:number,
  *            convergencia:number, escala:number}}
  */
@@ -82,6 +91,7 @@ export function geoAUtm(lat, lon, opc = {}) {
   }
   const zona = opc.zona ?? zonaUTM(lat, lon);
   if (!(zona >= 1 && zona <= 60)) throw new Error(`Zona UTM no válida: ${zona}`);
+  const C = coefDe(opc.elipsoide);
   let dlon = lon - meridianoCentral(zona);
   dlon = ((dlon + 180) % 360 + 360) % 360 - 180;
 
@@ -91,7 +101,7 @@ export function geoAUtm(lat, lon, opc = {}) {
 
   // Latitud conforme (en forma de tangente) — Karney (2011) ec. 7-9
   const tau = Math.tan(phi);
-  const sigma = Math.sinh(eatanhe(tau / Math.hypot(1, tau)));
+  const sigma = Math.sinh(eatanhe(C, tau / Math.hypot(1, tau)));
   const taup = tau * Math.hypot(1, sigma) - sigma * Math.hypot(1, tau);
 
   const xip = Math.atan2(taup, cosLam);
@@ -133,8 +143,9 @@ export function geoAUtm(lat, lon, opc = {}) {
  * UTM → geográficas.
  * @returns {{lat:number, lon:number, convergencia:number, escala:number}}
  */
-export function utmAGeo(zona, hemisferio, este, norte) {
+export function utmAGeo(zona, hemisferio, este, norte, opc = {}) {
   if (!(zona >= 1 && zona <= 60)) throw new Error(`Zona UTM no válida: ${zona}`);
+  const C = coefDe(opc.elipsoide);
   const hem = String(hemisferio).toUpperCase();
   if (hem !== 'N' && hem !== 'S') throw new Error(`Hemisferio no válido: ${hemisferio}`);
   const x = este - UTM.falsoEste;
@@ -161,7 +172,7 @@ export function utmAGeo(zona, hemisferio, este, norte) {
   // Newton para pasar de latitud conforme a geográfica (Karney 2011, ec. 19-21)
   let tau = taup;
   for (let i = 0; i < 10; i++) {
-    const sigma = Math.sinh(eatanhe(tau / Math.hypot(1, tau)));
+    const sigma = Math.sinh(eatanhe(C, tau / Math.hypot(1, tau)));
     const taui = tau * Math.hypot(1, sigma) - sigma * Math.hypot(1, tau);
     const dtau = ((taup - taui) / Math.hypot(1, taui)) *
       ((1 + (1 - C.e2) * tau * tau) / ((1 - C.e2) * Math.hypot(1, tau)));

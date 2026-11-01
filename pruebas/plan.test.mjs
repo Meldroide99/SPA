@@ -105,3 +105,18 @@ test('formato de superficies', () => {
   assert.equal(formatearArea(25000), '2,50 ha');
   assert.equal(formatearArea(3_200_000), '3,200 km² (320 ha)');
 });
+
+test('perfil: muestras sobre la geodésica, distancia acumulada exacta', async () => {
+  const { muestrasPerfil, estiloDe } = await import('../src/plan/plan.js');
+  const m = muestrasPerfil([A, B, C], 100);
+  let ref = 0;
+  for (const [p, q] of [[A, B], [B, C]]) ref += G.Inverse(p.lat, p.lon, q.lat, q.lon).s12;
+  cerca(m.at(-1).d, ref, 1e-6, 'distancia final');
+  cerca(m.at(-1).lat, C.lat, 1e-12); cerca(m.at(-1).lon, C.lon, 1e-12);
+  for (let i = 1; i < m.length; i++) assert.ok(m[i].d - m[i - 1].d <= 100 + 1e-9);
+  const el = nuevoElemento('linea', [A, B], { bando: 'enemigo' });
+  assert.deepEqual(estiloDe(el), { color: '#C0392B', trazo: 'continuo', grosor: 3 });
+  el.propiedades.estado = 'previsto'; assert.equal(estiloDe(el).trazo, 'discontinuo');
+  el.propiedades.color = '#123456'; el.propiedades.trazo = 'punteado'; el.propiedades.grosor = 5;
+  assert.deepEqual(estiloDe(el), { color: '#123456', trazo: 'punteado', grosor: 5 });
+});

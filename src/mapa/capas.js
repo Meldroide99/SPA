@@ -30,8 +30,12 @@ export const FONDOS = [
     id: 'mtn',
     nombre: 'Topográfico',
     detalle: 'Mapa Topográfico Nacional (MTN25 en zoom alto)',
-    url: wmts('https://www.ign.es/wmts/mapa-raster', 'MTN', 'image/jpeg'),
+    // PNG: más nítido que JPEG (texto y líneas finas sin artefactos)
+    url: wmts('https://www.ign.es/wmts/mapa-raster', 'MTN', 'image/png'),
     atribucion: ATRIB_IGN, maxNativo: 17, max: 19,
+    // El IGN cambia de mapa según el zoom: MTN25 en 15–16, más generalizado
+    // en 14 y 13. «Mantener detalle» pinta en 13–14 las teselas de zoom 15.
+    zoomDetalle: 15, zoomDetalleMin: 13,
   },
   {
     id: 'ortofoto',
@@ -42,6 +46,20 @@ export const FONDOS = [
     // Si el WMTS no responde, se prueba la MISMA ortofoto por el servicio WMS
     // del IGN, y como último recurso la imagen de satélite de Esri.
     alternativas: ['ortofoto-wms', 'satelite-esri'],
+  },
+  {
+    id: 'satelite',
+    nombre: 'Satélite',
+    detalle: 'Google satélite (acceso no oficial: Google puede cortarlo)',
+    url: 'https://mt{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', subdominios: '0123',
+    atribucion: 'Imágenes © Google', maxNativo: 20, max: 21,
+  },
+  {
+    id: 'hibrido',
+    nombre: 'Híbrido',
+    detalle: 'Google satélite con nombres y carreteras (acceso no oficial)',
+    url: 'https://mt{s}.google.com/vt/lyrs=y&hl=es&x={x}&y={y}&z={z}', subdominios: '0123',
+    atribucion: 'Imágenes y datos © Google', maxNativo: 20, max: 21,
   },
   {
     id: 'base',
@@ -122,14 +140,45 @@ export function crearCapa(L, def) {
   if (def.tipo === 'wms') {
     return L.tileLayer.wms(def.url, {
       layers: def.capas, format: def.formato ?? 'image/png', transparent: def.transparente ?? true, version: '1.3.0',
-      opacity: def.opacidad ?? 1, minZoom: def.zoomMin ?? 0, maxZoom: 20,
+      opacity: def.opacidad ?? 1, minZoom: def.zoomMin ?? 0, maxZoom: 21,
       attribution: def.atribucion,
     });
   }
-  const capa = L.tileLayer(def.url, {
-    maxNativeZoom: def.maxNativo ?? 18, maxZoom: def.max ?? 20, minZoom: 5,
+  const opciones = {
+    maxNativeZoom: def.maxNativo ?? 18, maxZoom: def.max ?? 21, minZoom: 5,
     opacity: def.opacidad ?? 1, attribution: def.atribucion,
     className: def.mezcla ? `mezcla-${def.mezcla}` : '',
+    subdomains: def.subdominios ?? 'abc',
+  };
+  if (def.zoomDetalle) return new (capaConDetalle(L))(def.url, { ...opciones, zoomDetalle: def.zoomDetalle, zoomDetalleMin: def.zoomDetalleMin });
+  return L.tileLayer(def.url, opciones);
+}
+
+/**
+ * Capa que, con `detalle` activado, pinta en los zooms [zoomDetalleMin,
+ * zoomDetalle) las teselas de `zoomDetalle` reducidas (2× o 4× más teselas):
+ * así se ve el MTN25 desde más arriba. Las teselas son las mismas del IGN.
+ */
+function capaConDetalle(L) {
+  return L.TileLayer.extend({
+    _factorDetalle() {
+      const z = this._tileZoom ?? this._map?.getZoom();
+      const o = this.options;
+      if (!this.detalle || z === undefined || z < o.zoomDetalleMin || z >= o.zoomDetalle) return 0;
+      return o.zoomDetalle - z;
+    },
+    getTileSize() {
+      const k = this._factorDetalle();
+      const t = L.TileLayer.prototype.getTileSize.call(this);
+      return k ? t.divideBy(2 ** k) : t;
+    },
+    _getZoomForUrl() {
+      return L.TileLayer.prototype._getZoomForUrl.call(this) + this._factorDetalle();
+    },
+    ponerDetalle(si) {
+      if (this.detalle === si) return;
+      this.detalle = si;
+      if (this._map) { this._resetGrid(); this.redraw(); }
+    },
   });
-  return capa;
 }

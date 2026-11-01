@@ -11,13 +11,29 @@
 <body class="app-mapa">
 <div id="app">
   <header class="barra-sup">
-    <div class="marca"><span class="sello-spa">SPA</span><span class="marca-txt"><strong>Mapa piloto</strong><small>Fase 3 · Guadarrama</small></span></div>
+    <div class="marca"><span class="sello-spa">SPA</span><span class="marca-txt"><strong>Mapa piloto</strong><small>Planeamiento · S3</small></span></div>
     <form class="buscar" id="buscar" autocomplete="off">
       <input id="buscar-txt" spellcheck="false" placeholder="Ir a… MGRS, UTM o geográficas" aria-label="Ir a una posición">
       <button type="submit">Ir</button>
       <div class="buscar-error" id="buscar-error" role="alert"></div>
     </form>
-    <nav class="enlaces"><a href="calculadora.html">Calculadora</a></nav>
+    <div class="sup-der">
+      <button type="button" class="btn-ajustes" id="btn-ajustes" aria-expanded="false" aria-controls="ajustes" title="Ajustes">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+        <span>Ajustes</span></button>
+      <div class="ajustes" id="ajustes" hidden>
+        <div class="aj-grupo"><div class="aj-tit">Coordenadas</div>
+          <div class="aj-opc" data-pref="coordenadas">
+            <button type="button" data-v="mgrs">MGRS<small>30T VL 64592 21080</small></button>
+            <button type="button" data-v="utm">UTM<small>30N 464592 E 4521080 N</small></button>
+            <button type="button" data-v="gms">Geográficas<small>40°50'24.0"N 3°25'12.0"W</small></button>
+            <button type="button" data-v="gd">Grados decimales<small>40.840000, -3.420000</small></button>
+          </div></div>
+        <div class="aj-grupo"><div class="aj-tit">Rumbos (regla)</div>
+          <div class="seg" data-pref="angulo"><button type="button" data-v="grados">Grados</button><button type="button" data-v="milesimas">Milésimas</button><button type="button" data-v="gms">G M S</button></div></div>
+        <p class="aj-nota">Coordenadas siempre al metro. Altitudes del MDT05 del IGN, redondeadas al metro.</p>
+      </div>
+    </div>
   </header>
 
   <div id="contenido">
@@ -25,15 +41,15 @@
 
     <div class="herramientas" role="toolbar" aria-label="Herramientas">
       <div class="h-grupo">
-        <button type="button" data-herr="consultar" aria-pressed="true" title="Consultar: toca el mapa para ver la coordenada o un elemento para editarlo">
-          <svg viewBox="0 0 24 24"><path d="M5 3l13 8-6 1.5L9 19z"/></svg><span>Consultar</span></button>
+        <button type="button" data-herr="consultar" aria-pressed="true" title="Mover el mapa y seleccionar elementos">
+          <svg viewBox="0 0 24 24"><path d="M5 3l13 8-6 1.5L9 19z"/></svg><span>Mover</span></button>
       </div>
       <div class="h-grupo" aria-label="Dibujar">
         <button type="button" data-herr="punto" aria-pressed="false" title="Dibujar un punto">
           <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/></svg><span>Punto</span></button>
-        <button type="button" data-herr="linea" aria-pressed="false" title="Dibujar una línea (doble clic o Intro para terminar)">
+        <button type="button" data-herr="linea" aria-pressed="false" title="Dibujar una línea o un track (doble clic o Intro para terminar; clic derecho quita el último punto)">
           <svg viewBox="0 0 24 24"><path d="M3 18 9 9l6 5 6-9"/><circle cx="3" cy="18" r="1.4"/><circle cx="9" cy="9" r="1.4"/><circle cx="15" cy="14" r="1.4"/><circle cx="21" cy="5" r="1.4"/></svg><span>Línea</span></button>
-        <button type="button" data-herr="area" aria-pressed="false" title="Dibujar un área (toca el primer vértice para cerrar)">
+        <button type="button" data-herr="area" aria-pressed="false" title="Dibujar un área (toca el primer punto para cerrar)">
           <svg viewBox="0 0 24 24"><path d="M4 7 12 3l8 6-3 11H7z"/></svg><span>Área</span></button>
         <button type="button" data-herr="circulo" aria-pressed="false" title="Dibujar un círculo: centro y radio">
           <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 12h8"/><circle cx="12" cy="12" r="1.2"/></svg><span>Círculo</span></button>
@@ -49,12 +65,24 @@
           <svg viewBox="0 0 24 24"><path d="m15 14 5-5-5-5"/><path d="M20 9H10a6 6 0 0 0 0 12h3"/></svg><span>Rehacer</span></button>
       </div>
       <div class="h-grupo">
-        <button type="button" id="limpiar" title="Quitar las marcas de consulta y la regla (no borra lo dibujado)">
-          <svg viewBox="0 0 24 24"><path d="m7 21-4-4L14 6l7 7-8 8z"/><path d="M9 12l6 6M3 21h18"/></svg><span>Limpiar</span></button>
+        <button type="button" id="btn-plan" aria-pressed="false" title="Lo dibujado y los archivos importados">
+          <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg><span>Plan</span></button>
         <button type="button" id="ir-piloto" title="Volver a la zona piloto">
           <svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z" stroke-dasharray="3 2"/><circle cx="12" cy="12" r="2"/></svg><span>Zona</span></button>
       </div>
     </div>
+
+    <!-- Panel «Plan»: lo dibujado y lo importado -->
+    <aside class="panel-plan" id="panel-plan" hidden>
+      <div class="pp-cab"><strong>Plan</strong><button type="button" id="plan-cerrar" class="gi-mini" title="Cerrar">×</button></div>
+      <div class="grupo-tit">Dibujado <span id="plan-cuenta"></span></div>
+      <div class="plan-lista" id="plan-lista"></div>
+      <p class="plan-nota">Se guarda en este navegador. Guardar en archivo y exportar: fase 5.</p>
+      <div class="grupo-tit">Archivos importados <span id="importados-cuenta"></span></div>
+      <div id="importados-lista"></div>
+      <div class="pm-acciones"><button type="button" id="btn-importar-datos">Importar archivo…</button></div>
+      <input type="file" id="entrada-datos" multiple hidden accept=".gpx,.kml,.kmz,.zip,.cot">
+    </aside>
 
     <aside class="panel-capas" id="panel-capas">
       <button type="button" class="panel-tit" id="capas-toggle" aria-expanded="true">
@@ -62,46 +90,39 @@
       <div class="panel-cuerpo" id="capas-cuerpo">
         <div class="grupo-tit">Fondo</div>
         <div class="fondos" id="fondos"></div>
+        <label class="sup sup-auto"><input type="checkbox" id="mtn-detalle">
+          <span class="txt"><b>Mantener detalle 1:25.000</b><small>Topográfico: sigue mostrando el MTN25 al alejarte (hasta zoom 13)</small></span></label>
         <label class="sup sup-auto"><input type="checkbox" id="fondo-auto">
           <span class="txt"><b>Ortofoto al acercarte</b><small>Desde zoom 17 pasa a ortofoto y al alejarte vuelve a tu mapa</small></span></label>
+        <div class="grupo-tit">Mapas importados</div>
+        <div id="mapas-importados"></div>
+        <div class="pm-acciones"><button type="button" id="btn-importar-mapa">Importar mapa…</button><button type="button" id="btn-buscar-mapas">Buscar en mis mapas…</button></div>
+        <input type="file" id="entrada-mapa" multiple hidden accept=".sqlite,.mbtiles,.db,.tif,.tiff,.jpg,.jpeg,.png,.jgw,.pgw,.tfw,.wld,.prj,.ecw,.jp2">
         <div class="grupo-tit">Encima</div>
         <div class="superpuestas" id="superpuestas"></div>
-        <div class="grupo-tit">Plan <span id="plan-cuenta"></span></div>
-        <div class="plan-lista" id="plan-lista"></div>
-        <p class="plan-nota">Se guarda solo en este navegador. Guardar en archivo y exportar llegan en la fase 5.</p>
       </div>
     </aside>
 
     <div class="aviso" id="aviso" hidden role="alert"></div>
-
     <div class="aviso-breve" id="aviso-breve" hidden role="status"></div>
-
     <section class="panel-medida panel-elemento" id="panel-elemento" hidden aria-live="polite"></section>
-
     <section class="panel-medida" id="panel-medida" hidden aria-live="polite">
-      <div class="pm-cab"><strong>Medida</strong><span id="pm-ayuda">Toca el mapa para añadir puntos</span></div>
+      <div class="pm-cab"><strong>Regla</strong><span id="pm-ayuda">Toca el mapa para añadir puntos</span></div>
       <div id="pm-cuerpo"></div>
       <div class="pm-acciones"><button type="button" id="pm-deshacer">Quitar último</button><button type="button" id="pm-nueva">Nueva medida</button></div>
     </section>
+    <div class="velo-soltar" id="velo-soltar" hidden><div>Suelta aquí: GPX, KML/KMZ, paquetes .zip de ATAK, o mapas (.sqlite, .mbtiles, .tif, .jpg + .jgw)</div></div>
   </div>
 
   <footer class="barra-estado">
     <div class="be-pos">
       <span class="be-et" id="be-et">Cursor</span>
-      <span class="be-mgrs" id="be-mgrs">—</span>
-      <button class="copiar" id="be-copiar" type="button">Copiar</button>
-    </div>
-    <div class="be-sec" id="be-sec"></div>
-    <div class="be-prefs">
-      <div class="seg" data-pref="angulo" title="Unidad de los rumbos">
-        <button type="button" data-v="grados">°</button><button type="button" data-v="milesimas">mils</button><button type="button" data-v="gms">G M S</button>
-      </div>
-      <div class="seg" data-pref="precision" title="Precisión MGRS">
-        <button type="button" data-v="5">1 m</button><button type="button" data-v="4">10 m</button><button type="button" data-v="3">100 m</button>
-      </div>
+      <span class="be-coord" id="be-coord">—</span>
+      <span class="be-alt" id="be-alt" title="Altitud del terreno (MDT05 del IGN)"></span>
     </div>
   </footer>
 </div>
+<dialog id="dialogo"></dialog>
 <script src="src/vendor/leaflet/leaflet.js"></script>
 <script type="module" src="src/ui/mapa.js"></script>
 </body>

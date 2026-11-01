@@ -33,8 +33,11 @@ visual, con el mismo estilo que la web Lauria.
    precisión. MGRS, UTM, grados-minutos-segundos y milésimas son solo
    formas de **mostrar** o de **leer**. Nunca se guarda un valor redondeado.
 2. **Datum:** WGS84. ETRS89 (oficial en España, RD 1071/2007) coincide a
-   efectos prácticos. ED50 (mapas antiguos) se convertirá con la rejilla
-   oficial del IGN, nunca con una fórmula aproximada. *(Pendiente.)*
+   efectos prácticos. ED50 (mapas antiguos) se convierte con la **rejilla
+   oficial del IGN** (SPED2ETV2, NTv2, EPSG:15932) y el elipsoide
+   internacional de 1924; nunca con una fórmula aproximada
+   (`src/geo/rejillas.js`). Altitudes elipsoidales (GPS, ATAK) → altitud
+   sobre el nivel del mar con el geoide **EGM08-REDNAP** del IGN.
 3. **MGRS se trunca, no se redondea.** Precisiones de 100 km a 1 m. Al leer
    una referencia se toma el centro del cuadrado y se informa del tamaño.
 4. **Distancias:** por defecto sobre el elipsoide. También "sobre el mapa"
@@ -127,73 +130,104 @@ docs/                    esta especificación e informe de precisión
 ## 7. Mapa (fase 2)
 
 - **Librería:** Leaflet 1.9.4 (copiada en `src/vendor/leaflet`).
-- **Capas** (`src/mapa/capas.js`), servicios WMTS/WMS oficiales, malla
-  `GoogleMapsCompatible`:
-  | Capa | Servicio | Nombre de capa |
+- **Fondos** (`src/mapa/capas.js`), malla `GoogleMapsCompatible`:
+  | Fondo | Servicio | Capa |
   |---|---|---|
-  | Topográfico | `ign.es/wmts/mapa-raster` | `MTN` |
+  | Topográfico | `ign.es/wmts/mapa-raster` (PNG) | `MTN` |
   | Ortofoto | `ign.es/wmts/pnoa-ma` | `OI.OrthoimageCoverage` |
+  | Satélite / Híbrido | `mt{0-3}.google.com/vt` | `lyrs=s` / `lyrs=y` |
   | Mapa base | `ign.es/wmts/ign-base` | `IGNBaseTodo` |
-  | Relieve / sombreado | `servicios.idee.es/wmts/mdt` | `Relieve` |
-  | Curvas de nivel | `servicios.idee.es/wms-inspire/mdt` | `EL.ContourLine` |
-  | Vértices geodésicos (en pruebas) | `ign.es/wms-inspire/redes-geodesicas` | `RED_REGENTE` |
-- **Pantalla y precisión:** el mapa se pinta en proyección web (EPSG:3857),
-  pero todos los números (coordenadas, cuadrícula, distancias, rumbos) los
-  calcula el motor sobre el elipsoide. La cuadrícula MGRS la dibuja SPA,
-  punto a punto, con el motor verificado (prueba: desviación < 1 µm).
-- **Rutas alternativas y diagnóstico:** si un fondo no carga ninguna tesela,
-  el mapa avisa con las causas probables y un enlace a una tesela de prueba.
-  La ortofoto pasa sola a la misma imagen por el **WMS del IGN**
-  (`wms-inspire/pnoa-ma`) y, si tampoco, a **Esri World Imagery**
-  (condiciones de uso de Esri por revisar antes de un uso real).
-- **Google:** su servicio de teselas (Map Tiles API) **no sirve satélite
-  2D a proyectos facturados en el EEE desde el 8-7-2025** (responde 403).
-  La única vía sería su API JavaScript completa (clave y facturación), que
-  sustituiría a Leaflet: descartado de momento.
-- **Exportar el mapa a imagen** (fase 5): requiere que los servicios del IGN
-  permitan uso entre orígenes (CORS). Pendiente de comprobar; por eso las
-  capas se cargan hoy sin `crossOrigin`.
-
-- **Cuadrícula:** muy tenue por defecto (intensidad 35 %, ajustable de
-  10 a 100 % en el panel de capas). Las cifras de los márgenes esquivan los
-  paneles y controles abiertos.
-- **Fondo automático (opcional):** casilla «Ortofoto al acercarte». Al
-  cruzar el zoom 17 hacia dentro pasa a la ortofoto; al alejarse vuelve al
-  mapa elegido. Si el usuario cambia de mapa a mano, se respeta.
-- **Copiar coordenadas:** se copia la **última posición del cursor** (al
-  salir del mapa no se sustituye por el centro). Tecla **C** sobre el mapa:
-  copia la coordenada bajo el cursor sin moverlo.
+  | Relieve | `servicios.idee.es/wmts/mdt` | `Relieve` |
+  Encima: sombreado, curvas de nivel (`wms-inspire/mdt`, `EL.ContourLine`),
+  vértices geodésicos (en pruebas), cuadrícula MGRS y zona piloto.
+- **Google:** acceso no oficial a sus teselas (lo usan ATAK y otros
+  programas). Sus condiciones lo prohíben y puede cortarse sin aviso;
+  decisión de Balú (quiere la mejor imagen). Respaldo: ortofoto PNOA.
+- **Mantener detalle 1:25.000** (opcional): el IGN cambia de mapa según el
+  zoom (MTN25 en 15–16, más general en 14 y 13). Con la opción, en 14 y 13
+  se pintan las teselas del 15 reducidas (4× y 16× teselas). Límite: zoom 13.
+- **Ortofoto al acercarte** (opcional): desde zoom 17.
+- **Pantalla y precisión:** el mapa se pinta en EPSG:3857, pero todos los
+  números los calcula el motor sobre el elipsoide. La cuadrícula MGRS la
+  dibuja SPA (desviación < 1 µm), tenue por defecto (35 %, ajustable).
+- **Diagnóstico y rutas alternativas:** si un fondo no carga, aviso con las
+  causas probables y tesela de prueba; la ortofoto pasa sola al WMS del IGN.
+- **Barra inferior:** solo la coordenada (en el formato elegido en Ajustes,
+  siempre al metro) y la **altitud** del terreno bajo el cursor.
+- **Ajustes** (icono arriba a la derecha): tipo de coordenada (MGRS, UTM,
+  geográficas, grados decimales) y unidad de los rumbos de la regla.
+- **Exportar el mapa a imagen** (fase 5): requiere CORS en los servicios.
 
 ## 8. Medir y dibujar (fase 3)
 
-- **Elementos:** punto, línea, área y círculo (`src/plan/plan.js`, sin
-  dependencias del mapa; `src/ui/dibujo.js`, la parte visual).
-- **Cómo se dibuja:** clic para cada vértice; termina con doble clic, Intro,
-  el botón «Terminar» o tocando el último vértice (línea) o el primero
-  (área). Retroceso quita el último vértice; Esc cancela. El círculo: centro
-  y borde, o centro y **radio escrito** en metros.
-- **Exactitud:** las líneas siguen la geodésica entre vértices; el círculo es
-  un polígono cuyos vértices están exactamente a la distancia del radio
-  (prueba: < 1 mm). Medidas: longitud real y sobre el mapa, rumbos de cada
-  tramo (geográfico y de cuadrícula), superficie y perímetro.
-- **Propiedades:** nombre, **bando** con los colores de APP-6 (propio azul,
-  enemigo rojo, neutral verde, desconocido amarillo) y **estado** (presente:
-  trazo continuo; previsto: discontinuo). El siguiente elemento toma el
-  último bando y estado usados.
-- **Editar:** clic en un elemento (o en la lista «Plan» del panel de capas)
-  para seleccionarlo. Arrastrar vértices; clic en un punto medio para añadir
-  uno; clic derecho (o × en la lista de vértices) para quitarlo. Supr borra.
-- **Deshacer / rehacer:** botones y Ctrl+Z / Ctrl+Y (Ctrl+Mayús+Z). Hasta
-  200 pasos.
-- **Guardado provisional:** el plan se guarda en el navegador
-  (`localStorage`). Guardar en archivo y exportar: fase 5.
-- **Pruebas:** `pruebas/plan.test.mjs` (medidas frente a GeographicLib, un
-  cuadrado de 1 km de cuadrícula mide 1 km²/k², historial) y
-  `pruebas/navegador.mjs` (21 comprobaciones en Chromium: dibujar, editar,
-  deshacer, copiar, cuadrícula, fondo automático).
+- **Elementos:** punto, línea (también tracks), área y círculo
+  (`src/plan/plan.js` sin dependencias del mapa; `src/ui/dibujo.js`).
+- **«Mover»** (antes «Consultar»): pinchar el mapa no pone nada; solo
+  selecciona elementos. Los puntos se ponen solo con la herramienta Punto.
+- **Al dibujar:** clic añade un punto; **imán**: si cae a 12 px o menos de
+  otro punto (del plan, de lo importado o de la propia línea) se une a él
+  exactamente; **clic derecho** quita el último; **arrastrar** un punto ya
+  puesto lo mueve; **mantener pulsado** abre un menú para eliminarlo;
+  doble clic, Intro o clic en el último punto termina (área: en el primero).
+- **Ficha del punto:** nombre, bando (colores APP-6), presente/previsto,
+  coordenada y altitud (MDT05, al metro).
+- **Ficha de la línea:** distancia total, desnivel acumulado de subida y
+  bajada, altitudes mínima/máxima e inicial/final, perfil de altura (al
+  pasar el ratón se marca el punto en el mapa); estilo: color (de bando o
+  libre), trazo (continua, discontinua, punteada) y grosor. Sin tabla de
+  tramos. La «línea de acción» llegará con los símbolos APP-6 (fase 4).
+- **Área / círculo:** superficie, perímetro / radio exacto; mismo estilo.
+- **Editar:** arrastrar vértices (con imán), añadir en puntos medios, quitar
+  con clic derecho; Supr borra; deshacer/rehacer (Ctrl+Z / Ctrl+Y).
+- **Panel «Plan»** (botón en la barra): lo dibujado y lo importado.
 
-## 9. Pendiente
+## 9. Alturas
 
-- Conversión ED50 ↔ ETRS89 con la rejilla del IGN.
+- **Fuente:** MDT05 del IGN (malla de 5 m, altitud ortométrica) por el WCS
+  de la IDEE (`servicios.idee.es/wcs-inspire/mdt`, cobertura
+  `Elevacion4258_5`; respaldo `Elevacion4258_25`). Permite CORS: funciona
+  también abriendo el archivo con doble clic. Comprobado desde el navegador
+  de Balú (bloque de 450 × 340 m en 0,4 s).
+- **Cómo:** bloques fijos de 0,004° con 2 celdas de margen, en caché;
+  interpolación bilineal entre centros de celda; se muestra **redondeada al
+  metro**. El desnivel usa una histéresis de 1 m contra el ruido de la malla.
+- **Alturas de los archivos:** se muestran aparte. Las de ATAK (CoT) son
+  elipsoidales (HAE) y se convierten con el geoide EGM08-REDNAP.
+
+## 10. Importar (`src/datos/`, `src/ui/importar.js`)
+
+- **Arrastrar y soltar** en cualquier parte de la página, o botones.
+- **Datos** → panel «Plan · Archivos importados» (ver/ocultar, nombres,
+  centrar, «Pasar al plan» para editarlos, quitar):
+  GPX (wpt, rte, trk), KML/KMZ (puntos, líneas, polígonos, tracks, estilos,
+  superposiciones de imagen), CoT de ATAK (puntos con bando, líneas,
+  rectángulos, círculos) y **paquetes .zip de ATAK** (manifiesto, CoT, y lo
+  que lleven dentro: GPX, KML, KMZ, otros zip y mapas).
+- **Mapas** → «Capas · Mapas importados» (ver, opacidad, centrar, quitar),
+  colocados solos:
+  - `.sqlite` de ATAK/osmdroid y **MBTiles** (plano o normalizado): lector
+    SQLite propio **por trozos** (sirve para archivos de GB: solo lee las
+    páginas necesarias). Comprobado con UCEDA_25K y UCEDA_FOTO: teselas
+    idénticas byte a byte a las de SQLite.
+  - **GeoTIFF** (clásico y BigTIFF; teselas o bandas; sin compresión, LZW,
+    Deflate, PackBits, JPEG, WebP; reducciones internas): lector propio por
+    trozos. Sistema leído del propio archivo (EPSG) o de su `.prj`; si no lo
+    trae, se pregunta.
+  - **JPG/PNG + archivo de mundo** (.jgw/.pgw/.wld) y `.prj`.
+  - Sistemas: ETRS89 y WGS84 UTM 28–31, ED50 UTM 28–31 (rejilla IGN),
+    REGCAN95, geográficas, Web Mercator.
+  - **Reproyección exacta:** malla de control de 17 × 17 por tesela calculada
+    con el motor; error medido ≤ 0,5 píxeles del mapa original.
+  - **ECW / JP2 / MrSID:** no se pueden leer en un navegador. Se avisa con
+    cómo convertirlos una vez a GeoTIFF (QGIS o `gdal_translate`).
+- **Buscador de mapas** (Chrome/Edge): se elige una vez la carpeta; se
+  leen solo las cabeceras (zona de cada mapa); búsqueda por nombre y «solo
+  los que cubren la vista»; se carga solo el elegido, sin copiarlo.
+- **Guardado:** IndexedDB del navegador. En Chrome/Edge los mapas se
+  guardan como acceso directo al archivo (no se copian; puede pedir volver
+  a dar acceso al abrir de nuevo).
+
+## 11. Pendiente
+
 - Rumbo magnético (modelo WMM).
 - Puntos de control: vértices geodésicos del IGN en la zona piloto.

@@ -10,14 +10,17 @@ rellenan solos con lo dibujado. Se desarrolla aquí y se migrará a S3.
 - Fase 2 — mapa piloto: mapas del IGN (topográfico MTN, ortofoto PNOA, mapa
   base, relieve, curvas de nivel), cuadrícula MGRS propia, coordenada bajo
   el cursor, consulta de puntos, búsqueda y regla de medida.
-- Fase 3 — medir y dibujar: puntos, líneas, áreas y círculos con nombre,
-  bando y estado; medidas exactas; edición de vértices; deshacer y rehacer.
+- Fase 3 — medir y dibujar: puntos, líneas/tracks, áreas y círculos con
+  nombre, bando, estilo; imán; perfil de altura y desnivel (MDT05 del IGN).
+- Importar: GPX, KML/KMZ, paquetes de ATAK; mapas .sqlite (ATAK), MBTiles,
+  GeoTIFF e imagen georreferenciada, colocados solos; buscador de mapas.
+- ED50 ↔ ETRS89 con la rejilla oficial del IGN y geoide EGM08-REDNAP.
 
 Especificación en [docs/ESPECIFICACION.md](docs/ESPECIFICACION.md).
 
 ## Probarlo
 
-- **Con doble clic:** abre `dist/mapa.html` o `dist/calculadora.html`.
+- **Con doble clic:** abre `dist/mapa.html` (o `dist/calculadora.html`).
   La calculadora funciona sin conexión; el mapa necesita internet para
   descargar las teselas del IGN.
 - **Para desarrollar:** `node herramientas/servidor.mjs` y abre
@@ -54,4 +57,6 @@ npm run prueba:navegador -- --capturas
 - GeographicLib (C. F. F. Karney), MIT — `src/vendor/LICENSE-geographiclib.txt`
 - Leaflet 1.9.4, BSD-2 — `src/vendor/leaflet/LICENSE-leaflet.txt`
 - Cartografía: © Instituto Geográfico Nacional / IDEE, CC BY 4.0 (scne.es). El navegador la pide directamente a sus servicios; no se copia en el repositorio.
+- Rejillas del IGN (SPED2ETV2, EGM08-REDNAP), CC BY 4.0, en la versión GeoTIFF del proyecto PROJ (OSGeo/PROJ-data) — `datos/rejillas/`.
+- Imágenes de Google: acceso no oficial, sujeto a sus condiciones (ver docs/ESPECIFICACION.md §7).
 - EB Garamond, Manrope e IBM Plex Mono, SIL OFL — `assets/fonts/` (falta copiar aquí el texto de licencia de Plex Mono)
