@@ -414,3 +414,78 @@ body.plan-abierto .panel-elemento, body.plan-abierto #panel-medida { left: 324px
 .cr-barra { height: 6px; border-radius: 3px; background: var(--linea); overflow: hidden; margin-bottom: 4px; }
 .cr-barra span { display: block; height: 100%; width: 0; background: var(--oro); transition: width .3s; }
 .btn-crear { font-weight: 600; }
+
+/* Símbolos (APP-6) */
+.panel-simbolos { position: absolute; z-index: 1001; left: 12px; top: 44px; width: min(340px, calc(100% - 24px)); max-height: calc(100% - 60px); overflow: auto; background: var(--superficie); border: 1px solid var(--linea); border-radius: 8px; box-shadow: var(--sombra); padding: 10px 12px 12px; }
+body.simbolos-abierto .panel-elemento, body.simbolos-abierto #panel-medida, body.simbolos-abierto .panel-creador { left: 364px; }
+body.simbolos-abierto .panel-plan { display: none; }
+@media (max-width: 760px) { body.simbolos-abierto .panel-elemento { left: 12px; top: auto; bottom: 12px; } }
+.panel-simbolos .pm-cab { align-items: center; }
+.sim-buscar { width: 100%; box-sizing: border-box; font: 13px var(--sans); padding: 7px 10px; border: 1px solid var(--linea-2); border-radius: var(--radio); margin: 8px 0; }
+.sim-pestanas { display: flex; width: 100%; margin-bottom: 8px; }
+.sim-pestanas button { flex: 1; font-size: 12.5px; }
+.sim-recientes { margin-bottom: 8px; }
+.sim-recientes > div { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 3px; }
+.sim-chip { border: 1px solid var(--linea-2); background: var(--superficie); border-radius: 6px; padding: 3px 4px; cursor: pointer; line-height: 0; }
+.sim-chip:hover { border-color: var(--oro); background: var(--hundido); }
+.sim-vista { display: flex; align-items: center; gap: 12px; padding: 8px; background: var(--hundido); border-radius: 8px; margin-bottom: 8px; min-height: 64px; }
+.sim-vista svg { flex: none; }
+.sim-vista b { display: block; font-size: 13.5px; }
+.sim-vista small { font: 10px var(--mono); color: var(--gris); word-break: break-all; }
+.sim-vista-ficha { margin-top: 6px; }
+.sim-paso { margin-top: 8px; }
+.sim-paso > .el-et { display: block; margin-bottom: 4px; }
+.sim-rejilla { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 4px; }
+.sim-tile { display: flex; align-items: center; gap: 6px; text-align: left; border: 1px solid var(--linea-2); background: var(--superficie); border-radius: 6px; padding: 4px 6px; font-size: 11.5px; line-height: 1.2; cursor: pointer; color: var(--tinta); min-height: 34px; }
+.sim-tile svg { flex: none; }
+.sim-tile:hover { border-color: var(--oro-claro); }
+.sim-tile[aria-pressed="true"] { border-color: var(--noche); box-shadow: inset 3px 0 0 var(--noche); background: var(--hundido); font-weight: 600; }
+.sim-escalones { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+.sim-escalones button { display: grid; gap: 1px; justify-items: center; border: 1px solid var(--linea-2); background: var(--superficie); border-radius: 6px; padding: 4px 2px; cursor: pointer; color: var(--tinta); }
+.sim-escalones b { font: 700 13px var(--sans); letter-spacing: .05em; min-height: 16px; }
+.sim-escalones span { font-size: 10.5px; color: var(--tinta-2); text-align: center; line-height: 1.15; }
+.sim-escalones button[aria-pressed="true"] { border-color: var(--noche); background: var(--hundido); box-shadow: inset 0 -3px 0 var(--noche); }
+.sim-campos { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 8px; }
+.sim-campos label { display: grid; gap: 2px; font-size: 11.5px; color: var(--gris); }
+.sim-campos input, .sim-extras input:not([type=checkbox]) { font: 13px var(--sans); padding: 5px 7px; border: 1px solid var(--linea-2); border-radius: var(--radio); min-width: 0; }
+.sim-extras { display: grid; gap: 6px; padding: 8px; background: var(--hundido); border-radius: 6px; }
+.sim-extras label { display: grid; gap: 2px; font-size: 11.5px; color: var(--gris); }
+.sim-chk { display: flex !important; align-items: center; gap: 6px; font-size: 12.5px !important; color: var(--tinta) !important; }
+.sim-chk input { accent-color: var(--noche); }
+.sim-extras .seg { display: flex; flex-wrap: wrap; }
+.sim-extras .seg button { font-size: 11.5px; }
+.sim-mas { margin-top: 8px; width: 100%; border: 1px dashed var(--linea-2); background: none; border-radius: var(--radio); padding: 5px; font-size: 12px; color: var(--tinta-2); cursor: pointer; }
+.panel-simbolos .pm-acciones button.primario, .panel-elemento button.primario { background: var(--noche); color: #fff; border-color: var(--noche); font-weight: 600; padding: 8px; }
+.sim-grupo { margin-top: 8px; }
+.sim-lista-cm { display: grid; gap: 3px; margin-top: 4px; }
+.sim-cm { display: flex; align-items: center; gap: 8px; text-align: left; border: 1px solid transparent; background: none; border-radius: 6px; padding: 3px 6px; cursor: pointer; font-size: 12.5px; color: var(--tinta); }
+.sim-cm:hover, .sim-cm:focus-visible { border-color: var(--linea-2); background: var(--hundido); }
+.sim-cm small { color: var(--gris); font-size: 10.5px; margin-left: 4px; }
+.sim-cm-ico { width: 64px; flex: none; display: grid; place-items: center; line-height: 0; }
+/* Símbolos sobre el mapa */
+.simbolo-unidad, .simbolo-punto { background: none; border: 0; }
+.simbolo-unidad svg, .simbolo-punto svg { display: block; overflow: visible; filter: drop-shadow(0 0 1px rgba(255,255,255,.95)) drop-shadow(0 1px 2px rgba(0,0,0,.25)); }
+.simbolo-unidad.sel svg, .simbolo-punto.sel svg { filter: drop-shadow(0 0 2px #E0B252) drop-shadow(0 0 4px #E0B252); }
+.etq-simbolo { position: absolute; transform: translate(-50%, var(--dy)); font: 700 11.5px var(--sans); color: var(--tinta); background: rgba(255,255,255,.85); padding: 0 4px; border-radius: 2px; white-space: nowrap; }
+.etq-pto-cm { position: absolute; left: 100%; top: 4px; margin-left: 3px; font: 700 12px var(--sans); white-space: nowrap; text-shadow: 0 0 3px #fff, 0 0 3px #fff; }
+.etq-cm { position: absolute; display: inline-block; font: 700 12px var(--sans); white-space: nowrap; text-shadow: 0 0 3px #fff, 0 0 3px #fff, 0 0 2px #fff; pointer-events: none; }
+.etq-cm.fondo { background: #fff; padding: 0 3px; border-radius: 2px; text-shadow: none; font-size: 13px; }
+.etq-cm.negrita { font-size: 13px; }
+.pe-sim { width: 30px; flex: none; display: grid; place-items: center; line-height: 0; }
+/* Selector visual (desplegable con miniaturas) */
+.sel-vis { position: relative; flex-wrap: wrap; }
+.sel-vis-btn { flex: 1; display: flex; align-items: center; gap: 8px; border: 1px solid var(--linea-2); background: var(--superficie); border-radius: var(--radio); padding: 4px 8px; cursor: pointer; font-size: 12.5px; color: var(--tinta); text-align: left; min-width: 0; }
+.sel-vis-btn span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sel-vis-btn i { font-style: normal; color: var(--gris); }
+.sel-vis-lista { position: absolute; z-index: 5; left: 0; right: 0; top: 100%; margin-top: 2px; max-height: 280px; overflow: auto; background: var(--superficie); border: 1px solid var(--linea-2); border-radius: 6px; box-shadow: var(--sombra); padding: 4px; }
+.sel-vis-lista button { display: flex; align-items: center; gap: 8px; width: 100%; border: 0; background: none; border-radius: 4px; padding: 4px 6px; cursor: pointer; font-size: 12.5px; text-align: left; color: var(--tinta); }
+.sel-vis-lista button:hover { background: var(--hundido); }
+.sel-vis-lista button[aria-pressed="true"] { background: var(--hundido); font-weight: 600; box-shadow: inset 3px 0 0 var(--noche); }
+.sel-vis-grupo { font-size: 10.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--gris); padding: 6px 6px 2px; }
+.marca-esc { display: inline-block; min-width: 34px; text-align: center; font: 700 12px var(--sans); }
+.sim-seg { display: flex; flex-wrap: wrap; }
+.sim-seg button { padding: 3px 5px; line-height: 0; }
+.sim-det { margin-top: 8px; border: 1px solid var(--linea); border-radius: 6px; }
+.sim-det > summary { cursor: pointer; padding: 6px 8px; font-size: 12px; color: var(--tinta-2); }
+.sim-det[open] > summary { border-bottom: 1px solid var(--linea); }
+.sim-det .sim-extras { border-radius: 0 0 6px 6px; margin: 0; }

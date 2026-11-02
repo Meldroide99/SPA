@@ -32,7 +32,7 @@ export const HERRAMIENTAS_DIBUJO = ['punto', 'linea', 'area', 'circulo'];
  * @param {() => Array<{lat,lon}>} [o.puntosExternos] puntos de lo importado (imán)
  * @param {() => void} [o.alCambiarPaneles]
  */
-export function iniciarDibujo({ L, mapa, herramienta, elegirHerramienta, fmt, alturas, puntosExternos = () => [], alCambiarPaneles = () => {} }) {
+export function iniciarDibujo({ L, mapa, herramienta, elegirHerramienta, fmt, alturas, puntosExternos = () => [], alCambiarPaneles = () => {}, simbolos = null }) {
   const $ = (id) => document.getElementById(id);
   const px = (p) => mapa.latLngToContainerPoint([p.lat, p.lon]);
   const DUENO = 'plan';
@@ -69,13 +69,15 @@ export function iniciarDibujo({ L, mapa, herramienta, elegirHerramienta, fmt, al
   let verticesAbiertos = false;
 
   const numero = (el) => plan.elementos.filter((e) => e.tipo === el.tipo).indexOf(el) + 1;
-  const titulo = (el) => el.propiedades.nombre || `${TIPOS[el.tipo].nombre} ${numero(el)}`;
+  const titulo = (el) => (el.simbolo && simbolos?.ficha(el)?.titulo) || el.propiedades.nombre || `${TIPOS[el.tipo].nombre} ${numero(el)}`;
+  const fijos = (el) => simbolos?.puntosFijos(el) ?? 0;
 
   function pintarElemento(el, puntos = puntosDe(el), radio = el.propiedades.radio) {
     capasDe.get(el.id)?.remove();
     const est = estiloDe(el);
     const sel = el.id === seleccion;
-    const { grupo, principal } = capaForma(L, {
+    const conSimbolo = el.simbolo && simbolos?.pintar(el, puntos, { seleccionado: sel, color: est.color, previsto: el.propiedades.estado === 'previsto', arrastrable: sel && el.tipo === 'punto' });
+    const { grupo, principal } = conSimbolo || capaForma(L, {
       tipo: el.tipo, puntos, radio, color: est.color, trazo: est.trazo, grosor: est.grosor,
       nombre: el.propiedades.nombre, previsto: el.propiedades.estado === 'previsto', seleccionado: sel,
       arrastrable: sel && el.tipo === 'punto',
@@ -158,7 +160,7 @@ export function iniciarDibujo({ L, mapa, herramienta, elegirHerramienta, fmt, al
       m.on('contextmenu', (e) => { L.DomEvent.preventDefault(e.originalEvent); quitarVertice(el, i); });
       capaAsas.addLayer(m);
     });
-    const n = el.tipo === 'area' ? pts.length : pts.length - 1;
+    const n = fijos(el) ? 0 : el.tipo === 'area' ? pts.length : pts.length - 1;
     for (let i = 0; i < n; i++) {
       const a = pts[i], b = pts[(i + 1) % pts.length];
       const mid = puntosGeodesica(a, b, 2)[1];
@@ -172,6 +174,7 @@ export function iniciarDibujo({ L, mapa, herramienta, elegirHerramienta, fmt, al
 
   function quitarVertice(el, i) {
     const pts = puntosDe(el);
+    if (fijos(el)) { avisoBreve('Este símbolo tiene sus puntos fijos: arrástralos para ajustarlo'); return; }
     if (pts.length <= TIPOS[el.tipo].min) { avisoBreve(`Una ${TIPOS[el.tipo].nombre.toLowerCase()} necesita al menos ${TIPOS[el.tipo].min} vértices`); return; }
     pts.splice(i, 1);
     cambio('Quitar vértice', () => moverPuntos(el, pts));
@@ -203,10 +206,23 @@ export function iniciarDibujo({ L, mapa, herramienta, elegirHerramienta, fmt, al
   function cancelarBorrador() { cerrarMenuPunto(); borrador = null; capaBorrador.clearLayers(); capaBorradorPuntos.clearLayers(); capaIman.clearLayers(); pintarPanel(); }
 
   /** Clic en el mapa (o en un punto del borrador) con una herramienta de dibujo. */
+  /** El borrador en curso dibuja un símbolo (unidad, medida o cometido). */
+  function ponerSimboloBorrador(simbolo, n = 0, ayuda = '', nombre = '') {
+    if (!borrador) empezar(herramienta());
+    Object.assign(borrador, { simbolo, n, ayuda, nombreSimbolo: nombre });
+    pintarBorrador(); pintarPanel();
+  }
   function clic(p0) {
     if (!borrador) empezar(herramienta());
     const b = borrador;
     const min = TIPOS[b.tipo].min;
+    if (b.n && b.tipo !== 'punto') {
+      const p = iman({ lat: p0.lat, lng: p0.lon }, {});
+      if (b.puntos.length && px(p).distanceTo(px(b.puntos.at(-1))) < 3) return;
+      b.puntos.push(p);
+      if (b.puntos.length >= b.n) { terminar(b.puntos); return; }
+      pintarBorrador(); pintarPanel(); return;
+    }
     // ¿Termina? (clic sobre el último punto en línea; sobre el primero en área)
     if ((b.tipo === 'linea' || b.tipo === 'area') && b.puntos.length >= min) {
       const fin = b.tipo === 'area' ? b.puntos[0] : b.puntos.at(-1);
@@ -230,8 +246,10 @@ export function iniciarDibujo({ L, mapa, herramienta, elegirHerramienta, fmt, al
   function terminar(pts, radio) {
     const b = borrador; if (!b) return;
     if (pts.length < TIPOS[b.tipo].min) { avisoBreve(`Faltan puntos: una ${TIPOS[b.tipo].nombre.toLowerCase()} necesita al menos ${TIPOS[b.tipo].min}`); return; }
-    const el = cambio(`Dibujar ${TIPOS[b.tipo].nombre.toLowerCase()}`, (p) => {
+    if (b.n && pts.length < b.n) { avisoBreve(`Faltan puntos: este símbolo necesita ${b.n}`); return; }
+    const el = cambio(b.simbolo ? `Colocar ${b.nombreSimbolo || 'símbolo'}` : `Dibujar ${TIPOS[b.tipo].nombre.toLowerCase()}`, (p) => {
       const e = nuevoElemento(b.tipo, pts.slice(), { radio, bando: preferencias.bando, estado: preferencias.estado });
+      if (b.simbolo) { e.simbolo = JSON.parse(JSON.stringify(b.simbolo)); simbolos?.alCrear(e); }
       p.elementos.push(e); return e;
     });
     borrador = null; capaBorrador.clearLayers(); capaBorradorPuntos.clearLayers(); capaIman.clearLayers();
@@ -264,6 +282,11 @@ export function iniciarDibujo({ L, mapa, herramienta, elegirHerramienta, fmt, al
         L.polyline([[b.puntos[0].lat, b.puntos[0].lon], [b.cursor.lat, b.cursor.lon]], { ...est, weight: 1.5, dashArray: '4 4' }).addTo(capaBorrador);
       }
     } else {
+      const vivos = b.cursor ? [...b.puntos, b.cursor] : b.puntos;
+      if (b.simbolo && simbolos?.previsualizar(capaBorrador, b.simbolo, vivos, c)) {
+        L.polyline(vivos.map((q) => [q.lat, q.lon]), { ...est, weight: 1, dashArray: '2 4', opacity: 0.6 }).addTo(capaBorrador);
+        return;
+      }
       if (b.puntos.length > 1) L.polyline(b.puntos.map((q) => [q.lat, q.lon]), est).addTo(capaBorrador);
       if (b.cursor) {
         L.polyline([[b.puntos.at(-1).lat, b.puntos.at(-1).lon], [b.cursor.lat, b.cursor.lon]], { ...est, weight: 2, dashArray: '5 5', opacity: 0.8 }).addTo(capaBorrador);
@@ -349,13 +372,15 @@ export function iniciarDibujo({ L, mapa, herramienta, elegirHerramienta, fmt, al
       }
       if (soloMedidas && esMio() && panel.querySelector('#dib-medidas')) { $('dib-medidas').innerHTML = medidas; return; }
       panel.dataset.dueno = DUENO;
-      panel.innerHTML = `<div class="pm-cab"><strong>${{ punto: 'Punto nuevo', linea: 'Línea nueva', area: 'Área nueva', circulo: 'Círculo nuevo' }[b.tipo]}</strong><span>${b.puntos.length ? `${b.puntos.length} punto${b.puntos.length > 1 ? 's' : ''}` : ''}</span></div>
-        <p class="el-ayuda">${ayuda}</p>
+      const tituloB = b.simbolo ? esc(b.nombreSimbolo || 'Símbolo nuevo') : { punto: 'Punto nuevo', linea: 'Línea nueva', area: 'Área nueva', circulo: 'Círculo nuevo' }[b.tipo];
+      const cuenta = b.n ? `${b.puntos.length} de ${b.n} puntos` : b.puntos.length ? `${b.puntos.length} punto${b.puntos.length > 1 ? 's' : ''}` : '';
+      panel.innerHTML = `<div class="pm-cab"><strong>${tituloB}</strong><span>${cuenta}</span></div>
+        <p class="el-ayuda">${esc(b.ayuda || '') || ayuda}${b.n && b.puntos.length < b.n ? ` <b>Punto ${b.puntos.length + 1}.</b>` : ''}</p>
         ${htmlColor({ bando: preferencias.bando }, 'pref-bando')}
         ${b.tipo === 'punto' ? `<div class="el-fila"><div class="seg" data-campo="pref-estado">${Object.entries(ESTADOS).map(([k, v]) => `<button type="button" data-v="${k}" aria-pressed="${k === preferencias.estado}">${v.nombre}</button>`).join('')}</div></div>` : ''}
         <div id="dib-medidas">${medidas}</div>
         ${b.tipo === 'circulo' && b.puntos.length ? '<form class="el-radio" id="dib-radio"><label>Radio exacto <input type="number" min="1" step="any" inputmode="decimal" placeholder="metros" id="dib-radio-m"></label><button type="submit">Crear</button></form>' : ''}
-        <div class="pm-acciones">${b.tipo === 'linea' || b.tipo === 'area' ? '<button type="button" data-acc="terminar">Terminar</button><button type="button" data-acc="quitar-ultimo">Quitar último</button>' : ''}<button type="button" data-acc="cancelar">Cancelar</button></div>`;
+        <div class="pm-acciones">${(b.tipo === 'linea' || b.tipo === 'area') && !b.n ? '<button type="button" data-acc="terminar">Terminar</button>' : ''}${b.tipo === 'linea' || b.tipo === 'area' ? '<button type="button" data-acc="quitar-ultimo">Quitar último</button>' : ''}<button type="button" data-acc="cancelar">Cancelar</button></div>`;
       panel.querySelector('.color-libre')?.remove(); // al dibujar, solo colores de bando
       mostrarPanel(true);
       return;
@@ -379,6 +404,23 @@ export function iniciarDibujo({ L, mapa, herramienta, elegirHerramienta, fmt, al
         <dl class="el-datos"><dt>Superficie</dt><dd>${formatearArea(m.area)}</dd><dt>Centro</dt><dd>${esc(fmt.coord(pts[0]))}</dd></dl>${htmlTrazo(est, 'el')}`;
     }
     const nVert = el.tipo === 'linea' || el.tipo === 'area';
+    const fs = el.simbolo && simbolos?.ficha(el);
+    if (fs) {
+      const estado = `<div class="el-fila"><div class="seg" data-campo="el-estado">${Object.entries(ESTADOS).map(([k, v]) => `<button type="button" data-v="${k}" aria-pressed="${k === el.propiedades.estado}">${v.nombre}</button>`).join('')}</div></div>`;
+      const pos = el.tipo === 'punto' ? `<div class="pm-total"><div class="grande mgrs">${esc(fmt.coord(pts[0]))}</div></div>${htmlAltitud()}` : '';
+      panel.dataset.dueno = DUENO;
+      panel.innerHTML = `<div class="pm-cab"><strong><span class="muestra-bando" style="--c:${est.color}"></span>${esc(fs.titulo)}</strong><span>${esc(fs.tipo)}</span></div>
+        ${fs.html}
+        ${el.simbolo.clase === 'medida' ? htmlColor({ bando: el.propiedades.bando, color: el.propiedades.color }, 'el-bando') : ''}
+        ${estado}
+        <label class="el-nombre">Nombre <input id="el-nombre" value="${esc(el.propiedades.nombre)}" placeholder="${el.simbolo.clase === 'unidad' ? 'Opcional' : 'Ej.: ROJA, 1, NORTE'}" maxlength="60"></label>
+        ${pos}
+        ${nVert ? `<details class="el-vert" ${verticesAbiertos ? 'open' : ''}><summary>Puntos (${pts.length})</summary><ol>${pts.map((p, i) => `<li><span class="v-letra">${i + 1}</span><code>${esc(fmt.coord(p))}</code>${fijos(el) ? '' : `<button type="button" data-quitar-v="${i}" title="Quitar punto" aria-label="Quitar punto">×</button>`}</li>`).join('')}</ol></details>` : ''}
+        <div class="pm-acciones"><button type="button" data-acc="centrar">Centrar</button><button type="button" data-acc="duplicar">Duplicar</button><button type="button" data-acc="borrar" class="peligro">Borrar</button><button type="button" data-acc="cerrar">Cerrar</button></div>`;
+      mostrarPanel(true);
+      if (el.tipo === 'punto') rellenarAltitud(alturas, pts[0]);
+      return;
+    }
     panel.dataset.dueno = DUENO;
     panel.innerHTML = `<div class="pm-cab"><strong><span class="muestra-bando" style="--c:${est.color}"></span>${esc(titulo(el))}</strong><span>${TIPOS[el.tipo].nombre}</span></div>
       <label class="el-nombre">Nombre <input id="el-nombre" value="${esc(el.propiedades.nombre)}" placeholder="Sin nombre (ej.: PL ROJA, OBJ 1)" maxlength="60"></label>
@@ -404,9 +446,11 @@ export function iniciarDibujo({ L, mapa, herramienta, elegirHerramienta, fmt, al
   }
 
   panel.addEventListener('toggle', (ev) => { if (esMio() && ev.target.matches('.el-vert')) verticesAbiertos = ev.target.open; }, true);
+  const tocarYPintar = (el) => (desc, fn) => cambio(desc, () => { fn(); tocar(el); });
   panel.addEventListener('click', (ev) => {
     if (!esMio()) return;
     const el = seleccion && buscar(seleccion);
+    if (el?.simbolo && simbolos?.manejarFicha(ev, el, tocarYPintar(el))) return;
     const seg = ev.target.closest('.seg[data-campo] button');
     if (seg) {
       const campo = seg.parentElement.dataset.campo, v = seg.dataset.v;
@@ -428,17 +472,21 @@ export function iniciarDibujo({ L, mapa, herramienta, elegirHerramienta, fmt, al
     if (acc === 'quitar-ultimo') quitarUltimo();
     if (acc === 'centrar' && el) seleccionar(el.id, { centrar: true });
     if (acc === 'borrar' && el) borrarSeleccion();
+    if (acc === 'duplicar' && el) duplicar(el);
     if (acc === 'cerrar') seleccionar(null);
   });
   panel.addEventListener('change', (ev) => {
     if (!esMio()) return;
     const el = seleccion && buscar(seleccion);
+    if (el?.simbolo && simbolos?.manejarFicha(ev, el, tocarYPintar(el))) return;
     if (ev.target.id === 'el-nombre' && el) { const v = ev.target.value.trim(); cambio('Cambiar nombre', () => { el.propiedades.nombre = v; tocar(el); }); }
     if (ev.target.dataset.campo === 'el-bando-libre' && el) { const v = ev.target.value; cambio('Cambiar color', () => { el.propiedades.color = v; tocar(el); }); }
   });
   panel.addEventListener('submit', (ev) => {
     if (!esMio()) return;
     ev.preventDefault();
+    const elS = seleccion && buscar(seleccion);
+    if (elS?.simbolo && simbolos?.manejarFicha(ev, elS, tocarYPintar(elS))) return;
     if (ev.target.id === 'dib-radio' && borrador?.tipo === 'circulo' && borrador.puntos.length) {
       const r = Number(String($('dib-radio-m').value).replace(',', '.'));
       if (r > 0) terminar(borrador.puntos, r); else avisoBreve('Escribe un radio mayor que 0');
@@ -449,6 +497,17 @@ export function iniciarDibujo({ L, mapa, herramienta, elegirHerramienta, fmt, al
       if (el && r > 0) cambio('Cambiar radio', () => { el.propiedades.radio = r; tocar(el); });
     }
   });
+
+  /** Copia desplazada unos metros (para repetir una unidad o una medida). */
+  function duplicar(el) {
+    const copia = JSON.parse(JSON.stringify(el));
+    const d = Math.max(30, 40 * (156543.03 * Math.cos((puntosDe(el)[0].lat * Math.PI) / 180)) / 2 ** mapa.getZoom());
+    const pts = puntosDe(el).map((p) => destino(p, 135, d));
+    const nuevo = nuevoElemento(el.tipo, pts.map((q) => ({ lat: q.lat, lon: q.lon })), { radio: el.propiedades.radio, bando: el.propiedades.bando, estado: el.propiedades.estado });
+    nuevo.propiedades = { ...copia.propiedades }; if (copia.simbolo) nuevo.simbolo = copia.simbolo;
+    cambio('Duplicar', (p) => { p.elementos.push(nuevo); });
+    seleccionar(nuevo.id);
+  }
 
   function borrarSeleccion() {
     const el = seleccion && buscar(seleccion); if (!el) return;
@@ -473,7 +532,7 @@ export function iniciarDibujo({ L, mapa, herramienta, elegirHerramienta, fmt, al
     caja.innerHTML = plan.elementos.map((el) => {
       const est = estiloDe(el);
       return `<button type="button" class="plan-el" data-el="${el.id}" aria-pressed="${el.id === seleccion}">
-      <svg viewBox="0 0 24 24" style="--c:${est.color}" ${est.trazo !== 'continuo' ? 'class="previsto"' : ''}>${ICONOS[el.tipo]}</svg>
+      ${(el.simbolo && simbolos?.icono(el)) ? `<span class="pe-sim">${simbolos.icono(el)}</span>` : `<svg viewBox="0 0 24 24" style="--c:${est.color}" ${est.trazo !== 'continuo' ? 'class="previsto"' : ''}>${ICONOS[el.tipo]}</svg>`}
       <span class="pe-nom">${esc(titulo(el))}</span><span class="pe-med">${esc(resumen(el))}</span></button>`;
     }).join('');
   }
@@ -518,7 +577,7 @@ export function iniciarDibujo({ L, mapa, herramienta, elegirHerramienta, fmt, al
 
   return {
     plan: () => plan, historial,
-    clic, dobleClic, moverCursor, quitarUltimo,
+    clic, dobleClic, moverCursor, quitarUltimo, ponerSimboloBorrador,
     herramientaCambiada(h) {
       if (HERRAMIENTAS_DIBUJO.includes(h)) { empezar(h); return; }
       if (borrador) cancelarBorrador();

@@ -1171,6 +1171,81 @@ body.plan-abierto .panel-elemento, body.plan-abierto #panel-medida { left: 324px
 .cr-barra span { display: block; height: 100%; width: 0; background: var(--oro); transition: width .3s; }
 .btn-crear { font-weight: 600; }
 
+/* Símbolos (APP-6) */
+.panel-simbolos { position: absolute; z-index: 1001; left: 12px; top: 44px; width: min(340px, calc(100% - 24px)); max-height: calc(100% - 60px); overflow: auto; background: var(--superficie); border: 1px solid var(--linea); border-radius: 8px; box-shadow: var(--sombra); padding: 10px 12px 12px; }
+body.simbolos-abierto .panel-elemento, body.simbolos-abierto #panel-medida, body.simbolos-abierto .panel-creador { left: 364px; }
+body.simbolos-abierto .panel-plan { display: none; }
+@media (max-width: 760px) { body.simbolos-abierto .panel-elemento { left: 12px; top: auto; bottom: 12px; } }
+.panel-simbolos .pm-cab { align-items: center; }
+.sim-buscar { width: 100%; box-sizing: border-box; font: 13px var(--sans); padding: 7px 10px; border: 1px solid var(--linea-2); border-radius: var(--radio); margin: 8px 0; }
+.sim-pestanas { display: flex; width: 100%; margin-bottom: 8px; }
+.sim-pestanas button { flex: 1; font-size: 12.5px; }
+.sim-recientes { margin-bottom: 8px; }
+.sim-recientes > div { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 3px; }
+.sim-chip { border: 1px solid var(--linea-2); background: var(--superficie); border-radius: 6px; padding: 3px 4px; cursor: pointer; line-height: 0; }
+.sim-chip:hover { border-color: var(--oro); background: var(--hundido); }
+.sim-vista { display: flex; align-items: center; gap: 12px; padding: 8px; background: var(--hundido); border-radius: 8px; margin-bottom: 8px; min-height: 64px; }
+.sim-vista svg { flex: none; }
+.sim-vista b { display: block; font-size: 13.5px; }
+.sim-vista small { font: 10px var(--mono); color: var(--gris); word-break: break-all; }
+.sim-vista-ficha { margin-top: 6px; }
+.sim-paso { margin-top: 8px; }
+.sim-paso > .el-et { display: block; margin-bottom: 4px; }
+.sim-rejilla { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 4px; }
+.sim-tile { display: flex; align-items: center; gap: 6px; text-align: left; border: 1px solid var(--linea-2); background: var(--superficie); border-radius: 6px; padding: 4px 6px; font-size: 11.5px; line-height: 1.2; cursor: pointer; color: var(--tinta); min-height: 34px; }
+.sim-tile svg { flex: none; }
+.sim-tile:hover { border-color: var(--oro-claro); }
+.sim-tile[aria-pressed="true"] { border-color: var(--noche); box-shadow: inset 3px 0 0 var(--noche); background: var(--hundido); font-weight: 600; }
+.sim-escalones { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+.sim-escalones button { display: grid; gap: 1px; justify-items: center; border: 1px solid var(--linea-2); background: var(--superficie); border-radius: 6px; padding: 4px 2px; cursor: pointer; color: var(--tinta); }
+.sim-escalones b { font: 700 13px var(--sans); letter-spacing: .05em; min-height: 16px; }
+.sim-escalones span { font-size: 10.5px; color: var(--tinta-2); text-align: center; line-height: 1.15; }
+.sim-escalones button[aria-pressed="true"] { border-color: var(--noche); background: var(--hundido); box-shadow: inset 0 -3px 0 var(--noche); }
+.sim-campos { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 8px; }
+.sim-campos label { display: grid; gap: 2px; font-size: 11.5px; color: var(--gris); }
+.sim-campos input, .sim-extras input:not([type=checkbox]) { font: 13px var(--sans); padding: 5px 7px; border: 1px solid var(--linea-2); border-radius: var(--radio); min-width: 0; }
+.sim-extras { display: grid; gap: 6px; padding: 8px; background: var(--hundido); border-radius: 6px; }
+.sim-extras label { display: grid; gap: 2px; font-size: 11.5px; color: var(--gris); }
+.sim-chk { display: flex !important; align-items: center; gap: 6px; font-size: 12.5px !important; color: var(--tinta) !important; }
+.sim-chk input { accent-color: var(--noche); }
+.sim-extras .seg { display: flex; flex-wrap: wrap; }
+.sim-extras .seg button { font-size: 11.5px; }
+.sim-mas { margin-top: 8px; width: 100%; border: 1px dashed var(--linea-2); background: none; border-radius: var(--radio); padding: 5px; font-size: 12px; color: var(--tinta-2); cursor: pointer; }
+.panel-simbolos .pm-acciones button.primario, .panel-elemento button.primario { background: var(--noche); color: #fff; border-color: var(--noche); font-weight: 600; padding: 8px; }
+.sim-grupo { margin-top: 8px; }
+.sim-lista-cm { display: grid; gap: 3px; margin-top: 4px; }
+.sim-cm { display: flex; align-items: center; gap: 8px; text-align: left; border: 1px solid transparent; background: none; border-radius: 6px; padding: 3px 6px; cursor: pointer; font-size: 12.5px; color: var(--tinta); }
+.sim-cm:hover, .sim-cm:focus-visible { border-color: var(--linea-2); background: var(--hundido); }
+.sim-cm small { color: var(--gris); font-size: 10.5px; margin-left: 4px; }
+.sim-cm-ico { width: 64px; flex: none; display: grid; place-items: center; line-height: 0; }
+/* Símbolos sobre el mapa */
+.simbolo-unidad, .simbolo-punto { background: none; border: 0; }
+.simbolo-unidad svg, .simbolo-punto svg { display: block; overflow: visible; filter: drop-shadow(0 0 1px rgba(255,255,255,.95)) drop-shadow(0 1px 2px rgba(0,0,0,.25)); }
+.simbolo-unidad.sel svg, .simbolo-punto.sel svg { filter: drop-shadow(0 0 2px #E0B252) drop-shadow(0 0 4px #E0B252); }
+.etq-simbolo { position: absolute; transform: translate(-50%, var(--dy)); font: 700 11.5px var(--sans); color: var(--tinta); background: rgba(255,255,255,.85); padding: 0 4px; border-radius: 2px; white-space: nowrap; }
+.etq-pto-cm { position: absolute; left: 100%; top: 4px; margin-left: 3px; font: 700 12px var(--sans); white-space: nowrap; text-shadow: 0 0 3px #fff, 0 0 3px #fff; }
+.etq-cm { position: absolute; display: inline-block; font: 700 12px var(--sans); white-space: nowrap; text-shadow: 0 0 3px #fff, 0 0 3px #fff, 0 0 2px #fff; pointer-events: none; }
+.etq-cm.fondo { background: #fff; padding: 0 3px; border-radius: 2px; text-shadow: none; font-size: 13px; }
+.etq-cm.negrita { font-size: 13px; }
+.pe-sim { width: 30px; flex: none; display: grid; place-items: center; line-height: 0; }
+/* Selector visual (desplegable con miniaturas) */
+.sel-vis { position: relative; flex-wrap: wrap; }
+.sel-vis-btn { flex: 1; display: flex; align-items: center; gap: 8px; border: 1px solid var(--linea-2); background: var(--superficie); border-radius: var(--radio); padding: 4px 8px; cursor: pointer; font-size: 12.5px; color: var(--tinta); text-align: left; min-width: 0; }
+.sel-vis-btn span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sel-vis-btn i { font-style: normal; color: var(--gris); }
+.sel-vis-lista { position: absolute; z-index: 5; left: 0; right: 0; top: 100%; margin-top: 2px; max-height: 280px; overflow: auto; background: var(--superficie); border: 1px solid var(--linea-2); border-radius: 6px; box-shadow: var(--sombra); padding: 4px; }
+.sel-vis-lista button { display: flex; align-items: center; gap: 8px; width: 100%; border: 0; background: none; border-radius: 4px; padding: 4px 6px; cursor: pointer; font-size: 12.5px; text-align: left; color: var(--tinta); }
+.sel-vis-lista button:hover { background: var(--hundido); }
+.sel-vis-lista button[aria-pressed="true"] { background: var(--hundido); font-weight: 600; box-shadow: inset 3px 0 0 var(--noche); }
+.sel-vis-grupo { font-size: 10.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--gris); padding: 6px 6px 2px; }
+.marca-esc { display: inline-block; min-width: 34px; text-align: center; font: 700 12px var(--sans); }
+.sim-seg { display: flex; flex-wrap: wrap; }
+.sim-seg button { padding: 3px 5px; line-height: 0; }
+.sim-det { margin-top: 8px; border: 1px solid var(--linea); border-radius: 6px; }
+.sim-det > summary { cursor: pointer; padding: 6px 8px; font-size: 12px; color: var(--tinta-2); }
+.sim-det[open] > summary { border-bottom: 1px solid var(--linea); }
+.sim-det .sim-extras { border-radius: 0 0 6px 6px; margin: 0; }
+
 </style>
 </head>
 <body class="app-mapa">
@@ -1219,6 +1294,15 @@ body.plan-abierto .panel-elemento, body.plan-abierto #panel-medida { left: 324px
               <span class="txt"><b>Híbrido al acercarte</b><small>Desde zoom 17 pasa al híbrido y al alejarte vuelve a tu mapa</small></span></label>
           </div>
         </details>
+        <details class="aj-sec" data-aj="simbolos">
+          <summary>Símbolos</summary>
+          <div class="aj-cuerpo">
+            <div class="aj-tit">Tamaño de las unidades</div>
+            <div class="seg"><button type="button" data-sim-modo="fijo">Fijo en pantalla</button><button type="button" data-sim-modo="escala">A escala del mapa</button></div>
+            <label class="intensidad aj-int">Tamaño <input type="range" id="sim-tam"><output id="sim-tam-v"></output></label>
+            <p class="aj-nota">Fijo: siempre legibles. A escala: el lado del octógono mide esos metros sobre el terreno.</p>
+          </div>
+        </details>
         <details class="aj-sec" data-aj="cuadricula">
           <summary>Cuadrícula MGRS</summary>
           <div class="aj-cuerpo">
@@ -1251,6 +1335,14 @@ body.plan-abierto .panel-elemento, body.plan-abierto #panel-medida { left: 324px
           <svg viewBox="0 0 24 24"><path d="M4 7 12 3l8 6-3 11H7z"/></svg><span>Área</span></button>
         <button type="button" data-herr="circulo" aria-pressed="false" title="Dibujar un círculo: centro y radio">
           <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 12h8"/><circle cx="12" cy="12" r="1.2"/></svg><span>Círculo</span></button>
+      </div>
+      <div class="h-grupo" aria-label="Símbolos APP-6">
+        <button type="button" data-simbolos="unidades" aria-pressed="false" title="Unidades (APP-6): constructor guiado y recientes">
+          <svg viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="12"/><path d="M3 7l18 12M3 19 21 7M10 4h4"/></svg><span>Unidad</span></button>
+        <button type="button" data-simbolos="medidas" aria-pressed="false" title="Medidas de coordinación: líneas, ejes, zonas y puntos">
+          <svg viewBox="0 0 24 24"><path d="M3 16h18M3 16v-3M21 16v-3"/><path d="M6 8h9l3 3-3 3"/></svg><span>Medida</span></button>
+        <button type="button" data-simbolos="cometidos" aria-pressed="false" title="Cometidos tácticos (verbos): bloquear, fijar, destruir…">
+          <svg viewBox="0 0 24 24"><path d="M17 4v16M17 12H4"/><path d="M8 9.5 4 12l4 2.5"/></svg><span>Cometido</span></button>
       </div>
       <div class="h-grupo">
         <button type="button" data-herr="medir" aria-pressed="false" title="Regla: medir distancias y rumbos sin guardar">
@@ -1312,6 +1404,7 @@ body.plan-abierto .panel-elemento, body.plan-abierto #panel-medida { left: 324px
     <div class="aviso-breve" id="aviso-breve" hidden role="status"></div>
     <section class="panel-medida panel-elemento" id="panel-elemento" hidden aria-live="polite"></section>
     <section class="panel-medida panel-creador" id="panel-creador" hidden aria-label="Creador de mapas"></section>
+    <section class="panel-simbolos" id="panel-simbolos" hidden aria-label="Símbolos"></section>
     <section class="panel-medida" id="panel-medida" hidden aria-live="polite">
       <div class="pm-cab"><strong>Regla</strong><span id="pm-ayuda">Toca el mapa para añadir puntos</span></div>
       <div id="pm-cuerpo"></div>
@@ -5965,7 +6058,7 @@ const HERRAMIENTAS_DIBUJO = ['punto', 'linea', 'area', 'circulo'];
  * @param {() => Array<{lat,lon}>} [o.puntosExternos] puntos de lo importado (imán)
  * @param {() => void} [o.alCambiarPaneles]
  */
-function iniciarDibujo({ L, mapa, herramienta, elegirHerramienta, fmt, alturas, puntosExternos = () => [], alCambiarPaneles = () => {} }) {
+function iniciarDibujo({ L, mapa, herramienta, elegirHerramienta, fmt, alturas, puntosExternos = () => [], alCambiarPaneles = () => {}, simbolos = null }) {
   const $ = (id) => document.getElementById(id);
   const px = (p) => mapa.latLngToContainerPoint([p.lat, p.lon]);
   const DUENO = 'plan';
@@ -6002,13 +6095,15 @@ function iniciarDibujo({ L, mapa, herramienta, elegirHerramienta, fmt, alturas, 
   let verticesAbiertos = false;
 
   const numero = (el) => plan.elementos.filter((e) => e.tipo === el.tipo).indexOf(el) + 1;
-  const titulo = (el) => el.propiedades.nombre || `${TIPOS[el.tipo].nombre} ${numero(el)}`;
+  const titulo = (el) => (el.simbolo && simbolos?.ficha(el)?.titulo) || el.propiedades.nombre || `${TIPOS[el.tipo].nombre} ${numero(el)}`;
+  const fijos = (el) => simbolos?.puntosFijos(el) ?? 0;
 
   function pintarElemento(el, puntos = puntosDe(el), radio = el.propiedades.radio) {
     capasDe.get(el.id)?.remove();
     const est = estiloDe(el);
     const sel = el.id === seleccion;
-    const { grupo, principal } = capaForma(L, {
+    const conSimbolo = el.simbolo && simbolos?.pintar(el, puntos, { seleccionado: sel, color: est.color, previsto: el.propiedades.estado === 'previsto', arrastrable: sel && el.tipo === 'punto' });
+    const { grupo, principal } = conSimbolo || capaForma(L, {
       tipo: el.tipo, puntos, radio, color: est.color, trazo: est.trazo, grosor: est.grosor,
       nombre: el.propiedades.nombre, previsto: el.propiedades.estado === 'previsto', seleccionado: sel,
       arrastrable: sel && el.tipo === 'punto',
@@ -6091,7 +6186,7 @@ function iniciarDibujo({ L, mapa, herramienta, elegirHerramienta, fmt, alturas, 
       m.on('contextmenu', (e) => { L.DomEvent.preventDefault(e.originalEvent); quitarVertice(el, i); });
       capaAsas.addLayer(m);
     });
-    const n = el.tipo === 'area' ? pts.length : pts.length - 1;
+    const n = fijos(el) ? 0 : el.tipo === 'area' ? pts.length : pts.length - 1;
     for (let i = 0; i < n; i++) {
       const a = pts[i], b = pts[(i + 1) % pts.length];
       const mid = puntosGeodesica(a, b, 2)[1];
@@ -6105,6 +6200,7 @@ function iniciarDibujo({ L, mapa, herramienta, elegirHerramienta, fmt, alturas, 
 
   function quitarVertice(el, i) {
     const pts = puntosDe(el);
+    if (fijos(el)) { avisoBreve('Este símbolo tiene sus puntos fijos: arrástralos para ajustarlo'); return; }
     if (pts.length <= TIPOS[el.tipo].min) { avisoBreve(`Una ${TIPOS[el.tipo].nombre.toLowerCase()} necesita al menos ${TIPOS[el.tipo].min} vértices`); return; }
     pts.splice(i, 1);
     cambio('Quitar vértice', () => moverPuntos(el, pts));
@@ -6136,10 +6232,23 @@ function iniciarDibujo({ L, mapa, herramienta, elegirHerramienta, fmt, alturas, 
   function cancelarBorrador() { cerrarMenuPunto(); borrador = null; capaBorrador.clearLayers(); capaBorradorPuntos.clearLayers(); capaIman.clearLayers(); pintarPanel(); }
 
   /** Clic en el mapa (o en un punto del borrador) con una herramienta de dibujo. */
+  /** El borrador en curso dibuja un símbolo (unidad, medida o cometido). */
+  function ponerSimboloBorrador(simbolo, n = 0, ayuda = '', nombre = '') {
+    if (!borrador) empezar(herramienta());
+    Object.assign(borrador, { simbolo, n, ayuda, nombreSimbolo: nombre });
+    pintarBorrador(); pintarPanel();
+  }
   function clic(p0) {
     if (!borrador) empezar(herramienta());
     const b = borrador;
     const min = TIPOS[b.tipo].min;
+    if (b.n && b.tipo !== 'punto') {
+      const p = iman({ lat: p0.lat, lng: p0.lon }, {});
+      if (b.puntos.length && px(p).distanceTo(px(b.puntos.at(-1))) < 3) return;
+      b.puntos.push(p);
+      if (b.puntos.length >= b.n) { terminar(b.puntos); return; }
+      pintarBorrador(); pintarPanel(); return;
+    }
     // ¿Termina? (clic sobre el último punto en línea; sobre el primero en área)
     if ((b.tipo === 'linea' || b.tipo === 'area') && b.puntos.length >= min) {
       const fin = b.tipo === 'area' ? b.puntos[0] : b.puntos.at(-1);
@@ -6163,8 +6272,10 @@ function iniciarDibujo({ L, mapa, herramienta, elegirHerramienta, fmt, alturas, 
   function terminar(pts, radio) {
     const b = borrador; if (!b) return;
     if (pts.length < TIPOS[b.tipo].min) { avisoBreve(`Faltan puntos: una ${TIPOS[b.tipo].nombre.toLowerCase()} necesita al menos ${TIPOS[b.tipo].min}`); return; }
-    const el = cambio(`Dibujar ${TIPOS[b.tipo].nombre.toLowerCase()}`, (p) => {
+    if (b.n && pts.length < b.n) { avisoBreve(`Faltan puntos: este símbolo necesita ${b.n}`); return; }
+    const el = cambio(b.simbolo ? `Colocar ${b.nombreSimbolo || 'símbolo'}` : `Dibujar ${TIPOS[b.tipo].nombre.toLowerCase()}`, (p) => {
       const e = nuevoElemento(b.tipo, pts.slice(), { radio, bando: preferencias.bando, estado: preferencias.estado });
+      if (b.simbolo) { e.simbolo = JSON.parse(JSON.stringify(b.simbolo)); simbolos?.alCrear(e); }
       p.elementos.push(e); return e;
     });
     borrador = null; capaBorrador.clearLayers(); capaBorradorPuntos.clearLayers(); capaIman.clearLayers();
@@ -6197,6 +6308,11 @@ function iniciarDibujo({ L, mapa, herramienta, elegirHerramienta, fmt, alturas, 
         L.polyline([[b.puntos[0].lat, b.puntos[0].lon], [b.cursor.lat, b.cursor.lon]], { ...est, weight: 1.5, dashArray: '4 4' }).addTo(capaBorrador);
       }
     } else {
+      const vivos = b.cursor ? [...b.puntos, b.cursor] : b.puntos;
+      if (b.simbolo && simbolos?.previsualizar(capaBorrador, b.simbolo, vivos, c)) {
+        L.polyline(vivos.map((q) => [q.lat, q.lon]), { ...est, weight: 1, dashArray: '2 4', opacity: 0.6 }).addTo(capaBorrador);
+        return;
+      }
       if (b.puntos.length > 1) L.polyline(b.puntos.map((q) => [q.lat, q.lon]), est).addTo(capaBorrador);
       if (b.cursor) {
         L.polyline([[b.puntos.at(-1).lat, b.puntos.at(-1).lon], [b.cursor.lat, b.cursor.lon]], { ...est, weight: 2, dashArray: '5 5', opacity: 0.8 }).addTo(capaBorrador);
@@ -6282,13 +6398,15 @@ function iniciarDibujo({ L, mapa, herramienta, elegirHerramienta, fmt, alturas, 
       }
       if (soloMedidas && esMio() && panel.querySelector('#dib-medidas')) { $('dib-medidas').innerHTML = medidas; return; }
       panel.dataset.dueno = DUENO;
-      panel.innerHTML = `<div class="pm-cab"><strong>${{ punto: 'Punto nuevo', linea: 'Línea nueva', area: 'Área nueva', circulo: 'Círculo nuevo' }[b.tipo]}</strong><span>${b.puntos.length ? `${b.puntos.length} punto${b.puntos.length > 1 ? 's' : ''}` : ''}</span></div>
-        <p class="el-ayuda">${ayuda}</p>
+      const tituloB = b.simbolo ? esc(b.nombreSimbolo || 'Símbolo nuevo') : { punto: 'Punto nuevo', linea: 'Línea nueva', area: 'Área nueva', circulo: 'Círculo nuevo' }[b.tipo];
+      const cuenta = b.n ? `${b.puntos.length} de ${b.n} puntos` : b.puntos.length ? `${b.puntos.length} punto${b.puntos.length > 1 ? 's' : ''}` : '';
+      panel.innerHTML = `<div class="pm-cab"><strong>${tituloB}</strong><span>${cuenta}</span></div>
+        <p class="el-ayuda">${esc(b.ayuda || '') || ayuda}${b.n && b.puntos.length < b.n ? ` <b>Punto ${b.puntos.length + 1}.</b>` : ''}</p>
         ${htmlColor({ bando: preferencias.bando }, 'pref-bando')}
         ${b.tipo === 'punto' ? `<div class="el-fila"><div class="seg" data-campo="pref-estado">${Object.entries(ESTADOS).map(([k, v]) => `<button type="button" data-v="${k}" aria-pressed="${k === preferencias.estado}">${v.nombre}</button>`).join('')}</div></div>` : ''}
         <div id="dib-medidas">${medidas}</div>
         ${b.tipo === 'circulo' && b.puntos.length ? '<form class="el-radio" id="dib-radio"><label>Radio exacto <input type="number" min="1" step="any" inputmode="decimal" placeholder="metros" id="dib-radio-m"></label><button type="submit">Crear</button></form>' : ''}
-        <div class="pm-acciones">${b.tipo === 'linea' || b.tipo === 'area' ? '<button type="button" data-acc="terminar">Terminar</button><button type="button" data-acc="quitar-ultimo">Quitar último</button>' : ''}<button type="button" data-acc="cancelar">Cancelar</button></div>`;
+        <div class="pm-acciones">${(b.tipo === 'linea' || b.tipo === 'area') && !b.n ? '<button type="button" data-acc="terminar">Terminar</button>' : ''}${b.tipo === 'linea' || b.tipo === 'area' ? '<button type="button" data-acc="quitar-ultimo">Quitar último</button>' : ''}<button type="button" data-acc="cancelar">Cancelar</button></div>`;
       panel.querySelector('.color-libre')?.remove(); // al dibujar, solo colores de bando
       mostrarPanel(true);
       return;
@@ -6312,6 +6430,23 @@ function iniciarDibujo({ L, mapa, herramienta, elegirHerramienta, fmt, alturas, 
         <dl class="el-datos"><dt>Superficie</dt><dd>${formatearArea(m.area)}</dd><dt>Centro</dt><dd>${esc(fmt.coord(pts[0]))}</dd></dl>${htmlTrazo(est, 'el')}`;
     }
     const nVert = el.tipo === 'linea' || el.tipo === 'area';
+    const fs = el.simbolo && simbolos?.ficha(el);
+    if (fs) {
+      const estado = `<div class="el-fila"><div class="seg" data-campo="el-estado">${Object.entries(ESTADOS).map(([k, v]) => `<button type="button" data-v="${k}" aria-pressed="${k === el.propiedades.estado}">${v.nombre}</button>`).join('')}</div></div>`;
+      const pos = el.tipo === 'punto' ? `<div class="pm-total"><div class="grande mgrs">${esc(fmt.coord(pts[0]))}</div></div>${htmlAltitud()}` : '';
+      panel.dataset.dueno = DUENO;
+      panel.innerHTML = `<div class="pm-cab"><strong><span class="muestra-bando" style="--c:${est.color}"></span>${esc(fs.titulo)}</strong><span>${esc(fs.tipo)}</span></div>
+        ${fs.html}
+        ${el.simbolo.clase === 'medida' ? htmlColor({ bando: el.propiedades.bando, color: el.propiedades.color }, 'el-bando') : ''}
+        ${estado}
+        <label class="el-nombre">Nombre <input id="el-nombre" value="${esc(el.propiedades.nombre)}" placeholder="${el.simbolo.clase === 'unidad' ? 'Opcional' : 'Ej.: ROJA, 1, NORTE'}" maxlength="60"></label>
+        ${pos}
+        ${nVert ? `<details class="el-vert" ${verticesAbiertos ? 'open' : ''}><summary>Puntos (${pts.length})</summary><ol>${pts.map((p, i) => `<li><span class="v-letra">${i + 1}</span><code>${esc(fmt.coord(p))}</code>${fijos(el) ? '' : `<button type="button" data-quitar-v="${i}" title="Quitar punto" aria-label="Quitar punto">×</button>`}</li>`).join('')}</ol></details>` : ''}
+        <div class="pm-acciones"><button type="button" data-acc="centrar">Centrar</button><button type="button" data-acc="duplicar">Duplicar</button><button type="button" data-acc="borrar" class="peligro">Borrar</button><button type="button" data-acc="cerrar">Cerrar</button></div>`;
+      mostrarPanel(true);
+      if (el.tipo === 'punto') rellenarAltitud(alturas, pts[0]);
+      return;
+    }
     panel.dataset.dueno = DUENO;
     panel.innerHTML = `<div class="pm-cab"><strong><span class="muestra-bando" style="--c:${est.color}"></span>${esc(titulo(el))}</strong><span>${TIPOS[el.tipo].nombre}</span></div>
       <label class="el-nombre">Nombre <input id="el-nombre" value="${esc(el.propiedades.nombre)}" placeholder="Sin nombre (ej.: PL ROJA, OBJ 1)" maxlength="60"></label>
@@ -6337,9 +6472,11 @@ function iniciarDibujo({ L, mapa, herramienta, elegirHerramienta, fmt, alturas, 
   }
 
   panel.addEventListener('toggle', (ev) => { if (esMio() && ev.target.matches('.el-vert')) verticesAbiertos = ev.target.open; }, true);
+  const tocarYPintar = (el) => (desc, fn) => cambio(desc, () => { fn(); tocar(el); });
   panel.addEventListener('click', (ev) => {
     if (!esMio()) return;
     const el = seleccion && buscar(seleccion);
+    if (el?.simbolo && simbolos?.manejarFicha(ev, el, tocarYPintar(el))) return;
     const seg = ev.target.closest('.seg[data-campo] button');
     if (seg) {
       const campo = seg.parentElement.dataset.campo, v = seg.dataset.v;
@@ -6361,17 +6498,21 @@ function iniciarDibujo({ L, mapa, herramienta, elegirHerramienta, fmt, alturas, 
     if (acc === 'quitar-ultimo') quitarUltimo();
     if (acc === 'centrar' && el) seleccionar(el.id, { centrar: true });
     if (acc === 'borrar' && el) borrarSeleccion();
+    if (acc === 'duplicar' && el) duplicar(el);
     if (acc === 'cerrar') seleccionar(null);
   });
   panel.addEventListener('change', (ev) => {
     if (!esMio()) return;
     const el = seleccion && buscar(seleccion);
+    if (el?.simbolo && simbolos?.manejarFicha(ev, el, tocarYPintar(el))) return;
     if (ev.target.id === 'el-nombre' && el) { const v = ev.target.value.trim(); cambio('Cambiar nombre', () => { el.propiedades.nombre = v; tocar(el); }); }
     if (ev.target.dataset.campo === 'el-bando-libre' && el) { const v = ev.target.value; cambio('Cambiar color', () => { el.propiedades.color = v; tocar(el); }); }
   });
   panel.addEventListener('submit', (ev) => {
     if (!esMio()) return;
     ev.preventDefault();
+    const elS = seleccion && buscar(seleccion);
+    if (elS?.simbolo && simbolos?.manejarFicha(ev, elS, tocarYPintar(elS))) return;
     if (ev.target.id === 'dib-radio' && borrador?.tipo === 'circulo' && borrador.puntos.length) {
       const r = Number(String($('dib-radio-m').value).replace(',', '.'));
       if (r > 0) terminar(borrador.puntos, r); else avisoBreve('Escribe un radio mayor que 0');
@@ -6382,6 +6523,17 @@ function iniciarDibujo({ L, mapa, herramienta, elegirHerramienta, fmt, alturas, 
       if (el && r > 0) cambio('Cambiar radio', () => { el.propiedades.radio = r; tocar(el); });
     }
   });
+
+  /** Copia desplazada unos metros (para repetir una unidad o una medida). */
+  function duplicar(el) {
+    const copia = JSON.parse(JSON.stringify(el));
+    const d = Math.max(30, 40 * (156543.03 * Math.cos((puntosDe(el)[0].lat * Math.PI) / 180)) / 2 ** mapa.getZoom());
+    const pts = puntosDe(el).map((p) => destino(p, 135, d));
+    const nuevo = nuevoElemento(el.tipo, pts.map((q) => ({ lat: q.lat, lon: q.lon })), { radio: el.propiedades.radio, bando: el.propiedades.bando, estado: el.propiedades.estado });
+    nuevo.propiedades = { ...copia.propiedades }; if (copia.simbolo) nuevo.simbolo = copia.simbolo;
+    cambio('Duplicar', (p) => { p.elementos.push(nuevo); });
+    seleccionar(nuevo.id);
+  }
 
   function borrarSeleccion() {
     const el = seleccion && buscar(seleccion); if (!el) return;
@@ -6406,7 +6558,7 @@ function iniciarDibujo({ L, mapa, herramienta, elegirHerramienta, fmt, alturas, 
     caja.innerHTML = plan.elementos.map((el) => {
       const est = estiloDe(el);
       return `<button type="button" class="plan-el" data-el="${el.id}" aria-pressed="${el.id === seleccion}">
-      <svg viewBox="0 0 24 24" style="--c:${est.color}" ${est.trazo !== 'continuo' ? 'class="previsto"' : ''}>${ICONOS[el.tipo]}</svg>
+      ${(el.simbolo && simbolos?.icono(el)) ? `<span class="pe-sim">${simbolos.icono(el)}</span>` : `<svg viewBox="0 0 24 24" style="--c:${est.color}" ${est.trazo !== 'continuo' ? 'class="previsto"' : ''}>${ICONOS[el.tipo]}</svg>`}
       <span class="pe-nom">${esc(titulo(el))}</span><span class="pe-med">${esc(resumen(el))}</span></button>`;
     }).join('');
   }
@@ -6451,7 +6603,7 @@ function iniciarDibujo({ L, mapa, herramienta, elegirHerramienta, fmt, alturas, 
 
   return {
     plan: () => plan, historial,
-    clic, dobleClic, moverCursor, quitarUltimo,
+    clic, dobleClic, moverCursor, quitarUltimo, ponerSimboloBorrador,
     herramientaCambiada(h) {
       if (HERRAMIENTAS_DIBUJO.includes(h)) { empezar(h); return; }
       if (borrador) cancelarBorrador();
@@ -9859,6 +10011,956 @@ function iniciarCreador({ L, mapa, estado, dibujo, importar, elegirHerramienta, 
 return { iniciarCreador };
 })();
 
+// ── src/simbolos/app6.js
+__mods["src/simbolos/app6.js"] = (function () {
+'use strict';
+// Símbolos de unidad terrestre conforme a la APP-6(E) Ed. E v2 (oct. 2025),
+// capítulos 1 y 3, con las denominaciones de la PD0-002 del MADOC.
+//
+// Geometría (APP-6(E) 1.3, tabla 1-14 y fig. 1-29): octógono de referencia de
+// lado L = 100 unidades centrado en (100, 100) → ocupa de 50 a 150.
+//   Amigo      rectángulo 1,5L × 1L      x 25–175, y 50–150
+//   Hostil     rombo 1,44L               vértices 28 y 172
+//   Neutral    cuadrado 1,1L             45–155
+//   Desconocido trébol 1,44L
+// Sectores del octógono: 1 (y 50–80), principal (80–120), 2 (120–150).
+// Los iconos «de marco completo» (infantería, reconocimiento, sanidad…) se
+// adaptan a la forma del marco (APP-6(E) 3.3.3).
+//
+// Código de identificación (SIDC) de 30 dígitos (anexo A): versión 16 =
+// APP-06(E)(2), conjunto 10 = unidad terrestre.
+
+const A = 4; // grosor de trazo (unidades del octógono)
+
+// ---------------------------------------------------------------- identidades y colores (tabla 1-15)
+const IDENTIDADES = {
+  amigo: { nombre: 'Propio', marco: 'amigo', codigo: '3', relleno: 'rgb(128,224,255)', color: 'rgb(0,168,220)' },
+  supuesto: { nombre: 'Supuesto propio', marco: 'amigo', codigo: '2', relleno: 'rgb(128,224,255)', color: 'rgb(0,168,220)', dudoso: true },
+  hostil: { nombre: 'Enemigo', marco: 'hostil', codigo: '6', relleno: 'rgb(255,128,128)', color: 'rgb(255,48,49)' },
+  sospechoso: { nombre: 'Sospechoso', marco: 'hostil', codigo: '5', relleno: 'rgb(255,128,128)', color: 'rgb(255,48,49)', dudoso: true },
+  neutral: { nombre: 'Neutral', marco: 'neutral', codigo: '4', relleno: 'rgb(170,255,170)', color: 'rgb(0,160,0)' },
+  desconocido: { nombre: 'Desconocido', marco: 'desconocido', codigo: '1', relleno: 'rgb(255,255,128)', color: 'rgb(225,220,0)' },
+  pendiente: { nombre: 'Pendiente', marco: 'desconocido', codigo: '0', relleno: 'rgb(255,255,128)', color: 'rgb(225,220,0)', dudoso: true },
+};
+
+// ---------------------------------------------------------------- escalones (tabla 1-8; nombres del ET, PD0-002 anexo A)
+const ESCALONES = {
+  '': { nombre: 'Sin escalón', codigo: '00' },
+  equipo: { nombre: 'Equipo / tripulación', codigo: '11', marca: 'Ø' },
+  escuadra: { nombre: 'Escuadra / patrulla', codigo: '12', marca: '•' },
+  peloton: { nombre: 'Pelotón', codigo: '13', marca: '••' },
+  seccion: { nombre: 'Sección', codigo: '14', marca: '•••' },
+  compania: { nombre: 'Compañía / escuadrón / batería', codigo: '15', marca: 'I' },
+  batallon: { nombre: 'Batallón / grupo / bandera', codigo: '16', marca: 'II' },
+  regimiento: { nombre: 'Regimiento / agrupación', codigo: '17', marca: 'III' },
+  brigada: { nombre: 'Brigada', codigo: '18', marca: 'X' },
+  division: { nombre: 'División', codigo: '21', marca: 'XX' },
+  cuerpo: { nombre: 'Cuerpo de ejército', codigo: '22', marca: 'XXX' },
+  ejercito: { nombre: 'Ejército', codigo: '23', marca: 'XXXX' },
+  mando: { nombre: 'Mando (++)', codigo: '00', marca: '++' },
+};
+
+// ---------------------------------------------------------------- marcos
+const MARCOS = {
+  amigo: {
+    d: 'M25,50 L175,50 L175,150 L25,150 Z',
+    arriba: () => 50, abajo: () => 150, izq: () => 25, der: () => 175,
+    esq: [[25, 50], [175, 50], [175, 150], [25, 150]], // sup-izq, sup-der, inf-der, inf-izq
+    staff: [25, 150],
+  },
+  hostil: {
+    d: 'M100,28 L172,100 L100,172 L28,100 Z',
+    arriba: (x) => 28 + Math.abs(x - 100), abajo: (x) => 172 - Math.abs(x - 100),
+    izq: (y) => 28 + Math.abs(y - 100), der: (y) => 172 - Math.abs(y - 100),
+    esq: [[64, 64], [136, 64], [136, 136], [64, 136]],
+    staff: [28, 100],
+  },
+  neutral: {
+    d: 'M45,45 L155,45 L155,155 L45,155 Z',
+    arriba: () => 45, abajo: () => 155, izq: () => 45, der: () => 155,
+    esq: [[45, 45], [155, 45], [155, 155], [45, 155]],
+    staff: [45, 155],
+  },
+  desconocido: {
+    d: 'M63,63 C63,20 137,20 137,63 C180,63 180,137 137,137 C137,180 63,180 63,137 C20,137 20,63 63,63 Z',
+    // aproximación por un círculo de radio 69 (suficiente para encajar líneas)
+    arriba: (x) => 100 - Math.sqrt(Math.max(0, 69 ** 2 - (x - 100) ** 2)),
+    abajo: (x) => 100 + Math.sqrt(Math.max(0, 69 ** 2 - (x - 100) ** 2)),
+    izq: (y) => 100 - Math.sqrt(Math.max(0, 69 ** 2 - (y - 100) ** 2)),
+    der: (y) => 100 + Math.sqrt(Math.max(0, 69 ** 2 - (y - 100) ** 2)),
+    esq: [[63, 63], [137, 63], [137, 137], [63, 137]],
+    staff: [31, 100],
+  },
+};
+const limitesMarco = (m) => {
+  const f = MARCOS[m];
+  return { x0: f.izq(100), x1: f.der(100), y0: f.arriba(100), y1: f.abajo(100) };
+};
+
+// ---------------------------------------------------------------- primitivas
+const linea = (d) => ({ d, trazo: true });
+const lleno = (d) => ({ d, lleno: true });
+const texto = (t, x, y, tam, opc = {}) => ({ texto: t, x, y, tam, ...opc });
+const circulo = (cx, cy, r, relleno = false) => ({ d: `M${cx - r},${cy} a${r},${r} 0 1,0 ${2 * r},0 a${r},${r} 0 1,0 ${-2 * r},0 Z`, trazo: !relleno, lleno: relleno });
+const textoIcono = (t) => texto(t, 100, 100, t.length <= 2 ? 42 : t.length === 3 ? 36 : t.length === 4 ? 30 : 24, { negrita: true, centro: true });
+const P = (p) => `${p[0].toFixed(1)},${p[1].toFixed(1)}`;
+
+// Elementos de marco completo (dependen de la forma)
+const X = (m) => { const [a, b, c, d] = MARCOS[m].esq; return linea(`M${P(a)} L${P(c)} M${P(d)} L${P(b)}`); };
+const diagonal = (m) => { const [, b, , d] = MARCOS[m].esq; return linea(`M${P(d)} L${P(b)}`); };
+const vertical = (m) => linea(`M100,${MARCOS[m].arriba(100).toFixed(1)} L100,${MARCOS[m].abajo(100).toFixed(1)}`);
+const contracarro = (m) => { const f = MARCOS[m]; const [, , c, d] = f.esq; return linea(`M${P(d)} L100,${f.arriba(100).toFixed(1)} L${P(c)}`); };
+const barraInferior = (m, y = 120) => { const f = MARCOS[m]; return linea(`M${f.izq(y).toFixed(1)},${y} L${f.der(y).toFixed(1)},${y}`); };
+const cruzSanidad = (m) => { const f = MARCOS[m]; return linea(`M100,${f.arriba(100).toFixed(1)} L100,${f.abajo(100).toFixed(1)} M${f.izq(100).toFixed(1)},100 L${f.der(100).toFixed(1)},100`); };
+const transmisiones = (m) => {
+  const [a, , c] = MARCOS[m].esq;
+  return linea(`M${P(a)} L100,110 L100,90 L${P(c)}`);
+};
+const cupulaAntiaerea = (m) => {
+  const f = MARCOS[m];
+  if (m === 'amigo') return linea('M25,150 Q100,96 175,150');
+  if (m === 'hostil') return linea('M60,140 Q100,104 140,140');
+  if (m === 'neutral') return linea('M45,155 Q100,104 155,155');
+  return linea(`M${f.izq(130).toFixed(1)},130 Q100,100 ${f.der(130).toFixed(1)},130`);
+};
+const asaltoAereo = (m) => { const f = MARCOS[m]; return linea(`M${f.izq(118).toFixed(1)},118 L88,118 L100,134 L112,118 L${f.der(118).toFixed(1)},118`); };
+
+// Iconos del sector principal (independientes del marco)
+const OVALO = 'M76,85 L124,85 A15,15 0 0 1 124,115 L76,115 A15,15 0 0 1 76,85 Z';
+const icono = {
+  carro: () => linea(OVALO),
+  punto: () => circulo(100, 100, 14, true),
+  puntoPequeno: () => circulo(100, 100, 10, true),
+  mortero: () => [circulo(100, 110, 6), linea('M100,104 L100,80 M92,89 L100,80 L108,89')],
+  ingenieros: () => linea('M70,115 L70,85 L130,85 L130,115 M100,85 L100,115'),
+  alaRotatoria: () => lleno('M60,84 L100,100 L60,116 Z M140,84 L100,100 L140,116 Z'),
+  alaFija: () => lleno('M100,100 C84,84 58,86 58,100 C58,114 84,116 100,100 C116,84 142,86 142,100 C142,114 116,116 100,100 Z'),
+  uas: () => lleno('M58,84 L100,104 L142,84 L142,96 L100,118 L58,96 Z'),
+  francotirador: () => linea('M70,84 L94,84 M106,84 L130,84 M100,94 L100,120'),
+  vigilancia: () => lleno('M100,80 L120,117 L80,117 Z'),
+  observador: () => linea('M100,80 L120,117 L80,117 Z'),
+  observadorArt: () => [linea('M100,80 L120,117 L80,117 Z'), circulo(100, 106, 6, true)],
+  nbq: () => [circulo(78, 87, 8, true), circulo(122, 87, 8, true), linea('M84,93 Q104,96 112,120 M116,93 Q96,96 88,120')],
+  mantenimiento: () => linea('M64,88 A12,12 0 0 1 64,112 M64,100 L136,100 M136,88 A12,12 0 0 0 136,112'),
+  transporte: () => [circulo(100, 100, 16), linea('M100,84 L100,116 M84,100 L116,100 M88.7,88.7 L111.3,111.3 M88.7,111.3 L111.3,88.7')],
+  municion: () => linea('M88,118 L88,96 A12,12 0 0 1 112,96 L112,118 M82,118 L118,118'),
+  combustible: () => linea('M84,84 L116,84 M84,84 L100,102 L116,84 M100,102 L100,120'),
+  apoyoCombate: () => lleno('M84,84 L116,84 L116,104 L100,118 L84,104 Z'),
+  armasCombinadas: () => [linea(OVALO), linea('M84,88 L116,112 M84,112 L116,88')],
+  misil: () => linea('M93,118 L93,90 A7,7 0 0 1 107,90 L107,118 M100,84 L100,118'),
+  explosivos: () => textoIcono('EOD'),
+  cuartelMaestre: () => [linea('M62,100 L120,100 M68,100 L68,110 M76,100 L76,110 M62,110 L80,110'), circulo(128, 100, 9)],
+  enlace: () => textoIcono('LO'),
+  psyops: () => lleno('M84,92 L92,92 L104,82 L104,118 L92,108 L84,108 Z'),
+};
+
+/**
+ * Iconos de entidad (conjunto 10, unidad terrestre), por código de 6 dígitos.
+ * `ff`: icono de marco completo (APP-6(E) tabla 3-2).
+ */
+const ENTIDADES = {
+  '000000': { nombre: 'Sin icono', dibujo: () => [] },
+  110300: { nombre: 'Cooperación cívico-militar (CIMIC)', dibujo: () => linea('M68,86 L132,86 L132,98 Q132,116 100,116 Q68,116 68,98 Z') },
+  110500: { nombre: 'Enlace', dibujo: () => icono.enlace() },
+  110600: { nombre: 'Operaciones psicológicas', dibujo: () => icono.psyops() },
+  111000: { nombre: 'Transmisiones', ff: true, dibujo: (m) => transmisiones(m) },
+  120100: { nombre: 'Asalto aéreo con medios orgánicos', ff: true, dibujo: (m) => asaltoAereo(m) },
+  120400: { nombre: 'Contracarro', ff: true, dibujo: (m) => contracarro(m) },
+  120401: { nombre: 'Contracarro acorazado', ff: true, dibujo: (m) => [contracarro(m), linea(OVALO)] },
+  120402: { nombre: 'Contracarro motorizado', ff: true, dibujo: (m) => [contracarro(m), vertical(m)] },
+  120500: { nombre: 'Acorazado (carros)', dibujo: () => icono.carro() },
+  120501: { nombre: 'Reconocimiento acorazado', ff: true, dibujo: (m) => [icono.carro(), diagonal(m)] },
+  120600: { nombre: 'Helicópteros', dibujo: () => icono.alaRotatoria() },
+  120601: { nombre: 'Helicópteros de reconocimiento', ff: true, dibujo: (m) => [icono.alaRotatoria(), diagonal(m)] },
+  120800: { nombre: 'Aviación de ala fija', dibujo: () => icono.alaFija() },
+  120900: { nombre: 'Combate', dibujo: () => textoIcono('CBT') },
+  121000: { nombre: 'Armas combinadas', dibujo: () => icono.armasCombinadas() },
+  121100: { nombre: 'Infantería', ff: true, dibujo: (m) => X(m) },
+  121101: { nombre: 'Infantería anfibia', ff: true, dibujo: (m) => [X(m), linea('M60,108 q6,-12 12,0 t12,0 t12,0 t12,0 t12,0 t12,0 t12,0')] },
+  121102: { nombre: 'Infantería mecanizada (cadenas)', ff: true, dibujo: (m) => [X(m), icono.carro()] },
+  121104: { nombre: 'Infantería motorizada', ff: true, dibujo: (m) => [X(m), vertical(m)] },
+  121200: { nombre: 'Observadores', dibujo: () => icono.observador() },
+  121300: { nombre: 'Reconocimiento / caballería', ff: true, dibujo: (m) => diagonal(m) },
+  121301: { nombre: 'Reconocimiento y vigilancia', ff: true, dibujo: (m) => [diagonal(m), icono.vigilancia()] },
+  121303: { nombre: 'Reconocimiento motorizado', ff: true, dibujo: (m) => [diagonal(m), vertical(m)] },
+  121500: { nombre: 'Tiradores de precisión', dibujo: () => icono.francotirador() },
+  121600: { nombre: 'Vigilancia', dibujo: () => icono.vigilancia() },
+  121700: { nombre: 'Fuerzas especiales', dibujo: () => textoIcono('SF') },
+  121800: { nombre: 'Operaciones especiales', dibujo: () => textoIcono('SOF') },
+  121900: { nombre: 'Sistemas aéreos no tripulados', dibujo: () => icono.uas() },
+  122100: { nombre: 'Unidad de combate combinada', ff: true, dibujo: (m) => [X(m), circulo(100, 100, 12, true)] },
+  130100: { nombre: 'Defensa antiaérea', ff: true, dibujo: (m) => cupulaAntiaerea(m) },
+  130101: { nombre: 'Defensa antiaérea (cañón)', ff: true, dibujo: (m) => [cupulaAntiaerea(m), linea(`M42,${MARCOS[m].arriba(42).toFixed(1)} L42,${(m === 'amigo' ? 150 : MARCOS[m].abajo(42)).toFixed(1)}`)] },
+  130102: { nombre: 'Defensa antiaérea (misiles)', ff: true, dibujo: (m) => [cupulaAntiaerea(m), icono.misil()] },
+  130300: { nombre: 'Artillería de campaña', dibujo: () => icono.punto() },
+  130301: { nombre: 'Artillería autopropulsada', dibujo: () => [icono.carro(), icono.puntoPequeno()] },
+  130303: { nombre: 'Reconocimiento de artillería', ff: true, dibujo: (m) => [icono.punto(), diagonal(m)] },
+  130400: { nombre: 'Observador de artillería', dibujo: () => icono.observadorArt() },
+  130700: { nombre: 'Misiles', dibujo: () => icono.misil() },
+  130800: { nombre: 'Morteros', dibujo: () => icono.mortero() },
+  140100: { nombre: 'Defensa NBQ', dibujo: () => icono.nbq() },
+  140103: { nombre: 'Reconocimiento NBQ', ff: true, dibujo: (m) => [icono.nbq(), diagonal(m)] },
+  140200: { nombre: 'Apoyo al combate', dibujo: () => icono.apoyoCombate() },
+  140500: { nombre: 'Cinológica', dibujo: () => textoIcono('DOG') },
+  140700: { nombre: 'Ingenieros (zapadores)', dibujo: () => icono.ingenieros() },
+  140701: { nombre: 'Zapadores acorazados', dibujo: () => [icono.ingenieros(), linea('M58,82 L142,82 A18,18 0 0 1 142,118 L58,118 A18,18 0 0 1 58,82 Z')] },
+  140702: { nombre: 'Zapadores motorizados', ff: true, dibujo: (m) => [icono.ingenieros(), vertical(m)] },
+  140703: { nombre: 'Reconocimiento de ingenieros', ff: true, dibujo: (m) => [icono.ingenieros(), diagonal(m)] },
+  140800: { nombre: 'Desactivación de explosivos (EOD)', dibujo: () => icono.explosivos() },
+  141200: { nombre: 'Policía militar', dibujo: () => textoIcono('MP') },
+  141700: { nombre: 'Seguridad', dibujo: () => textoIcono('SEC') },
+  150200: { nombre: 'Contrainteligencia', dibujo: () => textoIcono('CI') },
+  150500: { nombre: 'Guerra electrónica', dibujo: () => textoIcono('EW') },
+  151000: { nombre: 'Inteligencia', dibujo: () => textoIcono('MI') },
+  160200: { nombre: 'Abastecimiento (todas las clases)', ff: true, dibujo: (m) => [barraInferior(m), textoIcono('ALL')] },
+  160400: { nombre: 'Munición', dibujo: () => icono.municion() },
+  160600: { nombre: 'Apoyo logístico (servicios)', dibujo: () => textoIcono('CSS') },
+  161100: { nombre: 'Mantenimiento', dibujo: () => icono.mantenimiento() },
+  161300: { nombre: 'Sanidad', ff: true, dibujo: (m) => cruzSanidad(m) },
+  161700: { nombre: 'Abastecimiento (varias clases)', ff: true, dibujo: (m) => [barraInferior(m), textoIcono('MULT')] },
+  162400: { nombre: 'Personal', dibujo: () => textoIcono('PS') },
+  162500: { nombre: 'Combustible (POL)', dibujo: () => icono.combustible() },
+  162900: { nombre: 'Intendencia', dibujo: () => icono.cuartelMaestre() },
+  163600: { nombre: 'Transporte', dibujo: () => icono.transporte() },
+};
+
+// ---------------------------------------------------------------- modificadores de sector
+// Clave: 'c' + código común de 3 dígitos (tablas 1-3 y 1-4) o 'u' + código
+// de 2 dígitos del conjunto 10 (tablas 3-3 y 3-4).
+const SECTOR1 = {
+  c106: { nombre: 'Ataque', dibujo: () => texto('A', 100, 70, 26, { negrita: true, centro: true }) },
+  c111: { nombre: 'Utilitario', dibujo: () => texto('U', 100, 70, 26, { negrita: true, centro: true }) },
+  c112: { nombre: 'Ligero', dibujo: () => texto('L', 100, 70, 26, { negrita: true, centro: true }) },
+  c113: { nombre: 'Medio', dibujo: () => texto('M', 100, 70, 26, { negrita: true, centro: true }) },
+  c114: { nombre: 'Pesado', dibujo: () => texto('H', 100, 70, 26, { negrita: true, centro: true }) },
+  c107: { nombre: 'Acorazado', dibujo: () => linea('M88,57 L112,57 A7,7 0 0 1 112,71 L88,71 A7,7 0 0 1 88,57 Z') },
+  u41: { nombre: 'Lanzacohetes múltiple', dibujo: () => linea('M86,72 L100,61 L114,72 M86,64 L100,53 L114,64') },
+  u67: { nombre: 'Adquisición de objetivos (TA)', dibujo: () => texto('TA', 100, 70, 26, { negrita: true, centro: true }) },
+};
+const SECTOR2 = {
+  c100: { nombre: 'Paracaidista (aerotransportada)', dibujo: () => linea('M78,142 C78,127 100,127 100,142 C100,127 122,127 122,142') },
+  c113: { nombre: 'Montaña', dibujo: () => lleno('M84,146 L96,126 L103,136 L108,129 L118,146 Z') },
+  c103: { nombre: 'Esquiadores', dibujo: () => linea('M90,147 L110,127 M110,147 L90,127 M86,143 L94,151 M106,151 L114,143') },
+  c104: { nombre: 'Cadenas', dibujo: () => linea('M82,132 L118,132 A6,6 0 0 1 118,144 L82,144 A6,6 0 0 1 82,132 Z') },
+  c105: { nombre: 'Ruedas', dibujo: () => [circulo(86, 138, 5), circulo(114, 138, 5)] },
+  c106: { nombre: 'Ruedas todo terreno', dibujo: () => [circulo(82, 138, 5), circulo(100, 138, 5), circulo(118, 138, 5)] },
+  c101: { nombre: 'Bicicletas', dibujo: () => circulo(100, 138, 7) },
+  u59: { nombre: 'Aeromóvil (asalto aéreo)', dibujo: () => linea('M84,128 L100,144 L116,128') },
+  u60: { nombre: 'Anfibio', dibujo: (m) => { const f = MARCOS[m]; const x0 = f.izq(140), x1 = f.der(140); let d = `M${x0.toFixed(1)},140`; const n = Math.max(2, Math.round((x1 - x0) / 24)); const w = (x1 - x0) / n; for (let i = 0; i < n; i++) d += ` q${(w / 2).toFixed(1)},-14 ${w.toFixed(1)},0`; return linea(d); } },
+  c118: { nombre: 'Pesado', dibujo: () => texto('H', 100, 146, 26, { negrita: true, centro: true }) },
+  c119: { nombre: 'Medio', dibujo: () => texto('M', 100, 146, 26, { negrita: true, centro: true }) },
+  c121: { nombre: 'Ligero', dibujo: () => texto('L', 100, 146, 26, { negrita: true, centro: true }) },
+};
+const MODIFICADORES = { sector1: SECTOR1, sector2: SECTOR2 };
+
+// ---------------------------------------------------------------- SIDC
+/** Código APP-6(E) de 30 dígitos. */
+function sidc(s) {
+  const id = IDENTIDADES[s.identidad] ?? IDENTIDADES.amigo;
+  const estado = s.estado === 'previsto' ? '1' : '0';
+  const ghq = (s.finta ? 1 : 0) + (s.cg ? 2 : 0) + (s.ft ? 4 : 0);
+  const esc = (ESCALONES[s.escalon] ?? ESCALONES['']).codigo;
+  const ent = String(s.icono || '000000').padStart(6, '0');
+  const mod = (m) => (!m ? ['0', '00'] : m[0] === 'c' ? [m[1], m.slice(2)] : ['0', m.slice(1).padStart(2, '0')]);
+  const [c1, m1] = mod(s.mod1), [c2, m2] = mod(s.mod2);
+  return `160${id.codigo}10${estado}${ghq}${esc}${ent}${m1}${m2}${c1}${c2}00000000`;
+}
+
+// ---------------------------------------------------------------- SVG
+const escXml = (t) => String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const anchoTexto = (t, tam) => String(t).length * tam * 0.6;
+
+/** Marca de escalón (encima del marco), con su anchura. */
+function marcaEscalon(clave, yBase) {
+  const e = ESCALONES[clave]; if (!e?.marca) return { prims: [], ancho: 0, alto: 0 };
+  const p = [];
+  const y = yBase; // borde inferior de la marca
+  const m = e.marca;
+  if (m === 'Ø') {
+    p.push(circulo(100, y - 11, 9), linea(`M88,${y + 1} L112,${y - 23}`));
+    return { prims: p, ancho: 28, alto: 24 };
+  }
+  if (m.startsWith('•')) {
+    const n = m.length, w = (n - 1) * 20;
+    for (let i = 0; i < n; i++) p.push(circulo(100 - w / 2 + i * 20, y - 9, 7, true));
+    return { prims: p, ancho: w + 16, alto: 18 };
+  }
+  if (/^I+$/.test(m)) {
+    const n = m.length, w = (n - 1) * 15;
+    let d = ''; for (let i = 0; i < n; i++) { const x = 100 - w / 2 + i * 15; d += `M${x},${y} L${x},${y - 24} `; }
+    p.push({ d, trazo: true, grosor: 5 });
+    return { prims: p, ancho: w + 8, alto: 24 };
+  }
+  if (/^X+$/.test(m)) {
+    const n = m.length, w = (n - 1) * 26;
+    let d = ''; for (let i = 0; i < n; i++) { const x = 100 - w / 2 + i * 26; d += `M${x - 10},${y} L${x + 10},${y - 22} M${x - 10},${y - 22} L${x + 10},${y} `; }
+    p.push({ d, trazo: true, grosor: 4.5 });
+    return { prims: p, ancho: w + 22, alto: 22 };
+  }
+  p.push(texto(m, 100, y - 2, 28, { negrita: true, centro: true }));
+  return { prims: p, ancho: 36, alto: 24 };
+}
+
+function svgPrim(p, color, grosorBase) {
+  if (p.texto !== undefined) {
+    return `<text x="${p.x}" y="${p.y}" font-size="${p.tam}" font-family="Arial,Helvetica,sans-serif"${p.negrita ? ' font-weight="bold"' : ''}${p.centro ? ' text-anchor="middle" dominant-baseline="central"' : p.ancla ? ` text-anchor="${p.ancla}"` : ''} fill="${p.color ?? color}" stroke="none">${escXml(p.texto)}</text>`;
+  }
+  if (p.lleno) return `<path d="${p.d}" fill="${p.color ?? color}" stroke="none"/>`;
+  return `<path d="${p.d}" fill="none" stroke="${p.color ?? color}" stroke-width="${p.grosor ?? grosorBase}" stroke-linecap="${p.extremo ?? 'butt'}" stroke-linejoin="miter"${p.discontinuo ? ` stroke-dasharray="${p.discontinuo}"` : ''}/>`;
+}
+
+/**
+ * SVG de un símbolo de unidad.
+ * @param {object} s {identidad, estado:'presente'|'previsto', icono, mod1, mod2, escalon, cg, ft, finta, refuerzo:''|'+'|'-'|'±', T, M, H, G}
+ * @param {object} [opc] {tam: px de L (lado del octógono), monocromo, sinTextos}
+ * @returns {{svg, ancho, alto, ancla:{x,y}, sidc}}
+ */
+function svgUnidad(s, opc = {}) {
+  const id = IDENTIDADES[s.identidad] ?? IDENTIDADES.amigo;
+  const marco = id.marco;
+  const f = MARCOS[marco];
+  const negro = opc.monocromo ? '#000' : '#000';
+  const prims = [];
+  // Icono principal y modificadores
+  const ent = ENTIDADES[s.icono] ?? ENTIDADES['000000'];
+  const dib = (fn) => { [fn(marco)].flat(Infinity).forEach((x) => prims.push(x)); };
+  dib(ent.dibujo);
+  if (s.mod1 && SECTOR1[s.mod1]) dib(SECTOR1[s.mod1].dibujo);
+  if (s.mod2 && SECTOR2[s.mod2]) dib(SECTOR2[s.mod2].dibujo);
+  // Amplificadores gráficos
+  const yTop = f.arriba(100);
+  const extras = [];
+  const esc = marcaEscalon(s.escalon, yTop - 6);
+  extras.push(...esc.prims);
+  let techo = yTop - (esc.alto ? esc.alto + 6 : 0);
+  if (s.ft) {
+    const w = Math.max(esc.ancho, 34) + 18, h = (esc.alto || 16) + 14;
+    extras.push(linea(`M${100 - w / 2},${yTop} L${100 - w / 2},${yTop - h} L${100 + w / 2},${yTop - h} L${100 + w / 2},${yTop}`));
+    techo = Math.min(techo, yTop - h);
+  }
+  if (s.finta) {
+    const xl = f.esq[0][0] === 25 ? 25 : f.izq(yTop + 1), xr = 200 - xl;
+    const cima = techo - 26;
+    extras.push({ d: `M${xl},${yTop} L100,${cima} L${xr},${yTop}`, trazo: true, discontinuo: '10 8' });
+    techo = cima;
+  }
+  let suelo = f.abajo(100);
+  let ancla = { x: 100, y: 100 };
+  if (s.cg) {
+    const [sx, sy] = f.staff;
+    const yFin = 150 + 100;
+    extras.push(linea(`M${sx},${sy} L${sx},${yFin}`));
+    ancla = { x: sx, y: yFin };
+    suelo = yFin;
+  }
+  // Textos (APP-6(E) fig. 3-3)
+  const textos = [];
+  const xI = f.izq(100) - 8, xD = f.der(100) + 8;
+  if (!opc.sinTextos) {
+    const der = [['G', 70], ['H', 103], ['M', 136]];
+    for (const [k, y] of der) if (s[k]) textos.push(texto(s[k], xD, y + 10, 30, { ancla: 'start' }));
+    if (s.T) textos.push(texto(s.T, xI, 136 + 10, 30, { ancla: 'end' }));
+    if (s.V) textos.push(texto(s.V, xI, 103 + 10, 30, { ancla: 'end' }));
+  }
+  if (s.refuerzo) textos.push(texto(s.refuerzo === '±' ? '±' : s.refuerzo === '-' ? '−' : '+', xD, yTop + 6, 30, { ancla: 'start', negrita: true }));
+  // Caja que lo contiene todo
+  let x0 = f.izq(100) - 4, x1 = f.der(100) + 4, y0 = Math.min(techo, yTop) - 6, y1 = suelo + 6;
+  for (const t of textos) {
+    const w = anchoTexto(t.texto, t.tam);
+    if (t.ancla === 'end') x0 = Math.min(x0, t.x - w - 4); else x1 = Math.max(x1, t.x + w + 4);
+  }
+  // Marco (con trazo discontinuo si es previsto; punteado si la identidad es dudosa)
+  const relleno = opc.monocromo ? 'none' : id.relleno;
+  const dash = id.dudoso ? ' stroke-dasharray="3 7" stroke-linecap="round"' : s.estado === 'previsto' ? ' stroke-dasharray="14 8"' : '';
+  const blanco = id.dudoso || s.estado === 'previsto' ? `<path d="${f.d}" fill="none" stroke="#fff" stroke-width="${A}"/>` : '';
+  const cuerpo = `<path d="${f.d}" fill="${relleno}" stroke="none"/>${prims.map((p) => svgPrim(p, negro, A)).join('')}${blanco}<path d="${f.d}" fill="none" stroke="${negro}" stroke-width="${A}"${dash}/>`;
+  const resto = [...extras, ...textos].map((p) => svgPrim(p, negro, A)).join('');
+  const W = x1 - x0, H = y1 - y0;
+  const k = (opc.tam ?? 30) / 100;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${(W * k).toFixed(1)}" height="${(H * k).toFixed(1)}" viewBox="${x0.toFixed(1)} ${y0.toFixed(1)} ${W.toFixed(1)} ${H.toFixed(1)}">${cuerpo}${resto}</svg>`;
+  return { svg, ancho: W * k, alto: H * k, ancla: { x: (ancla.x - x0) * k, y: (ancla.y - y0) * k }, sidc: sidc(s) };
+}
+
+return { IDENTIDADES, ESCALONES, limitesMarco, ENTIDADES, MODIFICADORES, sidc, svgUnidad };
+})();
+
+// ── src/simbolos/catalogo.js
+__mods["src/simbolos/catalogo.js"] = (function () {
+'use strict';
+// Catálogo de unidades del ET para el constructor guiado: arma → tipo →
+// especialidad, con los nombres de la PD0-002 (anexo C) y los iconos y
+// modificadores de la APP-6(E). Ordenado de lo más usado a lo menos.
+
+/** Especialidad: {id, nombre, icono, mod1?, mod2?, claves?} */
+const ARMAS = [
+  {
+    id: 'infanteria', nombre: 'Infantería', icono: '121100', tipos: [
+      { id: 'ligera', nombre: 'Ligera', icono: '121100' },
+      { id: 'paracaidista', nombre: 'Paracaidista', icono: '121100', mod2: 'c100', claves: 'bandera bripac aerotransportada' },
+      { id: 'montana', nombre: 'Cazadores de montaña', icono: '121100', mod2: 'c113', claves: 'montaña' },
+      { id: 'motorizada', nombre: 'Motorizada', icono: '121104' },
+      { id: 'mecanizada', nombre: 'Mecanizada (cadenas)', icono: '121102' },
+      { id: 'protegida', nombre: 'Protegida (ruedas)', icono: '121102', mod2: 'c106', claves: 'vamtac piraña dragón 8x8' },
+      { id: 'aeromovil', nombre: 'Aeromóvil', icono: '121100', mod2: 'u59', claves: 'asalto aéreo helitransportada' },
+      { id: 'esquiadores', nombre: 'Esquiadores escaladores', icono: '121100', mod2: 'c103' },
+      { id: 'anfibia', nombre: 'Anfibia / de marina', icono: '121101' },
+    ],
+  },
+  {
+    id: 'apoyo', nombre: 'Armas de apoyo', icono: '130800', tipos: [
+      { id: 'morteros', nombre: 'Morteros', icono: '130800' },
+      { id: 'contracarro', nombre: 'Contracarro', icono: '120400', claves: 'spike misil cc' },
+      { id: 'contracarro-mot', nombre: 'Contracarro motorizado', icono: '120402' },
+      { id: 'contracarro-aco', nombre: 'Contracarro acorazado', icono: '120401' },
+      { id: 'tiradores', nombre: 'Tiradores de precisión', icono: '121500', claves: 'francotiradores' },
+      { id: 'apoyo-combate', nombre: 'Armas de apoyo / mando y apoyo', icono: '140200' },
+    ],
+  },
+  {
+    id: 'caballeria', nombre: 'Caballería / reconocimiento', icono: '121300', tipos: [
+      { id: 'reco', nombre: 'Reconocimiento', icono: '121300', claves: 'reco exploración' },
+      { id: 'reco-mot', nombre: 'Reconocimiento motorizado', icono: '121303' },
+      { id: 'ligero-aco', nombre: 'Ligero acorazado (ruedas)', icono: '120501', mod2: 'c106', claves: 'vrc centauro' },
+      { id: 'acorazado', nombre: 'Acorazado', icono: '120501' },
+      { id: 'expl-vig', nombre: 'Exploración y vigilancia', icono: '121301' },
+      { id: 'reco-para', nombre: 'Reconocimiento paracaidista', icono: '121300', mod2: 'c100' },
+    ],
+  },
+  { id: 'acorazada', nombre: 'Carros de combate', icono: '120500', tipos: [{ id: 'carros', nombre: 'Carros', icono: '120500', claves: 'leopard acorazado' }] },
+  {
+    id: 'artilleria', nombre: 'Artillería', icono: '130300', tipos: [
+      { id: 'remolcada', nombre: 'Campaña remolcada', icono: '130300', claves: 'obús' },
+      { id: 'autopropulsada', nombre: 'Campaña autopropulsada', icono: '130301', claves: 'atp' },
+      { id: 'lanzacohetes', nombre: 'Lanzacohetes', icono: '130300', mod1: 'u41' },
+      { id: 'paracaidista', nombre: 'Campaña paracaidista', icono: '130300', mod2: 'c100' },
+      { id: 'info-loc', nombre: 'Información y localización', icono: '130300', mod1: 'u67' },
+      { id: 'observador', nombre: 'Observador avanzado', icono: '130400', claves: 'oaf jtac' },
+      { id: 'antiaerea', nombre: 'Antiaérea', icono: '130100', claves: 'aaa defensa aérea' },
+      { id: 'antiaerea-cañon', nombre: 'Antiaérea (cañón)', icono: '130101' },
+      { id: 'antiaerea-misil', nombre: 'Antiaérea (misiles)', icono: '130102', claves: 'mistral nasams patriot' },
+    ],
+  },
+  {
+    id: 'ingenieros', nombre: 'Ingenieros', icono: '140700', tipos: [
+      { id: 'zapadores', nombre: 'Zapadores', icono: '140700' },
+      { id: 'paracaidistas', nombre: 'Zapadores paracaidistas', icono: '140700', mod2: 'c100' },
+      { id: 'montana', nombre: 'Zapadores de montaña', icono: '140700', mod2: 'c113' },
+      { id: 'mecanizados', nombre: 'Zapadores mecanizados', icono: '140701' },
+      { id: 'motorizados', nombre: 'Zapadores motorizados', icono: '140702' },
+      { id: 'reco', nombre: 'Reconocimiento de ingenieros', icono: '140703' },
+      { id: 'eod', nombre: 'Desactivación de explosivos', icono: '140800', claves: 'edex eod' },
+    ],
+  },
+  {
+    id: 'transmisiones', nombre: 'Transmisiones e inteligencia', icono: '111000', tipos: [
+      { id: 'transmisiones', nombre: 'Transmisiones', icono: '111000', claves: 'cis' },
+      { id: 'ew', nombre: 'Guerra electrónica', icono: '150500' },
+      { id: 'inteligencia', nombre: 'Inteligencia', icono: '151000' },
+      { id: 'vigilancia', nombre: 'Vigilancia', icono: '121600' },
+      { id: 'uas', nombre: 'UAS (drones)', icono: '121900', claves: 'uav dron raven' },
+      { id: 'contrainteligencia', nombre: 'Contrainteligencia', icono: '150200' },
+      { id: 'enlace', nombre: 'Enlace', icono: '110500' },
+      { id: 'cimic', nombre: 'CIMIC', icono: '110300' },
+      { id: 'psyops', nombre: 'Operaciones psicológicas', icono: '110600' },
+    ],
+  },
+  {
+    id: 'especiales', nombre: 'Operaciones especiales', icono: '121700', tipos: [
+      { id: 'goe', nombre: 'Operaciones especiales (GOE)', icono: '121700', claves: 'boinas verdes moe' },
+      { id: 'sof', nombre: 'SOF', icono: '121800' },
+    ],
+  },
+  {
+    id: 'helicopteros', nombre: 'Helicópteros (FAMET)', icono: '120600', tipos: [
+      { id: 'maniobra', nombre: 'De maniobra', icono: '120600', mod1: 'c111', claves: 'nh90 cougar' },
+      { id: 'ataque', nombre: 'De ataque', icono: '120600', mod1: 'c106', claves: 'tigre' },
+      { id: 'transporte', nombre: 'De transporte', icono: '120600', mod1: 'c114', claves: 'chinook' },
+      { id: 'reco', nombre: 'De reconocimiento', icono: '120601' },
+    ],
+  },
+  {
+    id: 'proteccion', nombre: 'NBQ, policía y seguridad', icono: '140100', tipos: [
+      { id: 'nbq', nombre: 'Defensa NBQ', icono: '140100' },
+      { id: 'nbq-reco', nombre: 'Reconocimiento NBQ', icono: '140103' },
+      { id: 'pm', nombre: 'Policía militar', icono: '141200' },
+      { id: 'seguridad', nombre: 'Seguridad', icono: '141700' },
+      { id: 'cinologica', nombre: 'Cinológica', icono: '140500' },
+    ],
+  },
+  {
+    id: 'logistica', nombre: 'Logística y sanidad', icono: '160600', tipos: [
+      { id: 'servicios', nombre: 'Servicios / logística', icono: '160600', claves: 'css grupo logístico' },
+      { id: 'sanidad', nombre: 'Sanidad', icono: '161300', claves: 'médica role' },
+      { id: 'abastecimiento', nombre: 'Abastecimiento', icono: '160200' },
+      { id: 'municion', nombre: 'Munición', icono: '160400' },
+      { id: 'combustible', nombre: 'Combustible', icono: '162500' },
+      { id: 'mantenimiento', nombre: 'Mantenimiento', icono: '161100' },
+      { id: 'transporte', nombre: 'Transporte', icono: '163600' },
+      { id: 'intendencia', nombre: 'Intendencia', icono: '162900' },
+      { id: 'personal', nombre: 'Personal', icono: '162400' },
+    ],
+  },
+  { id: 'generica', nombre: 'Sin icono (genérica)', icono: '000000', tipos: [{ id: 'generica', nombre: 'Unidad genérica', icono: '000000', claves: 'mando cuartel general plana mayor' }] },
+];
+
+/** Escalones habituales primero (los del batallón hacia abajo y arriba). */
+const ORDEN_ESCALONES = ['equipo', 'escuadra', 'peloton', 'seccion', 'compania', 'batallon', 'regimiento', 'brigada', 'division', 'cuerpo', 'ejercito', 'mando', ''];
+
+/** Nombre corto de un escalón según el arma (PD0-002 anexo A). */
+function nombreEscalon(escalon, arma) {
+  const art = arma === 'artilleria', cab = arma === 'caballeria' || arma === 'acorazada';
+  if (escalon === 'compania') return art ? 'Batería' : cab ? 'Escuadrón' : 'Compañía';
+  if (escalon === 'batallon') return art || cab ? 'Grupo' : 'Batallón';
+  return {
+    equipo: 'Equipo', escuadra: 'Escuadra', peloton: 'Pelotón', seccion: 'Sección', regimiento: 'Regimiento',
+    brigada: 'Brigada', division: 'División', cuerpo: 'Cuerpo de ejército', ejercito: 'Ejército', mando: 'Mando', '': 'Sin escalón',
+  }[escalon] ?? escalon;
+}
+
+/** Busca la especialidad de un símbolo (para el nombre y para editar). */
+function especialidadDe(s) {
+  for (const a of ARMAS) for (const t of a.tipos) {
+    if (t.icono === s.icono && (t.mod1 ?? '') === (s.mod1 ?? '') && (t.mod2 ?? '') === (s.mod2 ?? '')) return { arma: a, tipo: t };
+  }
+  for (const a of ARMAS) for (const t of a.tipos) if (t.icono === s.icono) return { arma: a, tipo: t };
+  return null;
+}
+
+/** «Sección de infantería paracaidista», «Compañía de carros»… */
+function nombreUnidad(s) {
+  const e = especialidadDe(s);
+  const esc = s.escalon ? nombreEscalon(s.escalon, e?.arma.id) : '';
+  if (!e) return esc || 'Unidad';
+  const t = e.tipo.nombre.toLowerCase();
+  const arma = e.arma.id === 'infanteria' ? `de infantería ${t}`
+    : e.arma.id === 'caballeria' && !/^(reconocimiento|exploración)/.test(t) ? `de caballería ${t}` : `de ${t}`;
+  return esc && esc !== 'Sin escalón' ? `${esc} ${arma}` : e.tipo.nombre;
+}
+
+/** Candidatos para el buscador (cada especialidad × escalones típicos). */
+function candidatosUnidad() {
+  const out = [];
+  for (const a of ARMAS) for (const t of a.tipos) {
+    out.push({ arma: a.id, tipo: t, texto: a.id === 'infanteria' ? `Infantería ${t.nombre.toLowerCase()}` : t.nombre, extra: `${a.nombre} ${t.claves ?? ''}` });
+  }
+  return out;
+}
+
+return { ARMAS, ORDEN_ESCALONES, nombreEscalon, especialidadDe, nombreUnidad, candidatosUnidad };
+})();
+
+// ── src/simbolos/medidas.js
+__mods["src/simbolos/medidas.js"] = (function () {
+'use strict';
+// Medidas de coordinación y cometidos tácticos (APP-6(E) cap. 8 y su
+// apéndice A; nombres de la PD0-002 cap. 2 y apéndice I). Las siglas son las
+// OTAN, como en la PD0-002 (PL, LD, OBJ, B de bloquear…).
+//
+// Cada gráfico se construye a partir de sus puntos de anclaje (los mismos que
+// define la norma). Se calcula en un plano local en metros alrededor del
+// primer punto y se devuelve en lat/lon: los puntos de anclaje son exactos;
+// el dibujo intermedio (puntas de flecha, arcos) es solo gráfico.
+
+const R = 6378137;
+/** Plano local (metros, x este / y norte) alrededor de p0. */
+function plano(p0) {
+  const k = Math.cos((p0.lat * Math.PI) / 180);
+  const a = (p) => [((p.lon - p0.lon) * Math.PI / 180) * R * k, ((p.lat - p0.lat) * Math.PI / 180) * R];
+  const g = ([x, y]) => [p0.lat + (y / R) * (180 / Math.PI), p0.lon + (x / (R * k)) * (180 / Math.PI)];
+  return { a, g };
+}
+const sum = (p, q) => [p[0] + q[0], p[1] + q[1]];
+const res = (p, q) => [p[0] - q[0], p[1] - q[1]];
+const mul = (p, k) => [p[0] * k, p[1] * k];
+const lon = (p) => Math.hypot(p[0], p[1]);
+const uni = (p) => { const l = lon(p) || 1; return [p[0] / l, p[1] / l]; };
+const perp = (p) => [-p[1], p[0]]; // 90° a la izquierda
+const med = (p, q) => mul(sum(p, q), 0.5);
+const rot = (p, ang) => { const c = Math.cos(ang), s = Math.sin(ang); return [p[0] * c - p[1] * s, p[0] * s + p[1] * c]; };
+const angulo = (v) => (Math.atan2(v[0], v[1]) * 180) / Math.PI; // rumbo de un vector (para girar textos)
+
+/** Punta de flecha abierta en `tip` llegando desde la dirección `dir` (unitario). */
+const punta = (tip, dir, t, ang = 0.5) => [sum(tip, mul(rot(dir, Math.PI - ang), t)), tip, sum(tip, mul(rot(dir, Math.PI + ang), t))];
+/** Arco circular (centro, radio, ángulo inicial y final en radianes, sentido antihorario si a1 > a0). */
+function arco(c, r, a0, a1, n = 36) {
+  const pts = [];
+  for (let i = 0; i <= n; i++) { const a = a0 + ((a1 - a0) * i) / n; pts.push([c[0] + r * Math.cos(a), c[1] + r * Math.sin(a)]); }
+  return pts;
+}
+const angDe = (v) => Math.atan2(v[1], v[0]);
+
+// ---------------------------------------------------------------- catálogo
+// tipo: elemento del plan que lo guarda ('punto' | 'linea' | 'area')
+// n: puntos exactos (cometidos) o mínimo (min) para líneas y áreas
+const GRUPOS = {
+  lineas: 'Líneas',
+  ejes: 'Ejes y direcciones de ataque',
+  areas: 'Zonas y posiciones',
+  puntos: 'Puntos',
+  cometidos: 'Cometidos tácticos (verbos)',
+};
+const MEDIDAS = [
+  // Líneas (PD0-002 tablas 2.2, 2.5, 2.7)
+  { id: 'limite', grupo: 'lineas', nombre: 'Límite', tipo: 'linea', min: 2, claves: 'boundary lateral', campos: ['escalon', 'izq', 'der'] },
+  { id: 'pl', grupo: 'lineas', nombre: 'Línea de fase', sigla: 'PL', tipo: 'linea', min: 2, claves: 'phase line' },
+  { id: 'ld', grupo: 'lineas', nombre: 'Línea de partida', sigla: 'LD', tipo: 'linea', min: 2, claves: 'lp línea de partida' },
+  { id: 'ldlc', grupo: 'lineas', nombre: 'Línea de partida / de contacto', sigla: 'LD/LC', tipo: 'linea', min: 2 },
+  { id: 'loa', grupo: 'lineas', nombre: 'Límite de avance', sigla: 'LOA', tipo: 'linea', min: 2 },
+  { id: 'fcl', grupo: 'lineas', nombre: 'Línea de coordinación final', sigla: 'FCL', tipo: 'linea', min: 2 },
+  { id: 'pld', grupo: 'lineas', nombre: 'Línea probable de despliegue', sigla: 'PLD', tipo: 'linea', min: 2, discontinua: true },
+  { id: 'lc', grupo: 'lineas', nombre: 'Línea de contacto', sigla: 'LC', tipo: 'linea', min: 2 },
+  { id: 'feba', grupo: 'lineas', nombre: 'Borde anterior de la zona de defensa', sigla: 'FEBA', tipo: 'linea', min: 2 },
+  // Ejes y direcciones (tabla 2.7)
+  { id: 'ataque-principal', grupo: 'ejes', nombre: 'Ataque principal (eje)', tipo: 'linea', min: 2, ayuda: 'Marca el eje desde la retaguardia hasta la punta.', campos: ['ancho'] },
+  { id: 'ataque-apoyo', grupo: 'ejes', nombre: 'Ataque de apoyo (eje)', tipo: 'linea', min: 2, campos: ['ancho'] },
+  { id: 'contraataque', grupo: 'ejes', nombre: 'Contraataque', sigla: 'CATK', tipo: 'linea', min: 2, campos: ['ancho'] },
+  { id: 'dir-principal', grupo: 'ejes', nombre: 'Dirección del ataque principal', tipo: 'linea', min: 2 },
+  { id: 'dir-apoyo', grupo: 'ejes', nombre: 'Dirección del ataque de apoyo', tipo: 'linea', min: 2 },
+  // Zonas (tablas 2.5–2.7)
+  { id: 'aa', grupo: 'areas', nombre: 'Zona de reunión', sigla: 'AA', tipo: 'area', min: 3 },
+  { id: 'obj', grupo: 'areas', nombre: 'Objetivo', sigla: 'OBJ', tipo: 'area', min: 3 },
+  { id: 'atk', grupo: 'areas', nombre: 'Posición de partida', sigla: 'ATK', tipo: 'area', min: 3 },
+  { id: 'aslt', grupo: 'areas', nombre: 'Posición de asalto', sigla: 'ASLT', tipo: 'area', min: 3 },
+  { id: 'ea', grupo: 'areas', nombre: 'Área de fuego sobre objetivos', sigla: 'EA', tipo: 'area', min: 3, claves: 'engagement area' },
+  { id: 'bp', grupo: 'areas', nombre: 'Posición defensiva', sigla: 'BP', tipo: 'area', min: 3, claves: 'battle position' },
+  { id: 'dz', grupo: 'areas', nombre: 'Zona de lanzamiento', sigla: 'DZ', tipo: 'area', min: 3, claves: 'paracaidistas salto' },
+  { id: 'lz', grupo: 'areas', nombre: 'Zona de aterrizaje', sigla: 'LZ', tipo: 'area', min: 3, claves: 'helicópteros toma' },
+  { id: 'pz', grupo: 'areas', nombre: 'Zona de recogida', sigla: 'PZ', tipo: 'area', min: 3 },
+  { id: 'sbf', grupo: 'areas', nombre: 'Posición de apoyo por el fuego', sigla: 'SBF', tipo: 'linea', n: 4, ayuda: 'Puntos 1 y 2: base; 3 y 4: puntas de las flechas.' },
+  { id: 'abf', grupo: 'areas', nombre: 'Posición de ataque por el fuego', sigla: 'ABF', tipo: 'linea', n: 3, ayuda: 'Punto 1: punta de la flecha; 2 y 3: extremos de la base.' },
+  // Puntos (tabla 2.4)
+  { id: 'ckp', grupo: 'puntos', nombre: 'Punto de control', sigla: 'CKP', tipo: 'punto', n: 1 },
+  { id: 'cop', grupo: 'puntos', nombre: 'Punto de contacto', sigla: 'CP', tipo: 'punto', n: 1 },
+  { id: 'coord', grupo: 'puntos', nombre: 'Punto de coordinación', sigla: 'PC', tipo: 'punto', n: 1 },
+  { id: 'rly', grupo: 'puntos', nombre: 'Punto de reunión', sigla: 'RLY', tipo: 'punto', n: 1 },
+  { id: 'sp', grupo: 'puntos', nombre: 'Punto inicial', sigla: 'SP', tipo: 'punto', n: 1 },
+  { id: 'rp', grupo: 'puntos', nombre: 'Punto de dislocación', sigla: 'RP', tipo: 'punto', n: 1 },
+  { id: 'pp', grupo: 'puntos', nombre: 'Punto de paso', sigla: 'PP', tipo: 'punto', n: 1 },
+  { id: 'pd', grupo: 'puntos', nombre: 'Punto de partida', sigla: 'PD', tipo: 'punto', n: 1 },
+  { id: 'op', grupo: 'puntos', nombre: 'Observatorio', sigla: 'OP', tipo: 'punto', n: 1 },
+  // Cometidos tácticos (apéndice A al cap. 8 / apéndice I de la PD0-002)
+  { id: 'bloquear', grupo: 'cometidos', nombre: 'Bloquear', sigla: 'B', tipo: 'linea', n: 3, ayuda: 'Puntos 1 y 2: la barra (de cara al enemigo); 3: el final de la línea.' },
+  { id: 'brecha', grupo: 'cometidos', nombre: 'Brecha', sigla: 'B', tipo: 'linea', n: 3, ayuda: 'Puntos 1 y 2: la abertura; 3: la parte de atrás.' },
+  { id: 'desbordar', grupo: 'cometidos', nombre: 'Desbordar', sigla: 'B', tipo: 'linea', n: 3, ayuda: 'Puntos 1 y 2: las puntas; 3: la parte de atrás.' },
+  { id: 'canalizar', grupo: 'cometidos', nombre: 'Canalizar', sigla: 'C', tipo: 'linea', n: 3, ayuda: 'Puntos 1 y 2: la abertura; 3: la parte de atrás.' },
+  { id: 'limpiar', grupo: 'cometidos', nombre: 'Operación de limpieza', sigla: 'C', tipo: 'linea', n: 3, ayuda: 'Puntos 1 y 2: la línea de llegada; 3: el inicio de las flechas.' },
+  { id: 'contener', grupo: 'cometidos', nombre: 'Contener', sigla: 'C', tipo: 'linea', n: 2, ayuda: 'Puntos 1 y 2: extremos del semicírculo.' },
+  { id: 'controlar', grupo: 'cometidos', nombre: 'Controlar', sigla: 'C', tipo: 'linea', n: 2, ayuda: 'Punto 1: centro; 2: inicio y radio.' },
+  { id: 'asegurar', grupo: 'cometidos', nombre: 'Asegurar', sigla: 'S', tipo: 'linea', n: 2, ayuda: 'Punto 1: centro; 2: inicio y radio (abertura hacia lo propio).' },
+  { id: 'ocupar', grupo: 'cometidos', nombre: 'Ocupar', sigla: 'O', tipo: 'linea', n: 2, ayuda: 'Punto 1: centro; 2: inicio y radio.' },
+  { id: 'aislar', grupo: 'cometidos', nombre: 'Aislar', sigla: 'I', tipo: 'linea', n: 2, ayuda: 'Punto 1: centro; 2: inicio y radio.' },
+  { id: 'tomar', grupo: 'cometidos', nombre: 'Tomar', sigla: 'S', tipo: 'linea', n: 3, ayuda: 'Punto 1: centro del círculo de la unidad; 2: radio; 3: punta de la flecha.' },
+  { id: 'destruir', grupo: 'cometidos', nombre: 'Destruir', sigla: 'D', tipo: 'linea', n: 2, ayuda: 'Punto 1: centro; 2: tamaño.' },
+  { id: 'neutralizar', grupo: 'cometidos', nombre: 'Neutralizar', sigla: 'N', tipo: 'linea', n: 2, ayuda: 'Punto 1: centro; 2: tamaño.' },
+  { id: 'suprimir', grupo: 'cometidos', nombre: 'Suprimir', sigla: 'S', tipo: 'linea', n: 2, ayuda: 'Punto 1: centro; 2: tamaño.' },
+  { id: 'fijar', grupo: 'cometidos', nombre: 'Fijar', sigla: 'F', tipo: 'linea', n: 2, ayuda: 'Punto 1: punta de la flecha; 2: el inicio.' },
+  { id: 'retardar', grupo: 'cometidos', nombre: 'Retardar', sigla: 'D', tipo: 'linea', n: 3, ayuda: 'Punto 1: punta de la flecha; 2: fin del tramo recto; 3: lado y tamaño del arco.' },
+  { id: 'retirarse', grupo: 'cometidos', nombre: 'Retirarse', sigla: 'W', tipo: 'linea', n: 3, ayuda: 'Punto 1: punta de la flecha; 2: fin del tramo recto; 3: lado y tamaño del arco.' },
+  { id: 'retirarse-presion', grupo: 'cometidos', nombre: 'Retirarse bajo presión', sigla: 'WP', tipo: 'linea', n: 3 },
+  { id: 'ruptura', grupo: 'cometidos', nombre: 'Ruptura del contacto', sigla: 'DIS', tipo: 'linea', n: 3 },
+  { id: 'demostracion', grupo: 'cometidos', nombre: 'Demostración', sigla: 'DEM', tipo: 'linea', n: 3 },
+  { id: 'desorganizar', grupo: 'cometidos', nombre: 'Desorganizar / perturbar', sigla: 'D', tipo: 'linea', n: 3, ayuda: 'Puntos 1 y 2: la línea base; 3: punta de la flecha más larga.' },
+  { id: 'interdiccion', grupo: 'cometidos', nombre: 'Interdicción', sigla: 'I', tipo: 'linea', n: 2, ayuda: 'Punto 1: centro; 2: tamaño y dirección.' },
+  { id: 'penetrar', grupo: 'cometidos', nombre: 'Penetrar', sigla: 'P', tipo: 'linea', n: 3, ayuda: 'Puntos 1 y 2: la barra; 3: el inicio de la flecha.' },
+  { id: 'envolver', grupo: 'cometidos', nombre: 'Envolver', sigla: 'E', tipo: 'linea', n: 3, ayuda: 'Punto 1: inicio; 2: fin del tramo recto; 3: fin del arco.' },
+  { id: 'emboscada', grupo: 'cometidos', nombre: 'Emboscada', tipo: 'linea', n: 3, ayuda: 'Punto 1: punta de la flecha; 2 y 3: extremos de la base.' },
+  { id: 'cubrir', grupo: 'cometidos', nombre: 'Cubrir', sigla: 'C', tipo: 'linea', n: 3, ayuda: 'Punto 1: la unidad; 2 y 3: puntas de las flechas.' },
+  { id: 'vigilar', grupo: 'cometidos', nombre: 'Vigilar / proteger', sigla: 'G', tipo: 'linea', n: 3, ayuda: 'Punto 1: la unidad; 2 y 3: puntas de las flechas.' },
+  { id: 'observar', grupo: 'cometidos', nombre: 'Observar / vigilar (pantalla)', sigla: 'S', tipo: 'linea', n: 3, ayuda: 'Punto 1: la unidad; 2 y 3: puntas de las flechas.' },
+];
+const medida = (id) => MEDIDAS.find((m) => m.id === id);
+const puntosNecesarios = (m) => m.n ?? m.min ?? 1;
+
+// ---------------------------------------------------------------- geometría
+/**
+ * Gráfico de una medida.
+ * @param {object} m definición (MEDIDAS)
+ * @param {Array<{lat,lon}>} anclas puntos de anclaje
+ * @param {object} props {nombre, ancho(m), escalon, izq, der}
+ * @returns {{lineas: Array<{pts:[[lat,lon]], discontinua?, grosor?}>, rellenos: Array<{pts}>, textos: Array<{pos:[lat,lon], texto, rumbo?, tam?}>}}
+ */
+function geometria(m, anclas, props = {}) {
+  const out = { lineas: [], rellenos: [], textos: [] };
+  if (!anclas.length) return out;
+  const { a, g } = plano(anclas[0]);
+  const P = anclas.map(a);
+  const L = (pts, opc = {}) => out.lineas.push({ pts: pts.map(g), ...opc });
+  const F = (pts) => out.rellenos.push({ pts: pts.map(g) });
+  const T = (p, texto, opc = {}) => { if (texto) out.textos.push({ pos: g(p), texto, ...opc }); };
+  const nombre = props.nombre ?? '';
+  const etiqueta = [m.sigla, nombre].filter(Boolean).join(' ');
+
+  // Líneas con rótulo en los extremos
+  if (m.grupo === 'lineas') {
+    L(P, { discontinua: m.discontinua });
+    if (m.id === 'limite') {
+      const i = Math.floor((P.length - 1) / 2), c = med(P[i], P[i + 1]);
+      const d = uni(res(P[i + 1], P[i])), n = perp(d), L0 = lon(res(P[i + 1], P[i]));
+      T(c, props.escalonMarca || '', { tam: 15, rumbo: angulo(d) - 90, fondo: true });
+      T(sum(c, mul(n, Math.max(30, L0 * 0.06))), props.izq, { rumbo: angulo(d) - 90 });
+      T(sum(c, mul(n, -Math.max(30, L0 * 0.06))), props.der, { rumbo: angulo(d) - 90 });
+    } else {
+      T(P[0], etiqueta, { extremo: 'inicio', dir: angulo(res(P[1], P[0])) });
+      T(P.at(-1), etiqueta, { extremo: 'fin', dir: angulo(res(P.at(-1), P.at(-2))) });
+    }
+    return out;
+  }
+  if (m.grupo === 'areas' && m.tipo === 'area') {
+    L([...P, P[0]]);
+    T(centroide(P), etiqueta, { tam: 14, negrita: true });
+    return out;
+  }
+  if (m.grupo === 'ejes') {
+    if (m.id.startsWith('dir-')) {
+      L(P);
+      const dir = uni(res(P.at(-1), P.at(-2))), t = Math.max(25, longitud(P) * 0.08);
+      L(punta(P.at(-1), dir, t));
+      if (m.id === 'dir-principal') L(punta(sum(P.at(-1), mul(dir, -t * 0.45)), dir, t));
+      T(med(P.at(-2), P.at(-1)), nombre, { rumbo: angulo(dir) - 90, arriba: true });
+      return out;
+    }
+    const ancho = props.ancho > 0 ? props.ancho : Math.max(80, longitud(P) * 0.14);
+    const flecha = flechaAncha(P, ancho, m.id === 'ataque-principal');
+    for (const l of flecha) L(l, { discontinua: m.id === 'contraataque' });
+    const i = Math.max(0, P.length - 2);
+    T(med(P[i], P[i + 1]), m.id === 'contraataque' ? ['CATK', nombre].filter(Boolean).join(' ') : nombre, { rumbo: angulo(res(P[i + 1], P[i])) - 90, negrita: true });
+    return out;
+  }
+  if (m.tipo === 'punto') return out; // los puntos se pintan con un icono (marcadorPunto)
+
+  // ---------------------------------------------------------- posiciones de fuego
+  if (m.id === 'sbf' && P.length >= 4) {
+    const [p1, p2, p3, p4] = P, base = res(p2, p1), n = uni(perp(base)), t = lon(base) * 0.18;
+    const atras = mul(n, -t);
+    L([sum(p1, sum(atras, mul(uni(base), -t * 0.6))), p1, p2, sum(p2, sum(atras, mul(uni(base), t * 0.6)))]);
+    L([p1, p3]); L(punta(p3, uni(res(p3, p1)), t * 0.5));
+    L([p2, p4]); L(punta(p4, uni(res(p4, p2)), t * 0.5));
+    T(med(p1, p2), nombre);
+    return out;
+  }
+  if (m.id === 'abf' && P.length >= 3) {
+    const [p1, p2, p3] = P, base = res(p3, p2), n = uni(perp(base)), t = lon(base) * 0.18;
+    const haciaFuera = mul(n, Math.sign((p1[0] - p2[0]) * n[0] + (p1[1] - p2[1]) * n[1]) || 1);
+    L([sum(p2, sum(mul(haciaFuera, -t), mul(uni(base), -t * 0.6))), p2, p3, sum(p3, sum(mul(haciaFuera, -t), mul(uni(base), t * 0.6)))]);
+    const c = med(p2, p3); L([c, p1]); L(punta(p1, uni(res(p1, c)), t * 0.5));
+    T(c, nombre);
+    return out;
+  }
+
+  // ---------------------------------------------------------- cometidos
+  const s = m.sigla ?? '';
+  switch (m.id) {
+    case 'bloquear': case 'penetrar': {
+      const [p1, p2, p3] = P, c = med(p1, p2);
+      L([p1, p2]);
+      L([p3, c]);
+      if (m.id === 'penetrar') L(punta(c, uni(res(c, p3)), lon(res(p2, p1)) * 0.18));
+      T(med(c, p3), s, { fondo: true });
+      break;
+    }
+    case 'brecha': case 'desbordar': case 'canalizar': {
+      const [p1, p2, p3] = P, ab = res(p2, p1), n = uni(perp(ab));
+      const prof = (p3[0] - p1[0]) * n[0] + (p3[1] - p1[1]) * n[1];
+      const atras = mul(n, prof);
+      const q1 = sum(p1, atras), q2 = sum(p2, atras);
+      L([p1, q1, q2, p2]);
+      const t = lon(ab) * 0.12, fuera = uni(ab), haciaDelante = mul(n, -Math.sign(prof) || 1);
+      if (m.id === 'desbordar') { L(punta(p1, haciaDelante, t)); L(punta(p2, haciaDelante, t)); }
+      else {
+        const sg = m.id === 'brecha' ? -1 : 1; // brecha: rabos hacia fuera; canalizar: hacia dentro
+        L([sum(p1, sum(mul(fuera, sg * t * 0.7), mul(haciaDelante, t * 0.7))), sum(p1, sum(mul(fuera, -sg * t * 0.7), mul(haciaDelante, -t * 0.7)))]);
+        L([sum(p2, sum(mul(fuera, -sg * t * 0.7), mul(haciaDelante, t * 0.7))), sum(p2, sum(mul(fuera, sg * t * 0.7), mul(haciaDelante, -t * 0.7)))]);
+      }
+      T(med(q1, q2), s, { fondo: true });
+      break;
+    }
+    case 'limpiar': {
+      const [p1, p2, p3] = P, ab = res(p2, p1), n = uni(perp(ab));
+      const prof = (p3[0] - p1[0]) * n[0] + (p3[1] - p1[1]) * n[1];
+      L([p1, p2]);
+      const t = lon(ab) * 0.1, dir = mul(n, -Math.sign(prof) || 1);
+      for (const k of [0.2, 0.5, 0.8]) {
+        const tip = sum(p1, mul(ab, k)), cola = sum(tip, mul(n, prof));
+        L([cola, tip]); L(punta(tip, dir, t));
+        if (k === 0.5) T(med(cola, tip), s, { fondo: true });
+      }
+      break;
+    }
+    case 'contener': {
+      const [p1, p2] = P, c = med(p1, p2), r = lon(res(p2, p1)) / 2, a0 = angDe(res(p1, c));
+      const arc = arco(c, r, a0, a0 + Math.PI, 30);
+      L(arc);
+      for (let i = 1; i < 10; i++) { const q = arc[i * 3]; const v = uni(res(q, c)); L([q, sum(q, mul(v, r * 0.18))]); } // rayas hacia fuera
+      T(sum(c, mul(uni(res(arc[15], c)), r * 1.32)), s, { fondo: true });
+      break;
+    }
+    case 'controlar': case 'asegurar': case 'ocupar': case 'aislar': {
+      const [p1, p2] = P, r = lon(res(p2, p1)) || 1, a0 = angDe(res(p2, p1));
+      const arc = arco(p1, r, a0, a0 + (330 * Math.PI) / 180, 44);
+      L(arc);
+      const fin = arc.at(-1), tg = uni(res(fin, arc.at(-2)));
+      if (m.id === 'ocupar') { const d = r * 0.14; L([sum(fin, [-d, -d]), sum(fin, [d, d])]); L([sum(fin, [-d, d]), sum(fin, [d, -d])]); }
+      else if (m.id === 'asegurar') { const t = r * 0.2; const b = sum(fin, mul(tg, -t)); L([sum(b, mul(perp(tg), t * 0.6)), fin]); }
+      else L(punta(fin, tg, r * 0.18));
+      if (m.id === 'aislar') {
+        for (let i = 4; i < 40; i += 6) {
+          const q = arc[i], q2 = arc[i + 2], v = uni(res(p1, q));
+          L([q, sum(med(q, q2), mul(v, r * 0.2)), q2]);
+        }
+      }
+      T(arc[Math.round(arc.length * 0.25)], s, { fondo: true });
+      break;
+    }
+    case 'tomar': {
+      const [p1, p2, p3] = P, r = lon(res(p2, p1)) || 1;
+      L(arco(p1, r, 0, 2 * Math.PI, 48));
+      const inicio = sum(p1, mul(uni(res(p3, p1)), r));
+      const cuerda = res(p3, inicio), ctrl = sum(med(inicio, p3), mul(uni(perp(cuerda)), lon(cuerda) * 0.3));
+      const curva = []; for (let i = 0; i <= 20; i++) { const t = i / 20; curva.push(sum(sum(mul(inicio, (1 - t) ** 2), mul(ctrl, 2 * t * (1 - t))), mul(p3, t * t))); }
+      L(curva); L(punta(p3, uni(res(p3, curva.at(-2))), lon(cuerda) * 0.1));
+      T(curva[10], s, { fondo: true });
+      break;
+    }
+    case 'destruir': case 'neutralizar': case 'suprimir': {
+      const [p1, p2] = P, d = lon(res(p2, p1)) || 1, hueco = d * 0.28;
+      for (const v of [[1, 1], [1, -1], [-1, 1], [-1, -1]]) {
+        const u = uni(v);
+        const disc = m.id === 'suprimir' || (m.id === 'neutralizar' && v[0] * v[1] < 0);
+        L([sum(p1, mul(u, hueco)), sum(p1, mul(u, d))], { discontinua: disc });
+      }
+      T(p1, s, { fondo: true });
+      break;
+    }
+    case 'fijar': {
+      const [p1, p2] = P, v = res(p1, p2), u = uni(v), n = perp(u), Ltot = lon(v);
+      const pts = [p2, sum(p2, mul(u, Ltot * 0.18))];
+      const nz = 8, a0 = Ltot * 0.18, a1 = Ltot * 0.85, amp = Ltot * 0.06;
+      for (let i = 1; i <= nz; i++) pts.push(sum(sum(p2, mul(u, a0 + ((a1 - a0) * (i - 0.5)) / nz)), mul(n, i % 2 ? amp : -amp)));
+      pts.push(sum(p2, mul(u, a1)), p1);
+      L(pts); L(punta(p1, u, Ltot * 0.1));
+      T(sum(p2, mul(u, Ltot * 0.08)), s, { fondo: true });
+      break;
+    }
+    case 'retardar': case 'retirarse': case 'retirarse-presion': case 'ruptura': case 'demostracion': {
+      const [p1, p2, p3] = P, u = uni(res(p1, p2)), n = perp(u);
+      const lado = Math.sign((p3[0] - p2[0]) * n[0] + (p3[1] - p2[1]) * n[1]) || 1;
+      const diam = Math.abs((p3[0] - p2[0]) * n[0] + (p3[1] - p2[1]) * n[1]) || lon(res(p1, p2)) * 0.3;
+      const c = sum(p2, mul(n, (lado * diam) / 2));
+      const a0 = angDe(res(p2, c));
+      const arc = arco(c, diam / 2, a0, a0 - lado * Math.PI, 24);
+      L([p1, p2]); L(arc);
+      if (m.id === 'demostracion') { const q = arc.at(-1); L([q, sum(q, mul(u, -lon(res(p1, p2)) * 0.6))]); }
+      L(punta(p1, u, lon(res(p1, p2)) * 0.1));
+      T(med(p1, p2), s, { fondo: true });
+      break;
+    }
+    case 'desorganizar': {
+      const [p1, p2, p3] = P, base = res(p2, p1), n = uni(perp(base));
+      const largo = (p3[0] - p1[0]) * n[0] + (p3[1] - p1[1]) * n[1];
+      L([p1, p2]);
+      const flechas = [[0.08, 0.45], [0.5, 0.3], [0.92, 1]];
+      const t = Math.abs(largo) * 0.1;
+      for (const [k, f] of flechas) {
+        const o = sum(p1, mul(base, k)), tip = sum(o, mul(n, largo * f));
+        L([o, tip]); L(punta(tip, mul(n, Math.sign(largo) || 1), t));
+        if (k === 0.5) T(sum(o, mul(n, largo * f * 0.5)), s, { fondo: true });
+      }
+      const c = med(p1, p2); L([c, sum(c, mul(n, -largo * 0.25))]);
+      break;
+    }
+    case 'interdiccion': {
+      const [p1, p2] = P, v = res(p2, p1), d = lon(v) || 1, u = uni(v);
+      const a = sum(p1, mul(u, -d)), b = sum(p1, mul(u, d));
+      L([a, b]); L(punta(b, u, d * 0.18));
+      const u2 = rot(u, Math.PI / 4), a2 = sum(p1, mul(u2, -d)), b2 = sum(p1, mul(u2, d));
+      L([a2, b2]); L(punta(b2, u2, d * 0.18));
+      T(p1, s, { fondo: true });
+      break;
+    }
+    case 'envolver': {
+      const [p1, p2, p3] = P, d = res(p3, p2), c = med(p2, p3), r = lon(d) / 2;
+      const a0 = angDe(res(p2, c));
+      const arc = arco(c, r, a0, a0 - Math.PI, 24);
+      L([p1, p2]); L(arc); L(punta(arc.at(-1), uni(res(arc.at(-1), arc.at(-2))), r * 0.35));
+      T(med(p1, p2), s, { fondo: true });
+      break;
+    }
+    case 'emboscada': {
+      const [p1, p2, p3] = P, c = med(p2, p3), dir = uni(res(p1, c)), r = lon(res(p3, p2)) / 2;
+      // base curva (abierta hacia la flecha) con rayas hacia atrás
+      const ctrl = sum(c, mul(dir, -r * 0.5));
+      const curva = []; for (let i = 0; i <= 16; i++) { const t = i / 16; curva.push(sum(sum(mul(p2, (1 - t) ** 2), mul(ctrl, 2 * t * (1 - t))), mul(p3, t * t))); }
+      L(curva);
+      for (let i = 1; i < 16; i += 2) L([curva[i], sum(curva[i], mul(dir, r * 0.2))]);
+      const ini = curva[8]; L([ini, p1]); L(punta(p1, dir, r * 0.25));
+      break;
+    }
+    case 'cubrir': case 'vigilar': case 'observar': {
+      const [p1, p2, p3] = P;
+      for (const q of [p2, p3]) {
+        const v = res(q, p1), u = uni(v), n = perp(u), d = lon(v);
+        const a0 = sum(p1, mul(u, d * 0.18)), z0 = sum(p1, mul(u, d * 0.55)), z1 = sum(p1, mul(u, d * 0.62));
+        L([a0, z0, sum(med(z0, z1), mul(n, d * 0.06)), z1, q]);
+        L(punta(q, u, d * 0.08));
+        T(sum(p1, mul(u, d * 0.3)), s, { fondo: true });
+      }
+      break;
+    }
+    default: L(P);
+  }
+  return out;
+}
+
+const longitud = (P) => P.slice(1).reduce((t, p, i) => t + lon(res(p, P[i])), 0);
+function centroide(P) {
+  let a = 0, cx = 0, cy = 0;
+  for (let i = 0; i < P.length; i++) {
+    const [x0, y0] = P[i], [x1, y1] = P[(i + 1) % P.length], f = x0 * y1 - x1 * y0;
+    a += f; cx += (x0 + x1) * f; cy += (y0 + y1) * f;
+  }
+  if (Math.abs(a) < 1e-9) return mul(P.reduce((s, p) => sum(s, p), [0, 0]), 1 / P.length);
+  return [cx / (3 * a), cy / (3 * a)];
+}
+
+/** Flecha ancha a lo largo de un eje (ataques). Devuelve polilíneas. */
+function flechaAncha(P, ancho, doble) {
+  const h = ancho / 2;
+  const izq = [], der = [];
+  const n = P.length;
+  // Normales suavizadas en los vértices
+  for (let i = 0; i < n - 1; i++) {
+    const dPrev = i > 0 ? uni(res(P[i], P[i - 1])) : null, dNext = uni(res(P[i + 1], P[i]));
+    const dir = dPrev ? uni(sum(dPrev, dNext)) : dNext;
+    const nn = perp(dir);
+    izq.push(sum(P[i], mul(nn, h))); der.push(sum(P[i], mul(nn, -h)));
+  }
+  const fin = P[n - 1], dFin = uni(res(fin, P[n - 2])), nFin = perp(dFin);
+  const largoPunta = Math.min(ancho * 0.9, longitud(P) * 0.3);
+  const base = sum(fin, mul(dFin, -largoPunta));
+  izq.push(sum(base, mul(nFin, h))); der.push(sum(base, mul(nFin, -h)));
+  const alas = [sum(base, mul(nFin, h * 1.6)), fin, sum(base, mul(nFin, -h * 1.6))];
+  const lineas = [[...izq, alas[0], alas[1], alas[2], ...der.slice().reverse()]];
+  if (doble) {
+    // Ataque principal: segunda punta dentro de la cabeza, paralela a la exterior
+    const atras = mul(dFin, -largoPunta * 0.32);
+    lineas.push([sum(sum(base, atras), mul(nFin, h * 1.25)), sum(fin, atras), sum(sum(base, atras), mul(nFin, -h * 1.25))]);
+  }
+  return lineas;
+}
+
+/** SVG de un punto de control (chincheta con su sigla) — APP-6(E) 8.3. */
+function svgPunto(m, color, nombre = '') {
+  const s = m.sigla ?? '';
+  if (m.id === 'op') {
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="34" height="32" viewBox="0 0 34 32"><path d="M17,3 L31,29 L3,29 Z" fill="#fff" stroke="${color}" stroke-width="2.5"/><circle cx="17" cy="21" r="3" fill="${color}"/></svg>`;
+  }
+  const w = Math.max(34, s.length * 9 + 14);
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="44" viewBox="0 0 ${w} 44"><path d="M3,3 L${w - 3},3 L${w - 3},26 L${w / 2 + 7},26 L${w / 2},41 L${w / 2 - 7},26 L3,26 Z" fill="#fff" stroke="${color}" stroke-width="2.5" stroke-linejoin="round"/><text x="${w / 2}" y="19.5" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="bold" font-size="12" fill="${color}">${s}</text></svg>${nombre ? '' : ''}`;
+}
+
+return { GRUPOS, MEDIDAS, medida, puntosNecesarios, geometria, svgPunto };
+})();
+
 // ── src/ui/difuso.js
 __mods["src/ui/difuso.js"] = (function () {
 'use strict';
@@ -10010,6 +11112,388 @@ function zonaMgrs(p) {
 return { normalizar, distancia, SINONIMOS, puntuar, buscar, leerCoordenadaFlexible, zonaMgrs };
 })();
 
+// ── src/ui/simbolos.js
+__mods["src/ui/simbolos.js"] = (function () {
+'use strict';
+// Símbolos en el mapa: paleta (unidades, medidas de coordinación y
+// cometidos), constructor guiado de unidades, recientes y fichas de edición.
+//
+// Los elementos del plan llevan `simbolo`:
+//   unidad   {clase:'unidad', identidad, icono, mod1, mod2, escalon, cg, ft, finta, refuerzo, T, M, H}
+//   medida   {clase:'medida', id, ancho?, escalon?, izq?, der?}
+// El estado (presente/previsto) y el nombre siguen en `propiedades`.
+
+const { svgUnidad, IDENTIDADES, ESCALONES, ENTIDADES } = __req("src/simbolos/app6.js");
+const { ARMAS, ORDEN_ESCALONES, nombreEscalon, nombreUnidad, especialidadDe, candidatosUnidad } = __req("src/simbolos/catalogo.js");
+const { MEDIDAS, GRUPOS, medida, geometria, svgPunto, puntosNecesarios } = __req("src/simbolos/medidas.js");
+const { buscar: buscarDifuso } = __req("src/ui/difuso.js");
+const { esc } = __req("src/ui/formas.js");
+
+const CLAVE = 'spa.simbolos';
+const BANDO_DE = { amigo: 'propio', supuesto: 'propio', hostil: 'enemigo', sospechoso: 'enemigo', neutral: 'neutral', desconocido: 'desconocido', pendiente: 'desconocido' };
+const IDENTIDAD_DE = { propio: 'amigo', enemigo: 'hostil', neutral: 'neutral', desconocido: 'desconocido' };
+const identidadDeBando = (b) => IDENTIDAD_DE[b] ?? 'amigo';
+
+/** Miniatura de una unidad para listas y botones. */
+const miniUnidad = (s, tam = 26) => svgUnidad({ escalon: '', ...s }, { tam, sinTextos: true }).svg;
+
+/** Miniatura de una medida o cometido (con anclas de ejemplo). */
+const EJEMPLOS = {
+  limite: [[5, 30], [95, 30]], pl: [[5, 30], [95, 30]], ld: [[5, 30], [95, 30]], ldlc: [[5, 30], [95, 30]], loa: [[5, 30], [95, 30]], fcl: [[5, 30], [95, 30]], pld: [[5, 30], [95, 30]], lc: [[5, 30], [95, 30]], feba: [[5, 30], [95, 30]],
+  'ataque-principal': [[8, 20], [45, 30], [92, 30]], 'ataque-apoyo': [[8, 20], [45, 30], [92, 30]], contraataque: [[8, 20], [45, 30], [92, 30]],
+  'dir-principal': [[8, 30], [92, 30]], 'dir-apoyo': [[8, 30], [92, 30]],
+  sbf: [[30, 18], [70, 18], [25, 50], [75, 50]], abf: [[50, 52], [30, 18], [70, 18]],
+  bloquear: [[75, 52], [75, 8], [10, 30]], penetrar: [[75, 52], [75, 8], [10, 30]],
+  brecha: [[80, 52], [80, 8], [20, 30]], desbordar: [[80, 52], [80, 8], [20, 30]], canalizar: [[80, 52], [80, 8], [20, 30]], limpiar: [[80, 52], [80, 8], [15, 30]],
+  contener: [[60, 54], [60, 6]], controlar: [[50, 30], [72, 30]], asegurar: [[50, 30], [72, 30]], ocupar: [[50, 30], [72, 30]], aislar: [[50, 30], [72, 30]],
+  tomar: [[20, 40], [30, 40], [90, 20]], destruir: [[50, 30], [72, 52]], neutralizar: [[50, 30], [72, 52]], suprimir: [[50, 30], [72, 52]],
+  fijar: [[92, 30], [8, 30]], retardar: [[10, 30], [70, 30], [70, 55]], retirarse: [[10, 30], [70, 30], [70, 55]], 'retirarse-presion': [[10, 30], [70, 30], [70, 55]], ruptura: [[10, 30], [70, 30], [70, 55]], demostracion: [[10, 30], [70, 30], [70, 55]],
+  desorganizar: [[20, 55], [20, 5], [90, 30]], interdiccion: [[50, 30], [80, 30]], envolver: [[8, 25], [55, 25], [85, 25]], emboscada: [[90, 30], [20, 55], [20, 5]],
+  cubrir: [[50, 30], [8, 30], [92, 30]], vigilar: [[50, 30], [8, 30], [92, 30]], observar: [[50, 30], [8, 30], [92, 30]],
+  aa: [[10, 10], [90, 8], [92, 52], [8, 50]], obj: [[10, 10], [90, 8], [92, 52], [8, 50]],
+};
+function miniMedida(m, color = '#1F5FA8', ancho = 64, alto = 38) {
+  if (m.tipo === 'punto') return svgPunto(m, color);
+  const ej = EJEMPLOS[m.id] ?? (m.tipo === 'area' ? EJEMPLOS.aa : [[8, 30], [92, 30]]);
+  const K = 1 / 111320; // metros → grados en el ecuador
+  const anclas = ej.map(([x, y]) => ({ lat: y * 10 * K, lon: x * 10 * K }));
+  const g = geometria(m, anclas, { nombre: '', escalonMarca: 'II' });
+  const pt = ([la, lo]) => [(lo / K / 10) * (ancho / 100), alto - (la / K / 10) * (alto / 60)];
+  const ruta = (pts) => pts.map((p, i) => `${i ? 'L' : 'M'}${pt(p).map((v) => v.toFixed(1)).join(',')}`).join(' ');
+  const lineas = g.lineas.map((l) => `<path d="${ruta(l.pts)}" fill="none" stroke="${color}" stroke-width="1.6"${l.discontinua || m.discontinua ? ' stroke-dasharray="4 3"' : ''}/>`).join('');
+  const textos = g.textos.filter((t) => t.texto && t.texto.length <= 4 && !t.extremo).map((t) => { const [x, y] = pt(t.pos); return `<text x="${x.toFixed(1)}" y="${(y + 3.5).toFixed(1)}" font-size="9" font-weight="bold" font-family="Arial" text-anchor="middle" fill="${color}" paint-order="stroke" stroke="#fff" stroke-width="3">${esc(t.texto)}</text>`; }).join('');
+  const sig = m.grupo === 'lineas' && m.sigla ? `<text x="${ancho / 2}" y="${alto / 2 - 4}" font-size="9" font-weight="bold" font-family="Arial" text-anchor="middle" fill="${color}">${esc(m.sigla)}</text>` : '';
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${ancho}" height="${alto}" viewBox="-4 -4 ${ancho + 8} ${alto + 8}">${lineas}${textos}${sig}</svg>`;
+}
+
+/**
+ * @param {object} o
+ * @param {*} o.L @param {*} o.mapa @param {*} o.dibujo
+ * @param {(h:string)=>void} o.elegirHerramienta
+ * @param {()=>{modo:'fijo'|'escala', px:number, metros:number}} o.tamano
+ */
+function iniciarSimbolos({ L, mapa, elegirHerramienta, tamano }) {
+  const $ = (id) => document.getElementById(id);
+  const panel = $('panel-simbolos');
+  let dibujo = null;
+  const est = {
+    pestaña: 'unidades', busqueda: '',
+    unidad: { identidad: 'amigo', icono: '121100', mod2: 'c100', escalon: 'seccion', T: '', M: '', H: '', cg: false, ft: false, finta: false, refuerzo: '' },
+    arma: 'infanteria', masOpciones: false,
+    recientes: [],
+  };
+  try { const g = JSON.parse(localStorage.getItem(CLAVE) || '{}'); Object.assign(est, g, { unidad: { ...est.unidad, ...g.unidad } }); } catch { /* nada */ }
+  const guardar = () => { try { localStorage.setItem(CLAVE, JSON.stringify({ pestaña: est.pestaña, unidad: est.unidad, arma: est.arma, recientes: est.recientes })); } catch { /* nada */ } };
+
+  // ---------------------------------------------------------- pintar en el mapa
+  const metrosPx = () => (156543.03392804097 * Math.cos((mapa.getCenter().lat * Math.PI) / 180)) / 2 ** mapa.getZoom();
+  const ladoPx = () => { const t = tamano(); return t.modo === 'escala' ? Math.max(10, Math.min(180, t.metros / metrosPx())) : t.px; };
+  mapa.on('zoomend', () => { if (tamano().modo === 'escala') dibujo?.refrescar(); });
+
+  /** Capa de un elemento con símbolo (o null si no tiene). */
+  function pintar(el, puntos, { seleccionado, color, previsto, arrastrable }) {
+    const s = el.simbolo; if (!s) return null;
+    const g = L.layerGroup();
+    if (s.clase === 'unidad') {
+      const r = svgUnidad({ ...s, estado: previsto ? 'previsto' : 'presente' }, { tam: ladoPx() });
+      const principal = L.marker([puntos[0].lat, puntos[0].lon], {
+        pane: 'elementos', draggable: Boolean(arrastrable), keyboard: false, bubblingMouseEvents: true,
+        icon: L.divIcon({ className: `simbolo-unidad${seleccionado ? ' sel' : ''}`, html: r.svg, iconSize: [r.ancho, r.alto], iconAnchor: [r.ancla.x, r.ancla.y] }),
+      });
+      g.addLayer(principal);
+      if (el.propiedades.nombre && !s.T && !s.M) g.addLayer(L.marker([puntos[0].lat, puntos[0].lon], { pane: 'elementos', interactive: false, icon: L.divIcon({ className: 'etq-ancla', html: `<span class="etq-simbolo" style="--dy:${(r.alto - r.ancla.y + 4).toFixed(0)}px">${esc(el.propiedades.nombre)}</span>`, iconSize: null }) }));
+      return { grupo: g, principal };
+    }
+    const m = medida(s.id); if (!m) return null;
+    if (m.tipo === 'punto') {
+      const html = svgPunto(m, color);
+      const ancho = Number(/width="([\d.]+)"/.exec(html)[1]);
+      const principal = L.marker([puntos[0].lat, puntos[0].lon], {
+        pane: 'elementos', draggable: Boolean(arrastrable), keyboard: false,
+        icon: L.divIcon({ className: `simbolo-punto${seleccionado ? ' sel' : ''}`, html: `${html}${el.propiedades.nombre ? `<span class="etq-pto-cm" style="color:${color}">${esc(el.propiedades.nombre)}</span>` : ''}`, iconSize: [ancho, m.id === 'op' ? 32 : 44], iconAnchor: [ancho / 2, m.id === 'op' ? 20 : 41] }),
+      });
+      g.addLayer(principal);
+      return { grupo: g, principal };
+    }
+    const geo = geometria(m, puntos, { nombre: el.propiedades.nombre, ancho: s.ancho, izq: s.izq, der: s.der, escalonMarca: ESCALONES[s.escalon]?.marca });
+    const discont = previsto || m.discontinua;
+    for (const l of geo.lineas) {
+      g.addLayer(L.polyline(l.pts, { pane: 'elementos', color: seleccionado ? '#E0B252' : '#fff', weight: seleccionado ? 8 : 6, opacity: seleccionado ? 0.9 : 0.7, interactive: false, lineJoin: 'round', lineCap: 'round' }));
+    }
+    for (const l of geo.lineas) {
+      g.addLayer(L.polyline(l.pts, { pane: 'elementos', color, weight: 2.6, dashArray: discont || l.discontinua ? '10 7' : null, interactive: false, lineJoin: 'round' }));
+    }
+    for (const t of geo.textos) {
+      let rot = t.rumbo ?? 0; rot = ((rot % 360) + 540) % 360 - 180; if (rot > 90) rot -= 180; if (rot < -90) rot += 180;
+      const cls = `etq-cm${t.fondo ? ' fondo' : ''}${t.negrita ? ' negrita' : ''}${t.extremo ? ` extremo ${t.extremo}` : ''}`;
+      const trans = t.extremo ? extremoTransform(t) : `translate(-50%,-50%) rotate(${rot.toFixed(1)}deg)`;
+      g.addLayer(L.marker(t.pos, { pane: 'elementos', interactive: false, icon: L.divIcon({ className: 'etq-ancla', html: `<span class="${cls}" style="color:${color};transform:${trans};${t.tam ? `font-size:${t.tam}px` : ''}">${esc(t.texto)}</span>`, iconSize: null }) }));
+    }
+    // Zona de clic: el recorrido de los puntos de anclaje (invisible y ancho)
+    const cerrar = m.tipo === 'area';
+    const pts = puntos.map((p) => [p.lat, p.lon]);
+    const principal = cerrar ? L.polygon(pts, { pane: 'elementos', color, weight: 14, opacity: 0, fillColor: color, fillOpacity: seleccionado ? 0.12 : 0.04, bubblingMouseEvents: true })
+      : L.polyline(geo.lineas.length ? geo.lineas.flatMap((l) => l.pts) : pts, { pane: 'elementos', color, weight: 16, opacity: 0, bubblingMouseEvents: true });
+    g.addLayer(principal);
+    return { grupo: g, principal };
+  }
+  // Rótulo de extremo de línea (PL, LD…): fuera de la línea, en su prolongación
+  function extremoTransform(t) {
+    const dir = ((t.dir ?? 90) + 360) % 360; // rumbo de la línea en ese extremo
+    const haciaFuera = t.extremo === 'inicio' ? (dir + 180) % 360 : dir;
+    const dx = Math.sin((haciaFuera * Math.PI) / 180), dy = -Math.cos((haciaFuera * Math.PI) / 180);
+    const ax = dx >= 0 ? 0 : -100, ay = -50;
+    return `translate(${ax}%,${ay}%) translate(${(dx * 8).toFixed(1)}px,${(dy * 8).toFixed(1)}px)`;
+  }
+
+  /** Vista previa mientras se dibuja (puntos puestos + cursor). */
+  function previsualizar(capa, simbolo, puntos, color) {
+    const m = simbolo?.clase === 'medida' ? medida(simbolo.id) : null;
+    if (!m || m.tipo === 'punto' || puntos.length < 2 || (m.n && puntos.length < m.n)) return false;
+    const geo = geometria(m, puntos, { nombre: '', ancho: simbolo.ancho, escalonMarca: '' });
+    for (const l of geo.lineas) L.polyline(l.pts, { pane: 'borrador', color, weight: 2.4, opacity: 0.85, dashArray: '6 5', interactive: false }).addTo(capa);
+    return true;
+  }
+
+  // ---------------------------------------------------------- recientes
+  function recordar(simbolo) {
+    const clave = JSON.stringify(simbolo);
+    est.recientes = [simbolo, ...est.recientes.filter((r) => JSON.stringify(r) !== clave)].slice(0, 10);
+    guardar(); if (!panel.hidden) pintarPanel();
+  }
+
+  // ---------------------------------------------------------- colocar / dibujar
+  function colocar(simbolo) {
+    if (simbolo.clase === 'unidad') {
+      elegirHerramienta('punto');
+      dibujo.ponerSimboloBorrador({ ...simbolo }, 1, `Toca el mapa donde va: ${nombreUnidad(simbolo)}.`);
+      return;
+    }
+    const m = medida(simbolo.id); if (!m) return;
+    elegirHerramienta(m.tipo === 'area' ? 'area' : m.tipo === 'punto' ? 'punto' : 'linea');
+    dibujo.ponerSimboloBorrador({ ...simbolo }, m.n ?? 0, m.ayuda ?? (m.tipo === 'area' ? 'Toca los vértices de la zona; toca el primero o doble clic para cerrar.' : m.tipo === 'punto' ? 'Toca el mapa donde va el punto.' : 'Toca los puntos de la línea; doble clic o Intro para terminar.'), m.nombre);
+  }
+
+  // ---------------------------------------------------------- paleta
+  function abrir(pestaña, si = true) {
+    if (pestaña) est.pestaña = pestaña;
+    panel.hidden = !si;
+    document.querySelectorAll('[data-simbolos]').forEach((b) => b.setAttribute('aria-pressed', String(si && b.dataset.simbolos === est.pestaña)));
+    if (si) pintarPanel();
+    guardar();
+  }
+
+  const u = () => est.unidad;
+  function pintarPanel() {
+    if (panel.hidden) return;
+    const cab = `<div class="pm-cab"><strong>Símbolos</strong><button type="button" class="pm-x" data-s="cerrar" aria-label="Cerrar">×</button></div>
+      <input class="sim-buscar" id="sim-buscar" placeholder="Buscar: «sección paracaidista», «PL», «bloquear»…" value="${esc(est.busqueda)}" autocomplete="off">
+      <div class="seg sim-pestanas">${[['unidades', 'Unidades'], ['medidas', 'Medidas'], ['cometidos', 'Cometidos']].map(([k, n]) => `<button type="button" data-pestana="${k}" aria-pressed="${est.pestaña === k}">${n}</button>`).join('')}</div>
+      ${est.recientes.length ? `<div class="sim-recientes"><span class="el-et">Recientes</span><div>${est.recientes.map((r, i) => `<button type="button" class="sim-chip" data-reciente="${i}" title="${esc(tituloSimbolo(r))}">${r.clase === 'unidad' ? miniUnidad(r, 18) : miniMedida(medida(r.id), '#1F5FA8', 34, 20)}</button>`).join('')}</div></div>` : ''}`;
+    let cuerpo;
+    if (est.busqueda.trim()) cuerpo = htmlBusqueda(est.busqueda.trim());
+    else if (est.pestaña === 'unidades') cuerpo = htmlConstructor();
+    else cuerpo = htmlMedidas(est.pestaña === 'cometidos' ? ['cometidos'] : ['lineas', 'ejes', 'areas', 'puntos']);
+    panel.innerHTML = cab + cuerpo;
+    const b = $('sim-buscar');
+    if (b && document.activeElement?.id !== 'sim-buscar' && est._enfocar) { b.focus(); b.setSelectionRange(b.value.length, b.value.length); est._enfocar = false; }
+  }
+  const tituloSimbolo = (s) => (s.clase === 'unidad' ? `${nombreUnidad(s)}${s.T ? ` ${s.T}` : ''}${s.M ? ` / ${s.M}` : ''}` : medida(s.id)?.nombre ?? '');
+
+  function htmlConstructor() {
+    const s = u();
+    const arma = ARMAS.find((a) => a.id === est.arma) ?? ARMAS[0];
+    const grande = svgUnidad(s, { tam: 46 });
+    const ids = ['amigo', 'hostil', 'neutral', 'desconocido'];
+    const masIds = ['supuesto', 'sospechoso', 'pendiente'];
+    return `<div class="sim-vista">${grande.svg}<div><b>${esc(nombreUnidad(s))}</b><small>SIDC ${grande.sidc}</small></div></div>
+      <div class="sim-paso"><span class="el-et">1 · Bando</span><div class="sim-rejilla sim-bandos">${[...ids, ...(est.masOpciones ? masIds : [])].map((id) => `<button type="button" class="sim-tile" data-identidad="${id}" aria-pressed="${s.identidad === id}">${miniUnidad({ ...s, identidad: id, escalon: '' }, 22)}<span>${IDENTIDADES[id].nombre}</span></button>`).join('')}</div></div>
+      <div class="sim-paso"><span class="el-et">2 · Arma</span><div class="sim-rejilla">${ARMAS.map((a) => `<button type="button" class="sim-tile" data-arma="${a.id}" aria-pressed="${a.id === arma.id}">${miniUnidad({ identidad: s.identidad, icono: a.icono }, 20)}<span>${esc(a.nombre)}</span></button>`).join('')}</div></div>
+      <div class="sim-paso"><span class="el-et">3 · Tipo</span><div class="sim-rejilla">${arma.tipos.map((t) => `<button type="button" class="sim-tile" data-tipo="${t.id}" aria-pressed="${t.icono === s.icono && (t.mod1 ?? '') === (s.mod1 ?? '') && (t.mod2 ?? '') === (s.mod2 ?? '')}">${miniUnidad({ identidad: s.identidad, icono: t.icono, mod1: t.mod1, mod2: t.mod2 }, 20)}<span>${esc(t.nombre)}</span></button>`).join('')}</div></div>
+      <div class="sim-paso"><span class="el-et">4 · Escalón</span><div class="sim-escalones">${ORDEN_ESCALONES.slice(0, 9).map((k) => `<button type="button" data-escalon="${k}" aria-pressed="${s.escalon === k}" title="${esc(ESCALONES[k].nombre)}"><b>${ESCALONES[k].marca ?? '—'}</b><span>${esc(nombreEscalon(k, arma.id))}</span></button>`).join('')}</div></div>
+      <div class="sim-paso sim-campos"><label>Designación <input data-campo-u="T" value="${esc(s.T)}" placeholder="1" maxlength="21"></label><label>Unidad superior <input data-campo-u="M" value="${esc(s.M)}" placeholder="II/RI4" maxlength="21"></label></div>
+      <button type="button" class="sim-mas" data-s="mas">${est.masOpciones ? 'Menos opciones ▲' : 'Más opciones (CG, agrupación, refuerzo, finta…) ▼'}</button>
+      ${est.masOpciones ? htmlExtras(s) : ''}
+      <div class="pm-acciones"><button type="button" class="primario" data-s="colocar">Colocar en el mapa</button></div>`;
+  }
+  function htmlExtras(s, pref = 'u') {
+    const chk = (k, n) => `<label class="sim-chk"><input type="checkbox" data-bool-${pref}="${k}" ${s[k] ? 'checked' : ''}>${n}</label>`;
+    if (pref === 'f') {
+      const activos = ['cg', 'ft', 'finta'].filter((k) => s[k]).length + (s.refuerzo ? 1 : 0) + (s.H ? 1 : 0);
+      return `<details class="sim-det"${activos ? ' open' : ''}><summary>Más opciones${activos ? ` (${activos})` : ''}</summary>${htmlExtras(s, 'f2')}</details>`;
+    }
+    if (pref === 'f2') pref = 'f';
+    return `<div class="sim-paso sim-extras">
+      ${chk('cg', 'Cuartel general')}${chk('ft', 'Agrupación táctica')}${chk('finta', 'Finta / simulada')}
+      <div class="seg" data-refuerzo-${pref}>${[['', 'Normal'], ['+', 'Reforzada (+)'], ['-', 'Disminuida (−)'], ['±', '±']].map(([v, n]) => `<button type="button" data-v="${v}" aria-pressed="${(s.refuerzo ?? '') === v}">${n}</button>`).join('')}</div>
+      <label>Información adicional (H) <input data-campo-${pref}="H" value="${esc(s.H ?? '')}" placeholder="RECO, NASAMS…" maxlength="20"></label>
+    </div>`;
+  }
+  function htmlMedidas(grupos) {
+    return grupos.map((gk) => `<div class="sim-grupo"><span class="el-et">${GRUPOS[gk]}</span><div class="sim-lista-cm">${MEDIDAS.filter((m) => m.grupo === gk).map((m) => `<button type="button" class="sim-cm" data-medida="${m.id}" title="${esc(m.ayuda ?? m.nombre)}"><span class="sim-cm-ico">${miniMedida(m)}</span><span>${esc(m.nombre)}${m.sigla && gk !== 'cometidos' ? ` <small>${esc(m.sigla)}</small>` : ''}</span></button>`).join('')}</div></div>`).join('');
+  }
+  function htmlBusqueda(q) {
+    const cands = [
+      ...candidatosUnidad().map((c) => ({ ...c, grupo: 'Unidades' })),
+      ...MEDIDAS.map((m) => ({ grupo: m.grupo === 'cometidos' ? 'Cometidos' : 'Medidas', texto: m.nombre, extra: `${m.sigla ?? ''} ${m.claves ?? ''}`, medida: m })),
+    ];
+    // «sección paracaidista»: el escalón dentro de la búsqueda
+    const qn = q.toLowerCase();
+    const escalon = ORDEN_ESCALONES.find((k) => k && qn.includes(nombreEscalon(k, 'infanteria').toLowerCase().split(' ')[0]))
+      ?? (/\b(bia|bía|batería)\b/.test(qn) ? 'compania' : /\b(escuadrón|esc)\b/.test(qn) ? 'compania' : /\bgrupo\b/.test(qn) ? 'batallon' : null);
+    const limpio = escalon ? qn.replace(nombreEscalon(escalon, 'infanteria').toLowerCase(), '').replace(/\b(de|del)\b/g, ' ').trim() || qn : qn;
+    const r = buscarDifuso(limpio, cands, 45).slice(0, 16);
+    if (!r.length) return '<p class="cat-vacio">Nada encontrado.</p>';
+    return `<div class="sim-lista-cm">${r.map((c, i) => {
+      if (c.medida) return `<button type="button" class="sim-cm" data-medida="${c.medida.id}"><span class="sim-cm-ico">${miniMedida(c.medida)}</span><span>${esc(c.texto)} <small>${esc(c.grupo)}</small></span></button>`;
+      const s = { ...u(), icono: c.tipo.icono, mod1: c.tipo.mod1 ?? '', mod2: c.tipo.mod2 ?? '', ...(escalon ? { escalon } : {}) };
+      est[`_res${i}`] = { s, arma: c.arma };
+      return `<button type="button" class="sim-cm" data-resultado="${i}"><span class="sim-cm-ico">${miniUnidad(s, 22)}</span><span>${esc(nombreUnidad(s))} <small>Unidad</small></span></button>`;
+    }).join('')}</div>`;
+  }
+
+  panel.addEventListener('click', (ev) => {
+    const b = ev.target.closest('button'); if (!b) return;
+    const s = u();
+    if (b.dataset.s === 'cerrar') { abrir(null, false); return; }
+    if (b.dataset.pestana) { est.pestaña = b.dataset.pestana; est.busqueda = ''; abrir(est.pestaña); return; }
+    if (b.dataset.identidad) s.identidad = b.dataset.identidad;
+    if (b.dataset.arma) {
+      est.arma = b.dataset.arma;
+      const t = ARMAS.find((a) => a.id === est.arma).tipos[0];
+      Object.assign(s, { icono: t.icono, mod1: t.mod1 ?? '', mod2: t.mod2 ?? '' });
+    }
+    if (b.dataset.tipo) { const t = ARMAS.find((a) => a.id === est.arma).tipos.find((x) => x.id === b.dataset.tipo); Object.assign(s, { icono: t.icono, mod1: t.mod1 ?? '', mod2: t.mod2 ?? '' }); }
+    if (b.dataset.escalon !== undefined) s.escalon = b.dataset.escalon;
+    if (b.closest('[data-refuerzo-u]')) s.refuerzo = b.dataset.v;
+    if (b.dataset.s === 'mas') est.masOpciones = !est.masOpciones;
+    if (b.dataset.s === 'colocar') { colocar({ clase: 'unidad', ...s }); return; }
+    if (b.dataset.medida) { colocar({ clase: 'medida', id: b.dataset.medida }); return; }
+    if (b.dataset.reciente !== undefined) { colocar({ ...est.recientes[Number(b.dataset.reciente)] }); return; }
+    if (b.dataset.resultado !== undefined) {
+      const r = est[`_res${b.dataset.resultado}`];
+      Object.assign(s, r.s); est.arma = r.arma; est.busqueda = ''; est.pestaña = 'unidades';
+    }
+    guardar(); pintarPanel();
+  });
+  panel.addEventListener('input', (ev) => {
+    if (ev.target.id === 'sim-buscar') { est.busqueda = ev.target.value; est._enfocar = true; pintarPanel(); return; }
+    const k = ev.target.dataset.campoU;
+    if (k) { u()[k] = ev.target.value; guardar(); const v = panel.querySelector('.sim-vista'); if (v) { const r = svgUnidad(u(), { tam: 46 }); v.innerHTML = `${r.svg}<div><b>${esc(nombreUnidad(u()))}</b><small>SIDC ${r.sidc}</small></div>`; } }
+  });
+  panel.addEventListener('change', (ev) => { const k = ev.target.dataset.boolU; if (k) { u()[k] = ev.target.checked; guardar(); pintarPanel(); } });
+  panel.addEventListener('keydown', (ev) => {
+    if (ev.target.id === 'sim-buscar' && ev.key === 'Enter') { panel.querySelector('.sim-lista-cm button')?.click(); }
+    if (ev.key === 'Escape') { if (est.busqueda) { est.busqueda = ''; pintarPanel(); } else abrir(null, false); }
+  });
+
+  // ---------------------------------------------------------- ficha (panel del elemento)
+  /** Partes de la ficha de un elemento con símbolo. */
+  function ficha(el) {
+    const s = el.simbolo; if (!s) return null;
+    if (s.clase === 'unidad') {
+      const e = especialidadDe(s);
+      const armaId = e?.arma.id ?? 'generica';
+      return {
+        titulo: nombreUnidad(s), tipo: 'Unidad',
+        html: `<div class="sim-vista sim-vista-ficha">${svgUnidad({ ...s, estado: el.propiedades.estado }, { tam: 40 }).svg}<div><b>${esc(nombreUnidad(s))}</b><small>SIDC ${svgUnidad(s).sidc}</small></div></div>
+          <div class="el-fila"><span class="el-et">Bando</span><div class="seg sim-seg" data-f="identidad">${['amigo', 'hostil', 'neutral', 'desconocido', 'supuesto', 'sospechoso', 'pendiente'].map((id) => `<button type="button" data-v="${id}" aria-pressed="${s.identidad === id}" title="${IDENTIDADES[id].nombre}">${miniUnidad({ ...s, identidad: id }, 16)}</button>`).join('')}</div></div>
+          ${selectorVisual('tipo', 'Tipo', ARMAS.flatMap((a) => a.tipos.map((t) => ({ v: `${a.id}/${t.id}`, grupo: a.nombre, nombre: t.nombre, ico: miniUnidad({ identidad: s.identidad, icono: t.icono, mod1: t.mod1, mod2: t.mod2 }, 18) }))), e ? `${e.arma.id}/${e.tipo.id}` : '')}
+          ${selectorVisual('escalon', 'Escalón', ORDEN_ESCALONES.map((k) => ({ v: k, nombre: nombreEscalon(k, armaId), ico: `<b class="marca-esc">${ESCALONES[k].marca ?? '—'}</b>` })), s.escalon ?? '')}
+          <div class="sim-campos"><label>Designación <input data-campo-f="T" value="${esc(s.T ?? '')}" maxlength="21" placeholder="1"></label><label>Superior <input data-campo-f="M" value="${esc(s.M ?? '')}" maxlength="21" placeholder="II/RI4"></label></div>
+          ${htmlExtras(s, 'f')}`,
+      };
+    }
+    const m = medida(s.id); if (!m) return null;
+    const mismos = MEDIDAS.filter((x) => x.grupo === m.grupo && x.tipo === m.tipo && puntosNecesarios(x) === puntosNecesarios(m) || x.id === m.id);
+    return {
+      titulo: el.propiedades.nombre ? `${m.sigla ? `${m.sigla} ` : ''}${el.propiedades.nombre}` : m.nombre, tipo: GRUPOS[m.grupo],
+      html: `${selectorVisual('medida', 'Tipo', mismos.map((x) => ({ v: x.id, nombre: x.nombre, ico: miniMedida(x, '#1F5FA8', 40, 24) })), m.id)}
+        ${m.campos?.includes('ancho') ? `<form class="el-radio" id="sim-ancho"><label>Anchura <input type="number" min="10" step="any" id="sim-ancho-m" value="${s.ancho ? Math.round(s.ancho) : ''}" placeholder="auto"></label><span>m</span><button type="submit">Aplicar</button></form>` : ''}
+        ${m.id === 'limite' ? `${selectorVisual('escalon', 'Escalón', ORDEN_ESCALONES.map((k) => ({ v: k, nombre: nombreEscalon(k, 'infanteria'), ico: `<b class="marca-esc">${ESCALONES[k].marca ?? '—'}</b>` })), s.escalon ?? '')}
+          <div class="sim-campos"><label>Unidad a un lado <input data-campo-f="izq" value="${esc(s.izq ?? '')}" maxlength="20"></label><label>Al otro lado <input data-campo-f="der" value="${esc(s.der ?? '')}" maxlength="20"></label></div>` : ''}
+        ${m.ayuda ? `<p class="el-ayuda">${esc(m.ayuda)} Arrastra los puntos para ajustarlo.</p>` : ''}`,
+    };
+  }
+  function selectorVisual(campo, etiqueta, opciones, valor) {
+    const act = opciones.find((o) => o.v === valor) ?? opciones[0];
+    let grupoAnt = null;
+    return `<div class="el-fila sel-vis" data-sel="${campo}"><span class="el-et">${etiqueta}</span>
+      <button type="button" class="sel-vis-btn" data-abrir-sel="${campo}">${act?.ico ?? ''}<span>${esc(act?.nombre ?? '')}</span><i>▾</i></button>
+      <div class="sel-vis-lista" hidden>${opciones.map((o) => { const cab = o.grupo && o.grupo !== grupoAnt ? `<div class="sel-vis-grupo">${esc(o.grupo)}</div>` : ''; grupoAnt = o.grupo; return `${cab}<button type="button" data-elegir="${esc(o.v)}" aria-pressed="${o.v === valor}">${o.ico ?? ''}<span>${esc(o.nombre)}</span></button>`; }).join('')}</div></div>`;
+  }
+
+  /** Clics y cambios en la ficha. Devuelve true si los ha atendido. */
+  function manejarFicha(ev, el, cambio) {
+    const s = el.simbolo; if (!s) return false;
+    const t = ev.target;
+    const recordarTras = () => recordar(copiaSimbolo(el));
+    if (ev.type === 'click') {
+      const abrirSel = t.closest('[data-abrir-sel]');
+      if (abrirSel) { const lista = abrirSel.parentElement.querySelector('.sel-vis-lista'); const ab = lista.hidden; document.querySelectorAll('.sel-vis-lista').forEach((x) => { x.hidden = true; }); lista.hidden = !ab; if (ab) lista.querySelector('[aria-pressed="true"]')?.scrollIntoView({ block: 'nearest' }); return true; }
+      const elegir = t.closest('[data-elegir]');
+      if (elegir) {
+        const campo = elegir.closest('[data-sel]').dataset.sel, v = elegir.dataset.elegir;
+        if (campo === 'tipo') { const [a, tp] = v.split('/'); const tt = ARMAS.find((x) => x.id === a).tipos.find((x) => x.id === tp); cambio('Cambiar tipo', () => { Object.assign(s, { icono: tt.icono, mod1: tt.mod1 ?? '', mod2: tt.mod2 ?? '' }); }); }
+        if (campo === 'escalon') cambio('Cambiar escalón', () => { s.escalon = v; });
+        if (campo === 'medida') cambio('Cambiar tipo', () => { s.id = v; });
+        recordarTras(); return true;
+      }
+      const seg = t.closest('.sim-seg[data-f] button');
+      if (seg) { const v = seg.dataset.v; cambio('Cambiar bando', () => { s.identidad = v; el.propiedades.bando = BANDO_DE[v] ?? 'propio'; el.propiedades.color = null; }); recordarTras(); return true; }
+      const ref = t.closest('[data-refuerzo-f] button');
+      if (ref) { cambio('Cambiar refuerzo', () => { s.refuerzo = ref.dataset.v; }); recordarTras(); return true; }
+      return false;
+    }
+    if (ev.type === 'change') {
+      const k = t.dataset.campoF;
+      if (k) { cambio('Cambiar texto', () => { s[k] = t.value.trim(); }); recordarTras(); return true; }
+      const b = t.dataset.boolF;
+      if (b) { cambio('Cambiar símbolo', () => { s[b] = t.checked; }); recordarTras(); return true; }
+    }
+    if (ev.type === 'submit' && t.id === 'sim-ancho') {
+      ev.preventDefault();
+      const v = Number(String($('sim-ancho-m').value).replace(',', '.'));
+      cambio('Cambiar anchura', () => { s.ancho = v > 0 ? v : null; });
+      return true;
+    }
+    return false;
+  }
+  const copiaSimbolo = (el) => { const { ...c } = el.simbolo; if (c.clase === 'unidad') return c; return { clase: 'medida', id: c.id }; };
+  document.addEventListener('click', (ev) => { if (!ev.target.closest('.sel-vis')) document.querySelectorAll('.sel-vis-lista').forEach((x) => { x.hidden = true; }); });
+
+  /** Al crear un elemento con símbolo: color de bando de la identidad y recientes. */
+  function alCrear(el) {
+    if (el.simbolo?.clase === 'unidad') el.propiedades.bando = BANDO_DE[el.simbolo.identidad] ?? 'propio';
+    recordar(copiaSimbolo(el));
+  }
+  /** Miniatura para la lista del plan. */
+  function icono(el) {
+    const s = el.simbolo; if (!s) return null;
+    if (s.clase === 'unidad') return miniUnidad(s, 16);
+    const m = medida(s.id); return m ? miniMedida(m, '#1F5FA8', 30, 18) : null;
+  }
+  /** Número fijo de puntos (cometidos) o 0 si es libre. */
+  const puntosFijos = (el) => (el.simbolo?.clase === 'medida' ? medida(el.simbolo.id)?.n ?? 0 : 0);
+  /** Candidatos del buscador universal. */
+  function candidatosBusqueda() {
+    return [
+      ...candidatosUnidad().map((c) => ({ grupo: 'Símbolos', texto: c.texto, extra: `unidad símbolo ${c.extra}`, detalle: 'Unidad · colocar', accion: () => { Object.assign(est.unidad, { icono: c.tipo.icono, mod1: c.tipo.mod1 ?? '', mod2: c.tipo.mod2 ?? '' }); est.arma = c.arma; abrir('unidades'); } })),
+      ...MEDIDAS.map((m) => ({ grupo: 'Símbolos', texto: m.nombre, extra: `${m.sigla ?? ''} ${m.claves ?? ''} ${m.grupo === 'cometidos' ? 'cometido verbo' : 'medida de coordinación'}`, detalle: m.grupo === 'cometidos' ? 'Cometido · dibujar' : 'Medida · dibujar', accion: () => colocar({ clase: 'medida', id: m.id }) })),
+    ];
+  }
+
+  return {
+    conectar(d) { dibujo = d; },
+    abrir, pintar, previsualizar, ficha, manejarFicha, alCrear, icono, puntosFijos, candidatosBusqueda,
+    get abierto() { return !panel.hidden; },
+    get entidades() { return ENTIDADES; },
+  };
+}
+
+return { identidadDeBando, miniUnidad, miniMedida, iniciarSimbolos };
+})();
+
 // ── src/ui/mapa.js
 __mods["src/ui/mapa.js"] = (function () {
 'use strict';
@@ -10024,6 +11508,7 @@ const { capaCuadricula } = __req("src/mapa/cuadricula.js");
 const { iniciarDibujo, HERRAMIENTAS_DIBUJO } = __req("src/ui/dibujo.js");
 const { iniciarImportar } = __req("src/ui/importar.js");
 const { iniciarCreador } = __req("src/ui/creador.js");
+const { iniciarSimbolos } = __req("src/ui/simbolos.js");
 const { crearServicioAlturas } = __req("src/datos/alturas.js");
 const { prepararRejillas } = __req("src/geo/rejillas.js");
 const { crsDesdeEpsg } = __req("src/geo/crs.js");
@@ -10038,7 +11523,7 @@ const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&l
 const CLAVE = 'spa.mapa.estado';
 const estado = {
   angulo: 'grados', coordenadas: 'mgrs', fondo: 'mtn', imagen: 'google', rotulos: true,
-  fondoAuto: false, mtnDetalle: false, intensidadCuadricula: 35,
+  fondoAuto: false, mtnDetalle: false, intensidadCuadricula: 35, simTam: { modo: 'fijo', px: 34, metros: 400 },
   superpuestas: { cuadricula: true, piloto: true }, secciones: { fondo: true }, ajustesAbiertos: { coordenadas: true }, vista: null,
 };
 try { Object.assign(estado, JSON.parse(localStorage.getItem(CLAVE) || '{}')); } catch { /* sin almacenamiento */ }
@@ -10113,7 +11598,7 @@ let fondoActual = null;
 let alCambiarFondo = () => {}; // la cuadrícula se pinta en blanco sobre el híbrido
 // eslint-disable-next-line prefer-const
 let importar = null;
-const VERSION = '0.6.2';
+const VERSION = '0.7.0';
 function ponerFondo(id, { automatico = false } = {}) {
   if (!capasFondo[id]) id = 'mtn';
   if (fondoActual) mapa.removeLayer(fondoActual);
@@ -10186,7 +11671,7 @@ $('mtn-detalle').checked = Boolean(estado.mtnDetalle);
 $('mtn-detalle').addEventListener('change', (ev) => { estado.mtnDetalle = ev.target.checked; guardar(); capasFondo.mtn.ponerDetalle?.(estado.mtnDetalle); });
 
 // ---------------------------------------------------------------- visualización y zona piloto
-const SELECTORES_OBSTACULO = '.herramientas.visible, .herr-pista, .panel-capas, .panel-plan, .panel-medida, .aviso, .aviso-breve, .leaflet-control-zoom, .leaflet-control-scale, .leaflet-control-attribution';
+const SELECTORES_OBSTACULO = '.herramientas.visible, .herr-pista, .panel-capas, .panel-plan, .panel-medida, .panel-simbolos, .aviso, .aviso-breve, .leaflet-control-zoom, .leaflet-control-scale, .leaflet-control-attribution';
 function obstaculos() {
   const base = $('mapa').getBoundingClientRect();
   return [...document.querySelectorAll(SELECTORES_OBSTACULO)].map((el) => el.getBoundingClientRect()).filter((r) => r.width && r.height)
@@ -10241,13 +11726,45 @@ if (window.matchMedia('(max-width: 760px)').matches) ponerPanelCapas(false);
 let herramienta = 'consultar';
 let ultimaPos = null;
 const fmt = { metros, coord };
+const simbolos = iniciarSimbolos({
+  L, mapa,
+  elegirHerramienta: (h) => elegirHerramienta(h),
+  tamano: () => estado.simTam,
+});
 const dibujo = iniciarDibujo({
-  L, mapa, alturas, fmt,
+  L, mapa, alturas, fmt, simbolos,
   herramienta: () => herramienta,
   elegirHerramienta: (h) => elegirHerramienta(h),
   puntosExternos: () => importar?.puntosVisibles() ?? [],
   alCambiarPaneles: () => recolocarEtiquetas(),
 });
+simbolos.conectar(dibujo);
+function abrirSimbolos(pestana) {
+  const abierto = simbolos.abierto && $('panel-simbolos').dataset.pestana === pestana;
+  simbolos.abrir(pestana, !abierto);
+  $('panel-simbolos').dataset.pestana = pestana;
+  document.body.classList.toggle('simbolos-abierto', simbolos.abierto);
+  recolocarEtiquetas();
+}
+document.querySelectorAll('[data-simbolos]').forEach((b) => b.addEventListener('click', () => abrirSimbolos(b.dataset.simbolos)));
+new MutationObserver(() => { document.body.classList.toggle('simbolos-abierto', !$('panel-simbolos').hidden); recolocarEtiquetas(); }).observe($('panel-simbolos'), { attributes: true, attributeFilter: ['hidden'] });
+// Tamaño de los símbolos (Ajustes)
+for (const b of document.querySelectorAll('[data-sim-modo]')) {
+  b.setAttribute('aria-pressed', String(b.dataset.simModo === estado.simTam.modo));
+  b.addEventListener('click', () => { estado.simTam.modo = b.dataset.simModo; guardar(); document.querySelectorAll('[data-sim-modo]').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); ponerTamSim(); dibujo.refrescar(); });
+}
+function ponerTamSim() {
+  const esc = estado.simTam.modo === 'escala';
+  $('sim-tam').min = esc ? 100 : 20; $('sim-tam').max = esc ? 2000 : 70; $('sim-tam').step = esc ? 50 : 2;
+  $('sim-tam').value = esc ? estado.simTam.metros : estado.simTam.px;
+  $('sim-tam-v').textContent = esc ? `${estado.simTam.metros} m` : `${estado.simTam.px} px`;
+}
+$('sim-tam').addEventListener('input', (ev) => {
+  const v = Number(ev.target.value);
+  if (estado.simTam.modo === 'escala') estado.simTam.metros = v; else estado.simTam.px = v;
+  guardar(); ponerTamSim(); dibujo.refrescar();
+});
+ponerTamSim();
 importar = iniciarImportar({
   L, mapa, alturas, fmt, dibujo,
   fondo: () => fondoActual?.idSpa ?? '',
@@ -10461,6 +11978,10 @@ const ACCIONES = [
   { texto: 'Ajustes', extra: 'opciones configuración', detalle: 'Abrir', accion: () => abrirAjustes(true) },
   { texto: 'Importar archivo', extra: 'gpx kml kmz zip atak paquete datos', detalle: 'GPX, KML/KMZ, paquetes de ATAK', accion: () => $('btn-importar-datos').click() },
   { texto: 'Importar mapa', extra: 'sqlite mbtiles tif geotiff jpg', detalle: 'Mapas propios', accion: () => $('btn-importar-mapa').click() },
+  { texto: 'Símbolos de unidad', extra: 'app-6 app6 unidad símbolo paleta constructor', detalle: 'Abrir la paleta', accion: () => abrirSimbolos('unidades') },
+  { texto: 'Medidas de coordinación', extra: 'app-6 líneas zonas puntos paleta', detalle: 'Abrir la paleta', accion: () => abrirSimbolos('medidas') },
+  { texto: 'Cometidos tácticos', extra: 'verbos app-6 paleta', detalle: 'Abrir la paleta', accion: () => abrirSimbolos('cometidos') },
+  { texto: 'Tamaño de los símbolos', extra: 'escala fijo ajustes', detalle: 'Ajustes', accion: () => abrirAjustes(true, 'simbolos') },
   { texto: 'Crear mapa', extra: 'creador de mapas descargar zona teselas atak sqlite mbtiles geotiff offline sin conexión', detalle: 'Descargar una zona en ATAK, MBTiles, ZIP o GeoTIFF', accion: abrirCreador },
   { texto: 'Buscar en mis mapas', extra: 'carpeta catálogo', detalle: 'Mapas de tu carpeta', accion: () => importar.abrirBuscador() },
 ].map((a) => ({ grupo: 'Ajustes y acciones', ...a }));
@@ -10471,7 +11992,7 @@ function candidatos() {
     const n = el.propiedades.nombre || `${TIPOS[el.tipo].nombre} ${dibujo.plan().elementos.filter((e) => e.tipo === el.tipo).indexOf(el) + 1}`;
     return { grupo: 'Plan', texto: n, extra: `${nomTipo[el.tipo]} dibujado ${el.propiedades.bando}`, detalle: TIPOS[el.tipo].nombre, accion: () => { ponerPanelPlan(true); dibujo.seleccionar(el.id, { centrar: true }); } };
   });
-  return [...plan, ...importar.candidatosBusqueda(), ...ACCIONES];
+  return [...plan, ...importar.candidatosBusqueda(), ...ACCIONES, ...simbolos.candidatosBusqueda()];
 }
 let resultados = [], marcado = 0;
 function pintarResultados(q) {

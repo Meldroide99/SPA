@@ -9,6 +9,7 @@ import { capaCuadricula } from '../mapa/cuadricula.js';
 import { iniciarDibujo, HERRAMIENTAS_DIBUJO } from './dibujo.js';
 import { iniciarImportar } from './importar.js';
 import { iniciarCreador } from './creador.js';
+import { iniciarSimbolos } from './simbolos.js';
 import { crearServicioAlturas } from '../datos/alturas.js';
 import { prepararRejillas } from '../geo/rejillas.js';
 import { crsDesdeEpsg } from '../geo/crs.js';
@@ -23,7 +24,7 @@ const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&l
 const CLAVE = 'spa.mapa.estado';
 const estado = {
   angulo: 'grados', coordenadas: 'mgrs', fondo: 'mtn', imagen: 'google', rotulos: true,
-  fondoAuto: false, mtnDetalle: false, intensidadCuadricula: 35,
+  fondoAuto: false, mtnDetalle: false, intensidadCuadricula: 35, simTam: { modo: 'fijo', px: 34, metros: 400 },
   superpuestas: { cuadricula: true, piloto: true }, secciones: { fondo: true }, ajustesAbiertos: { coordenadas: true }, vista: null,
 };
 try { Object.assign(estado, JSON.parse(localStorage.getItem(CLAVE) || '{}')); } catch { /* sin almacenamiento */ }
@@ -98,7 +99,7 @@ let fondoActual = null;
 let alCambiarFondo = () => {}; // la cuadrícula se pinta en blanco sobre el híbrido
 // eslint-disable-next-line prefer-const
 let importar = null;
-const VERSION = '0.6.2';
+const VERSION = '0.7.0';
 function ponerFondo(id, { automatico = false } = {}) {
   if (!capasFondo[id]) id = 'mtn';
   if (fondoActual) mapa.removeLayer(fondoActual);
@@ -171,7 +172,7 @@ $('mtn-detalle').checked = Boolean(estado.mtnDetalle);
 $('mtn-detalle').addEventListener('change', (ev) => { estado.mtnDetalle = ev.target.checked; guardar(); capasFondo.mtn.ponerDetalle?.(estado.mtnDetalle); });
 
 // ---------------------------------------------------------------- visualización y zona piloto
-const SELECTORES_OBSTACULO = '.herramientas.visible, .herr-pista, .panel-capas, .panel-plan, .panel-medida, .aviso, .aviso-breve, .leaflet-control-zoom, .leaflet-control-scale, .leaflet-control-attribution';
+const SELECTORES_OBSTACULO = '.herramientas.visible, .herr-pista, .panel-capas, .panel-plan, .panel-medida, .panel-simbolos, .aviso, .aviso-breve, .leaflet-control-zoom, .leaflet-control-scale, .leaflet-control-attribution';
 function obstaculos() {
   const base = $('mapa').getBoundingClientRect();
   return [...document.querySelectorAll(SELECTORES_OBSTACULO)].map((el) => el.getBoundingClientRect()).filter((r) => r.width && r.height)
@@ -226,13 +227,45 @@ if (window.matchMedia('(max-width: 760px)').matches) ponerPanelCapas(false);
 let herramienta = 'consultar';
 let ultimaPos = null;
 const fmt = { metros, coord };
+const simbolos = iniciarSimbolos({
+  L, mapa,
+  elegirHerramienta: (h) => elegirHerramienta(h),
+  tamano: () => estado.simTam,
+});
 const dibujo = iniciarDibujo({
-  L, mapa, alturas, fmt,
+  L, mapa, alturas, fmt, simbolos,
   herramienta: () => herramienta,
   elegirHerramienta: (h) => elegirHerramienta(h),
   puntosExternos: () => importar?.puntosVisibles() ?? [],
   alCambiarPaneles: () => recolocarEtiquetas(),
 });
+simbolos.conectar(dibujo);
+function abrirSimbolos(pestana) {
+  const abierto = simbolos.abierto && $('panel-simbolos').dataset.pestana === pestana;
+  simbolos.abrir(pestana, !abierto);
+  $('panel-simbolos').dataset.pestana = pestana;
+  document.body.classList.toggle('simbolos-abierto', simbolos.abierto);
+  recolocarEtiquetas();
+}
+document.querySelectorAll('[data-simbolos]').forEach((b) => b.addEventListener('click', () => abrirSimbolos(b.dataset.simbolos)));
+new MutationObserver(() => { document.body.classList.toggle('simbolos-abierto', !$('panel-simbolos').hidden); recolocarEtiquetas(); }).observe($('panel-simbolos'), { attributes: true, attributeFilter: ['hidden'] });
+// Tamaño de los símbolos (Ajustes)
+for (const b of document.querySelectorAll('[data-sim-modo]')) {
+  b.setAttribute('aria-pressed', String(b.dataset.simModo === estado.simTam.modo));
+  b.addEventListener('click', () => { estado.simTam.modo = b.dataset.simModo; guardar(); document.querySelectorAll('[data-sim-modo]').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); ponerTamSim(); dibujo.refrescar(); });
+}
+function ponerTamSim() {
+  const esc = estado.simTam.modo === 'escala';
+  $('sim-tam').min = esc ? 100 : 20; $('sim-tam').max = esc ? 2000 : 70; $('sim-tam').step = esc ? 50 : 2;
+  $('sim-tam').value = esc ? estado.simTam.metros : estado.simTam.px;
+  $('sim-tam-v').textContent = esc ? `${estado.simTam.metros} m` : `${estado.simTam.px} px`;
+}
+$('sim-tam').addEventListener('input', (ev) => {
+  const v = Number(ev.target.value);
+  if (estado.simTam.modo === 'escala') estado.simTam.metros = v; else estado.simTam.px = v;
+  guardar(); ponerTamSim(); dibujo.refrescar();
+});
+ponerTamSim();
 importar = iniciarImportar({
   L, mapa, alturas, fmt, dibujo,
   fondo: () => fondoActual?.idSpa ?? '',
@@ -446,6 +479,10 @@ const ACCIONES = [
   { texto: 'Ajustes', extra: 'opciones configuración', detalle: 'Abrir', accion: () => abrirAjustes(true) },
   { texto: 'Importar archivo', extra: 'gpx kml kmz zip atak paquete datos', detalle: 'GPX, KML/KMZ, paquetes de ATAK', accion: () => $('btn-importar-datos').click() },
   { texto: 'Importar mapa', extra: 'sqlite mbtiles tif geotiff jpg', detalle: 'Mapas propios', accion: () => $('btn-importar-mapa').click() },
+  { texto: 'Símbolos de unidad', extra: 'app-6 app6 unidad símbolo paleta constructor', detalle: 'Abrir la paleta', accion: () => abrirSimbolos('unidades') },
+  { texto: 'Medidas de coordinación', extra: 'app-6 líneas zonas puntos paleta', detalle: 'Abrir la paleta', accion: () => abrirSimbolos('medidas') },
+  { texto: 'Cometidos tácticos', extra: 'verbos app-6 paleta', detalle: 'Abrir la paleta', accion: () => abrirSimbolos('cometidos') },
+  { texto: 'Tamaño de los símbolos', extra: 'escala fijo ajustes', detalle: 'Ajustes', accion: () => abrirAjustes(true, 'simbolos') },
   { texto: 'Crear mapa', extra: 'creador de mapas descargar zona teselas atak sqlite mbtiles geotiff offline sin conexión', detalle: 'Descargar una zona en ATAK, MBTiles, ZIP o GeoTIFF', accion: abrirCreador },
   { texto: 'Buscar en mis mapas', extra: 'carpeta catálogo', detalle: 'Mapas de tu carpeta', accion: () => importar.abrirBuscador() },
 ].map((a) => ({ grupo: 'Ajustes y acciones', ...a }));
@@ -456,7 +493,7 @@ function candidatos() {
     const n = el.propiedades.nombre || `${TIPOS[el.tipo].nombre} ${dibujo.plan().elementos.filter((e) => e.tipo === el.tipo).indexOf(el) + 1}`;
     return { grupo: 'Plan', texto: n, extra: `${nomTipo[el.tipo]} dibujado ${el.propiedades.bando}`, detalle: TIPOS[el.tipo].nombre, accion: () => { ponerPanelPlan(true); dibujo.seleccionar(el.id, { centrar: true }); } };
   });
-  return [...plan, ...importar.candidatosBusqueda(), ...ACCIONES];
+  return [...plan, ...importar.candidatosBusqueda(), ...ACCIONES, ...simbolos.candidatosBusqueda()];
 }
 let resultados = [], marcado = 0;
 function pintarResultados(q) {

@@ -360,6 +360,65 @@ im=Image.open(sys.argv[1]); a=im.getchannel('A'); print(im.mode, im.size[0]%256,
   await pag.click('#cr-cerrar');
 }
 
+// ---------------------------------------------------------------- símbolos APP-6(E)
+{
+  await vista(40.80, -4.02, 14); await pag.waitForTimeout(300);
+  const n0 = await motor(() => window.__spa.dibujo.plan().elementos.length);
+  const caja = await pag.locator('#mapa').boundingBox();
+  const cx = caja.x + caja.width / 2, cy = caja.y + caja.height / 2;
+  await pag.mouse.move(80, 70); await pag.waitForTimeout(200);
+  await pag.click('[data-simbolos="unidades"]');
+  ok(await pag.locator('#panel-simbolos').isVisible(), 'Paleta de símbolos abierta desde la barra');
+  await pag.click('#panel-simbolos [data-arma="infanteria"]');
+  await pag.click('#panel-simbolos [data-tipo="paracaidista"]');
+  await pag.click('#panel-simbolos [data-escalon="seccion"]');
+  await pag.fill('[data-campo-u="T"]', '1'); await pag.fill('[data-campo-u="M"]', 'II/RI4');
+  ok(/Sección de infantería paracaidista/.test(await pag.textContent('.sim-vista')), 'Constructor guiado: «Sección de infantería paracaidista»');
+  await pag.click('[data-s="colocar"]');
+  await pag.mouse.click(cx + 60, cy + 40); await pag.waitForTimeout(300);
+  const u1 = await motor(() => window.__spa.dibujo.plan().elementos.at(-1));
+  ok(u1.simbolo?.clase === 'unidad' && u1.simbolo.icono === '121100' && u1.simbolo.mod2 === 'c100' && u1.simbolo.escalon === 'seccion' && u1.simbolo.T === '1', 'Unidad colocada con su símbolo');
+  ok(await pag.locator('.leaflet-elementos-pane .simbolo-unidad svg').count() >= 1, 'Símbolo dibujado en el mapa');
+  ok(/SIDC 160310001412110000000100000000/.test(await pag.textContent('#panel-elemento')), 'Ficha con el SIDC APP-6(E) de 30 dígitos');
+  // Cambiar el escalón con el desplegable visual
+  await pag.click('#panel-elemento [data-abrir-sel="escalon"]');
+  await pag.click('#panel-elemento [data-sel="escalon"] [data-elegir="compania"]'); await pag.waitForTimeout(200);
+  ok((await motor(() => window.__spa.dibujo.plan().elementos.at(-1).simbolo.escalon)) === 'compania', 'Escalón cambiado desde la ficha (desplegable con miniaturas)');
+  // Recientes: repetir la unidad con un clic
+  ok(await pag.locator('#panel-simbolos .sim-chip').count() >= 1, 'La unidad queda en «Recientes»');
+  await pag.click('#panel-simbolos [data-reciente="0"]');
+  await pag.mouse.click(cx + 160, cy + 40); await pag.waitForTimeout(300);
+  ok((await motor(() => window.__spa.dibujo.plan().elementos.length)) === n0 + 2, 'Repetida desde «Recientes»');
+  // Cometido con puntos fijos (bloquear: 3)
+  await pag.click('#panel-simbolos [data-pestana="cometidos"]');
+  await pag.click('#panel-simbolos [data-medida="bloquear"]');
+  for (const [dx, dy] of [[250, -60], [250, 60], [120, 0]]) { await pag.mouse.click(cx + dx, cy + dy); await pag.waitForTimeout(80); }
+  await pag.waitForTimeout(300);
+  const b = await motor(() => window.__spa.dibujo.plan().elementos.at(-1));
+  ok(b.simbolo?.id === 'bloquear' && b.geometria.coordinates.length === 3, 'Cometido «Bloquear» con sus 3 puntos de anclaje');
+  ok(await pag.locator('.asa-media').count() === 0 && await pag.locator('.asa-vert').count() === 3, 'Puntos fijos: se arrastran, no se añaden ni se quitan');
+  // Línea de fase con nombre
+  await pag.click('#panel-simbolos [data-pestana="medidas"]');
+  await pag.click('#panel-simbolos [data-medida="pl"]');
+  await pag.mouse.click(cx - 0, cy + 150); await pag.mouse.dblclick(cx + 260, cy + 140); await pag.waitForTimeout(300);
+  await pag.fill('#el-nombre', 'ROJA'); await pag.press('#el-nombre', 'Tab'); await pag.waitForTimeout(300);
+  ok((await pag.locator('.etq-cm', { hasText: 'PL ROJA' }).count()) === 2, 'Línea de fase rotulada «PL ROJA» en los dos extremos');
+  // Deshacer
+  await pag.keyboard.press('Escape'); await pag.keyboard.press('Control+z'); await pag.waitForTimeout(200);
+  ok((await motor(() => window.__spa.dibujo.plan().elementos.at(-1).propiedades.nombre)) === '', 'Ctrl+Z deshace el último cambio');
+  // Buscador universal: «bloquear» → empieza a dibujar el cometido
+  await pag.click('#panel-simbolos [data-s="cerrar"]');
+  await pag.fill('#buscar-txt', 'bloquear'); await pag.waitForTimeout(200); await pag.keyboard.press('Enter'); await pag.waitForTimeout(200);
+  ok(await motor(() => window.__spa.dibujo.dibujando), 'Buscar «bloquear» y pulsar Intro: listo para dibujarlo');
+  await pag.keyboard.press('Escape');
+  // Tamaño a escala: crece al acercar
+  await motor(() => { window.__spa.estado.simTam = { modo: 'escala', px: 34, metros: 400 }; window.__spa.dibujo.refrescar(); });
+  const ancho = async () => motor(() => document.querySelector('.leaflet-elementos-pane .simbolo-unidad svg').getBoundingClientRect().width);
+  const a14 = await ancho(); await vista(40.80, -4.02, 15); await pag.waitForTimeout(400); const a15 = await ancho();
+  ok(a15 > a14 * 1.7, `A escala: el símbolo crece al acercar (${a14.toFixed(0)} → ${a15.toFixed(0)} px)`);
+  await motor(() => { window.__spa.estado.simTam = { modo: 'fijo', px: 34, metros: 400 }; window.__spa.dibujo.refrescar(); });
+}
+
 if (CAPTURAS) {
   await pag.setViewportSize({ width: 390, height: 780 }); await pag.waitForTimeout(300);
   await pag.screenshot({ path: 'docs/capturas/v4-movil.png' });

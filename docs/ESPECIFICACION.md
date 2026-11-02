@@ -114,18 +114,39 @@ herramientas/            empaquetador y servidor local
 docs/                    esta especificación e informe de precisión
 ```
 
-## 6. Simbología APP-6
+## 6. Simbología APP-6 (fase 4, `src/simbolos/`, `src/ui/simbolos.js`)
 
-- Ediciones disponibles: **C** (mayo 2011) y **D versión 1** (octubre 2017)
-  en PDF. La **E** existe (referencia de 2025) pero no la tenemos todavía.
-- APP-6(C) no tiene código de símbolo propio (su anexo A remite a la B).
-  APP-6(D) usa un **código numérico de 20 dígitos** (anexo A, A.2–A.3).
-- Plan: diseñar para la **edición vigente (E)**. Mientras no tengamos el
-  documento, se trabaja con la **D**, de la misma familia de códigos
-  (a confirmar con el texto de la E).
-- El PowerPoint del curso (APP-6 (C), PD0-002) da la lista de símbolos y
-  cometidos tácticos más usados y sus nombres en castellano: base del
-  catálogo corto.
+- Norma: **APP-6(E) Ed. E v2 (octubre 2025)**. Nombres en castellano y
+  escalones según la **PD0-002** (anexo A: • escuadra, •• pelotón,
+  ••• sección).
+- **SIDC de 30 dígitos** (anexo A): versión `16`, contexto, identidad,
+  conjunto `10` (unidad terrestre), estado, CG/FT/finta, escalón (2),
+  entidad (6), modificador 1 (2), modificador 2 (2), modificador común
+  (dígitos 21–22) y ceros. Se guarda en cada elemento y se muestra en la ficha.
+- Dibujo propio (sin librerías): marcos de la tabla 1-15 (amigo, hostil,
+  neutral, desconocido y sus variantes dudosas), sectores 1 y 2, mástil de
+  CG (el ancla es su extremo, 1.2.6), corchete de FT, finta, refuerzo
+  (+ − ±), campos T (izquierda) y M/H (derecha). ≈60 iconos de unidad
+  terrestre.
+- **Medidas de coordinación**: límite, PL, LD, LD/LC, LOA, FCL, PLD, LC,
+  FEBA; ejes de ataque; zonas (AA, OBJ, ATK, ASLT, EA, BP, DZ, LZ, PZ, SBF,
+  ABF); puntos (CKP, COP, punto de coordinación, RLY, SP, RP, PP, PD, OP).
+- **Cometidos tácticos** (28): bloquear, brecha, desbordar, canalizar,
+  limpiar, contener, controlar, asegurar, ocupar, aislar, tomar, destruir,
+  neutralizar, suprimir, fijar, retardar, retirarse (con y sin presión),
+  ruptura, demostración, desorganizar, interdicción, penetrar, envolver,
+  emboscada, cubrir, vigilar, observar. Cada uno pide un número fijo de
+  puntos y la ayuda dice qué es cada punto.
+- Las geometrías se calculan en un plano métrico local alrededor de las
+  anclas y se pasan a lat/lon; las líneas pasan exactamente por los
+  puntos tocados (prueba automática).
+- Interfaz: paleta con buscador («sección paracaidista», «bloquear»),
+  constructor guiado bando → arma → tipo → escalón → designación,
+  «Recientes» (últimas 10), ficha con desplegables de miniaturas, Duplicar.
+- Tamaño: fijo en pantalla (px) o a escala del mapa (metros), en Ajustes.
+- Pendiente: exportar con SIDC (fase 5), material/equipos, cometidos que
+  faltan (relevo, seguir y apoyar, capturar, negar, explotación,
+  persecución, escoltar).
 
 ## 7. Mapa (fase 2)
 
