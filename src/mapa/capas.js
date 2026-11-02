@@ -28,7 +28,7 @@ export const FONDOS = [
     id: 'mtn', nombre: 'Topográfico', detalle: 'Mapa Topográfico Nacional del IGN (MTN25 en zoom alto)',
     // PNG: más nítido que JPEG (texto y líneas finas sin artefactos)
     url: wmts('https://www.ign.es/wmts/mapa-raster', 'MTN', 'image/png'),
-    atribucion: ATRIB_IGN, maxNativo: 17, max: 19,
+    atribucion: ATRIB_IGN, maxNativo: 17, max: 21,
     // El IGN cambia de mapa según el zoom: MTN25 en 15–16, más generalizado
     // en 14 y 13. «Mantener detalle» pinta en 13–14 las teselas de zoom 15.
     zoomDetalle: 15, zoomDetalleMin: 13,
@@ -37,7 +37,7 @@ export const FONDOS = [
   {
     id: 'base', nombre: 'Mapa base', detalle: 'IGN Base: callejero y topografía vectorial',
     url: wmts('https://www.ign.es/wmts/ign-base', 'IGNBaseTodo', 'image/png'),
-    atribucion: ATRIB_IGN, maxNativo: 17, max: 19,
+    atribucion: ATRIB_IGN, maxNativo: 17, max: 21,
   },
   { id: 'relieve', nombre: 'Relieve', detalle: 'Sombreado calculado con el MDT del IGN (5 m al acercarse)', tipo: 'relieve' },
 ];
@@ -106,6 +106,14 @@ export function crearCapa(L, def) {
   if (def.quadkey) return new (capaQuadkey(L))(def.quadkey, opciones);
   if (def.zoomDetalle) return new (capaConDetalle(L))(def.url, { ...opciones, zoomDetalle: def.zoomDetalle, zoomDetalleMin: def.zoomDetalleMin });
   return L.tileLayer(def.url, opciones);
+}
+
+/** URL de la tesela z/x/y de una capa (para descargarla fuera de Leaflet: creador de mapas). */
+export function urlTesela(def, z, x, y) {
+  const sub = def.subdominios ?? 'abc';
+  const s = sub[Math.abs(x + y) % sub.length];
+  return (def.quadkey ?? def.url).replaceAll('{s}', s).replaceAll('{q}', quadkey(x, y, z))
+    .replaceAll('{z}', z).replaceAll('{x}', x).replaceAll('{y}', y);
 }
 
 /** Clave de tesela de Bing (quadkey). */

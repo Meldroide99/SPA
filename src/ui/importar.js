@@ -30,11 +30,42 @@ const base = (n) => n.replace(/\.[^./]+$/, '').toLowerCase();
 const uid = () => (crypto.randomUUID?.() ?? String(Math.random()).slice(2));
 const tam = (b) => (b >= 1e9 ? `${(b / 1e9).toFixed(1)} GB` : b >= 1e6 ? `${(b / 1e6).toFixed(0)} MB` : `${Math.max(1, Math.round(b / 1e3))} KB`);
 
+/** Pinta en `lienzo` la tesela z/x/y de la caché `t` (ver crearCapaMapa). */
+async function componerTesela(t, hay, z, x, y, lienzo) {
+  const ctx = lienzo.getContext('2d');
+  const pintar = async (blob, dx, dy, lado, recorte) => {
+    const im = await createImageBitmap(blob);
+    if (recorte) ctx.drawImage(im, recorte.sx, recorte.sy, recorte.lado, recorte.lado, 0, 0, 256, 256);
+    else ctx.drawImage(im, dx, dy, lado, lado);
+    im.close?.();
+  };
+  if (hay.has(z)) { const b = await t.tesela(z, x, y); if (b) { await pintar(b, 0, 0, 256); return true; } }
+  // Hijas (zoom más fino): 4, 16 o 64 teselas reducidas
+  for (let k = 1; k <= 3; k++) {
+    if (!hay.has(z + k)) continue;
+    const n = 2 ** k, lado = 256 / n;
+    const blobs = await Promise.all(Array.from({ length: n * n }, (_, i) => t.tesela(z + k, x * n + (i % n), y * n + Math.floor(i / n)).catch(() => null)));
+    if (!blobs.some(Boolean)) continue;
+    await Promise.all(blobs.map((b, i) => (b ? pintar(b, (i % n) * lado, Math.floor(i / n) * lado, lado) : null)));
+    return true;
+  }
+  // Madre (zoom más grueso): se amplía la parte que corresponde
+  for (let k = 1; k <= 6 && z - k >= 0; k++) {
+    if (!hay.has(z - k)) continue;
+    const n = 2 ** k, b = await t.tesela(z - k, x >> k, y >> k);
+    if (!b) continue;
+    const lado = 256 / n;
+    await pintar(b, 0, 0, 0, { sx: (x % n) * lado, sy: (y % n) * lado, lado });
+    return true;
+  }
+  return false;
+}
+
 export function iniciarImportar({ L, mapa, fmt, alturas, dibujo, herramienta, alCambiarPaneles = () => {} }) {
   const $ = (id) => document.getElementById(id);
   const DUENO = 'importados';
   if (!mapa.getPane('importados')) mapa.createPane('importados').style.zIndex = 455;
-  if (!mapa.getPane('mapasImportados')) mapa.createPane('mapasImportados').style.zIndex = 250;
+  if (!mapa.getPane('mapasImportados')) mapa.createPane('mapasImportados').style.zIndex = 350; // encima de todos los fondos (200), debajo de cuadrícula y dibujos
   // El mapa seleccionado va por encima de todas las capas (fondo, sombreado, curvas)
   if (!mapa.getPane('mapaSeleccionado')) mapa.createPane('mapaSeleccionado').style.zIndex = 445;
   if (!mapa.getPane('marcoMapa')) { const p = mapa.createPane('marcoMapa'); p.style.zIndex = 480; p.style.pointerEvents = 'none'; }
@@ -165,8 +196,10 @@ export function iniciarImportar({ L, mapa, fmt, alturas, dibujo, herramienta, al
       if (Number.isFinite(p.ele)) {
         if (e.refAltura === 'hae') {
           const h = rejillasListas() ? haeAAltitud(p.lat, p.lon, p.ele) : null;
-          deArchivo = `${Math.round(p.ele)} m elipsoidal (HAE)${h !== null ? ` ≈ ${Math.round(h)} m sobre el nivel del mar` : ''}`;
-        } else deArchivo = `${Math.round(p.ele)} m`;
+          // Siempre sobre el nivel del mar: la altura elipsoidal se corrige con el geoide EGM08-REDNAP
+          deArchivo = h !== null ? `${Math.round(h)} m s. n. m.` : '';
+          if (h === null && !rejillasListas()) { const sel = seleccion; prepararRejillas().then(() => { if (seleccion === sel) pintarFicha(); }).catch(() => {}); }
+        } else deArchivo = `${Math.round(p.ele)} m s. n. m.`;
       }
       cuerpo = `<div class="pm-total"><div class="grande mgrs">${esc(fmt.coord(p))}</div></div>${htmlAltitud()}
         ${deArchivo ? `<div class="el-altitud secundaria"><span class="el-et">En el archivo</span><span>${deArchivo}</span></div>` : ''}
@@ -221,22 +254,22 @@ export function iniciarImportar({ L, mapa, fmt, alturas, dibujo, herramienta, al
       const t = await abrirMapaTeselas(lectorBlob(archivo), m.nombre);
       limites = t.limites;
       info = `${t.tipo} · zoom ${t.minZoom}–${t.maxZoom}`;
+      // Cada tesela de pantalla se compone con lo que tenga la caché: la del
+      // mismo zoom; si falta, sus hijas de un zoom más fino (hasta 3 niveles,
+      // reducidas), o un trozo de su madre (ampliado). Así una caché de ATAK
+      // con zooms dispersos se ve completa a cualquier escala.
+      const zooms = t.zooms ?? Array.from({ length: t.maxZoom - t.minZoom + 1 }, (_, i) => t.minZoom + i);
+      const hay = new Set(zooms);
       const Capa = L.GridLayer.extend({
         createTile(c, hecho) {
-          const img = document.createElement('img');
-          img.alt = '';
-          t.tesela(c.z, c.x, c.y).then((b) => {
-            if (!b) { hecho(null, img); return; }
-            const url = URL.createObjectURL(b);
-            img.onload = () => { URL.revokeObjectURL(url); hecho(null, img); };
-            img.onerror = () => { URL.revokeObjectURL(url); hecho(null, img); };
-            img.src = url;
-          }, (e) => hecho(e, img));
-          return img;
+          const lienzo = document.createElement('canvas');
+          lienzo.width = lienzo.height = 256;
+          componerTesela(t, hay, c.z, c.x, c.y, lienzo).then((algo) => hecho(null, lienzo), (e) => hecho(e, lienzo));
+          return lienzo;
         },
       });
       capa = new Capa({
-        pane: 'mapasImportados', minNativeZoom: t.minZoom, maxNativeZoom: t.maxZoom, maxZoom: 22, minZoom: Math.max(3, t.minZoom - 5),
+        pane: 'mapasImportados', maxNativeZoom: t.maxZoom, maxZoom: 22, minZoom: Math.max(3, t.minZoom - 3),
         bounds: L.latLngBounds([limites.sur, limites.oeste], [limites.norte, limites.este]),
       });
     } else {

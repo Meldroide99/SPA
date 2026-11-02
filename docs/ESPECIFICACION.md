@@ -157,16 +157,26 @@ docs/                    esta especificación e informe de precisión
 - **Pantalla y precisión:** el mapa se pinta en EPSG:3857, pero todos los
   números los calcula el motor sobre el elipsoide. La cuadrícula MGRS la
   dibuja SPA (desviación < 1 µm), tenue por defecto (35 %, ajustable).
+  Sobre el híbrido, líneas y rótulos en **blanco**; sobre los mapas, en azul
+  oscuro.
+- **Zoom:** todos los fondos llegan a zoom 21 (Topográfico y Mapa base se
+  amplían desde su zoom 17; antes desaparecían a partir del 20).
 - **Diagnóstico y rutas alternativas:** si un fondo no carga, aviso con las
   causas probables y tesela de prueba; la ortofoto pasa sola al WMS del IGN.
 - **Barra inferior:** solo la coordenada (en el formato elegido en Ajustes,
   siempre al metro) y la **altitud** del terreno bajo el cursor.
-- **Ajustes** (icono arriba a la derecha): tipo de coordenada (MGRS, UTM,
-  geográficas, grados decimales) y unidad de los rumbos de la regla.
-- **Panel de capas en desplegables:** Fondo (fondos, imagen del híbrido,
-  rótulos, detalle 1:25.000, híbrido al acercarte), Mapas (zona piloto y
-  mapas importados) y Visualización (cuadrícula MGRS e intensidad,
-  sombreado, curvas de nivel). Vértices geodésicos: quitados.
+- **Ajustes** (icono arriba a la derecha), en apartados desplegables que
+  recuerdan si estaban abiertos: *Coordenadas y rumbos* (MGRS, UTM,
+  geográficas, grados decimales; grados, milésimas o G M S), *Imagen del
+  híbrido* (Google por defecto, PNOA, Esri, Bing, con su fecha; nombres y
+  carreteras), *Mapas de fondo* (mantener detalle 1:25.000, híbrido al
+  acercarte) y *Cuadrícula MGRS* (intensidad). El buscador abre el apartado
+  que toca.
+- **Panel de capas en desplegables:** Fondo (solo los cuatro fondos), Mapas
+  (zona piloto, mapas importados, importar, buscar en mis mapas, crear mapa)
+  y Visualización (cuadrícula MGRS, sombreado, curvas de nivel).
+- **Altitudes:** siempre sobre el nivel del mar (MDT05 del IGN; las alturas
+  elipsoidales de ATAK se convierten con el geoide EGM08-REDNAP).
 - **Barra de herramientas** escondida: aparece al acercar el ratón arriba a
   la izquierda (en pantallas táctiles, siempre). Una pastilla indica la
   herramienta activa.
@@ -227,6 +237,11 @@ docs/                    esta especificación e informe de precisión
 - **Mapas** → «Capas · Mapas» (ver, opacidad, centrar, quitar). **Clic en
   su nombre:** encuadra el mapa (acercando o alejando), lo marca con un
   marco magenta que parpadea y lo pone **por encima de todas las capas**.
+  Todos los mapas importados se pintan **encima de cualquier fondo** (el
+  fondo elegido queda debajo: al bajar la opacidad se mezclan). Las cachés
+  de ATAK con zooms incompletos se ven a cualquier escala: cada tesela se
+  compone con la del mismo zoom, o con sus hijas reducidas (hasta 3 niveles),
+  o con un trozo ampliado de su madre.
   Desde lejos, los mapas que aún no se pintan por el zoom muestran su
   contorno discontinuo. Se colocan solos:
   colocados solos:
@@ -252,7 +267,34 @@ docs/                    esta especificación e informe de precisión
   guardan como acceso directo al archivo (no se copian; puede pedir volver
   a dar acceso al abrir de nuevo).
 
-## 11. Pendiente
+## 11. Creador de mapas (`src/datos/creador.js`, `src/ui/creador.js`)
+
+- **Zona:** dibujada en el mapa (irregular, cóncava incluida; clic derecho
+  quita el último vértice, doble clic o «Terminar»), un área o círculo del
+  plan, o la vista actual. Se descargan solo las teselas que toca la zona
+  (barrido por filas: bordes + interior; probado contra una referencia
+  exacta con 60 polígonos al azar).
+- **Capas:** Topográfico (hasta z17), Híbrido (la imagen y los rótulos de
+  Ajustes, hasta z20 en Google), Mapa base (z17) y Relieve (calculado con el
+  MDT, z17). Cada una con su rango de zoom y los m/píxel de cada zoom.
+- **Varias capas:** un solo archivo (cada zoom de una capa; si dos piden el
+  mismo zoom gana la de más arriba, que se ordena con ▲) o un archivo por
+  capa.
+- **Formatos:** ATAK `.sqlite` (tablas `tiles`, `ATAK_catalog`,
+  `ATAK_metadata` con srid 3857, como las cachés de Balú), MBTiles 1.3 (con
+  índice), ZIP de teselas `{z}/{x}/{y}` y GeoTIFF (EPSG:3857, Deflate, una
+  imagen por capa al zoom elegido, recortada a la zona con transparencia).
+  Escritor SQLite propio (`sqlite-escritor.js`), verificado con el SQLite
+  oficial (`integrity_check`), incluido un índice de 200 000 entradas.
+- **Calidad** JPEG del híbrido con rótulos y del relieve: alta, media,
+  ligera. Las teselas que no hay que recomponer se guardan tal cual llegan.
+- **Estimación** de teselas, MB y tiempo antes de empezar; aviso por encima
+  de 30 000 teselas y límite de 250 000.
+- **Descarga** en el propio navegador (6 a la vez, reintentos, progreso,
+  cancelar). Se elige dónde guardar antes de empezar (Chrome/Edge) o se
+  descarga normal. Opción de abrir el mapa en SPA al terminar.
+
+## 12. Pendiente
 
 - Rumbo magnético (modelo WMM).
 - Puntos de control: vértices geodésicos del IGN en la zona piloto.

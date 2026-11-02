@@ -22,16 +22,46 @@
         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
         <span>Ajustes</span></button>
       <div class="ajustes" id="ajustes" hidden>
-        <div class="aj-grupo"><div class="aj-tit">Coordenadas</div>
-          <div class="aj-opc" data-pref="coordenadas">
-            <button type="button" data-v="mgrs">MGRS<small>30T VL 64592 21080</small></button>
-            <button type="button" data-v="utm">UTM<small>30N 464592 E 4521080 N</small></button>
-            <button type="button" data-v="gms">Geográficas<small>40°50'24.0"N 3°25'12.0"W</small></button>
-            <button type="button" data-v="gd">Grados decimales<small>40.840000, -3.420000</small></button>
-          </div></div>
-        <div class="aj-grupo"><div class="aj-tit">Rumbos (regla)</div>
-          <div class="seg" data-pref="angulo"><button type="button" data-v="grados">Grados</button><button type="button" data-v="milesimas">Milésimas</button><button type="button" data-v="gms">G M S</button></div></div>
-        <p class="aj-nota">Coordenadas siempre al metro. Altitudes del MDT05 del IGN, redondeadas al metro.</p>
+        <div class="aj-cab">Ajustes</div>
+        <details class="aj-sec" data-aj="coordenadas" open>
+          <summary>Coordenadas y rumbos</summary>
+          <div class="aj-cuerpo">
+            <div class="aj-tit">Coordenadas (siempre al metro)</div>
+            <div class="aj-opc" data-pref="coordenadas">
+              <button type="button" data-v="mgrs">MGRS<small>30T VL 64592 21080</small></button>
+              <button type="button" data-v="utm">UTM<small>30N 464592 E 4521080 N</small></button>
+              <button type="button" data-v="gms">Geográficas<small>40°50'24.0"N 3°25'12.0"W</small></button>
+              <button type="button" data-v="gd">Grados decimales<small>40.840000, -3.420000</small></button>
+            </div>
+            <div class="aj-tit">Rumbos de la regla</div>
+            <div class="seg" data-pref="angulo"><button type="button" data-v="grados">Grados</button><button type="button" data-v="milesimas">Milésimas</button><button type="button" data-v="gms">G M S</button></div>
+          </div>
+        </details>
+        <details class="aj-sec" data-aj="imagen">
+          <summary>Imagen del híbrido</summary>
+          <div class="aj-cuerpo">
+            <div class="seg seg-imagen" id="imagen-fuente"></div>
+            <div class="oh-fecha" id="imagen-fecha"></div>
+            <label class="sup sup-auto"><input type="checkbox" id="rotulos"><span class="txt"><b>Nombres y carreteras</b><small>Rótulos encima de la imagen</small></span></label>
+          </div>
+        </details>
+        <details class="aj-sec" data-aj="fondos">
+          <summary>Mapas de fondo</summary>
+          <div class="aj-cuerpo">
+            <label class="sup sup-auto"><input type="checkbox" id="mtn-detalle">
+              <span class="txt"><b>Mantener detalle 1:25.000</b><small>Topográfico: sigue mostrando el MTN25 al alejarte (hasta zoom 13)</small></span></label>
+            <label class="sup sup-auto"><input type="checkbox" id="fondo-auto">
+              <span class="txt"><b>Híbrido al acercarte</b><small>Desde zoom 17 pasa al híbrido y al alejarte vuelve a tu mapa</small></span></label>
+          </div>
+        </details>
+        <details class="aj-sec" data-aj="cuadricula">
+          <summary>Cuadrícula MGRS</summary>
+          <div class="aj-cuerpo">
+            <label class="intensidad aj-int" title="Intensidad de las líneas de la cuadrícula">Intensidad <input type="range" id="cuad-intensidad" min="10" max="100" step="5"><output id="cuad-intensidad-v"></output></label>
+            <p class="aj-nota">Sobre el híbrido las líneas se pintan en blanco; sobre los mapas, en azul oscuro.</p>
+          </div>
+        </details>
+        <p class="aj-nota">Altitudes siempre sobre el nivel del mar (MDT05 del IGN), redondeadas al metro.</p>
       </div>
     </div>
   </header>
@@ -94,16 +124,6 @@
           <summary><span>Fondo</span><span class="sec-val" id="fondo-actual"></span></summary>
           <div class="sec-cuerpo">
             <div class="fondos" id="fondos"></div>
-            <div class="opc-hibrido" id="opc-hibrido">
-              <div class="oh-tit">Imagen del híbrido</div>
-              <div class="seg seg-imagen" id="imagen-fuente"></div>
-              <div class="oh-fecha" id="imagen-fecha"></div>
-              <label class="sup sup-auto"><input type="checkbox" id="rotulos"><span class="txt"><b>Nombres y carreteras</b><small>Rótulos encima de la imagen</small></span></label>
-            </div>
-            <label class="sup sup-auto"><input type="checkbox" id="mtn-detalle">
-              <span class="txt"><b>Mantener detalle 1:25.000</b><small>Topográfico: sigue mostrando el MTN25 al alejarte (hasta zoom 13)</small></span></label>
-            <label class="sup sup-auto"><input type="checkbox" id="fondo-auto">
-              <span class="txt"><b>Híbrido al acercarte</b><small>Desde zoom 17 pasa al híbrido y al alejarte vuelve a tu mapa</small></span></label>
           </div>
         </details>
         <details class="seccion" data-sec="mapas">
@@ -111,7 +131,7 @@
           <div class="sec-cuerpo">
             <label class="sup"><input type="checkbox" data-id="piloto" id="sup-piloto"><span class="txt"><b>Zona piloto</b><small>Guadarrama, unos 20 × 20 km</small></span></label>
             <div id="mapas-importados"></div>
-            <div class="pm-acciones"><button type="button" id="btn-importar-mapa">Importar mapa…</button><button type="button" id="btn-buscar-mapas">Buscar en mis mapas…</button></div>
+            <div class="pm-acciones"><button type="button" id="btn-importar-mapa">Importar mapa…</button><button type="button" id="btn-buscar-mapas">Buscar en mis mapas…</button><button type="button" id="btn-crear-mapa" class="btn-crear">Crear mapa…</button></div>
             <input type="file" id="entrada-mapa" multiple hidden accept=".sqlite,.mbtiles,.db,.tif,.tiff,.jpg,.jpeg,.png,.jgw,.pgw,.tfw,.wld,.prj,.ecw,.jp2">
           </div>
         </details>
@@ -125,6 +145,7 @@
     <div class="aviso" id="aviso" hidden role="alert"></div>
     <div class="aviso-breve" id="aviso-breve" hidden role="status"></div>
     <section class="panel-medida panel-elemento" id="panel-elemento" hidden aria-live="polite"></section>
+    <section class="panel-medida panel-creador" id="panel-creador" hidden aria-label="Creador de mapas"></section>
     <section class="panel-medida" id="panel-medida" hidden aria-live="polite">
       <div class="pm-cab"><strong>Regla</strong><span id="pm-ayuda">Toca el mapa para añadir puntos</span></div>
       <div id="pm-cuerpo"></div>

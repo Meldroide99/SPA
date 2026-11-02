@@ -782,7 +782,19 @@ body.app-mapa { overflow: hidden; }
 .btn-ajustes { display: flex; align-items: center; gap: 7px; border: 1px solid rgba(255,255,255,.25); background: rgba(255,255,255,.08); color: #fff; border-radius: var(--radio); padding: 6px 11px; font-size: 13px; font-weight: 600; cursor: pointer; }
 .btn-ajustes svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.6; }
 .btn-ajustes:hover, .btn-ajustes[aria-expanded="true"] { background: rgba(255,255,255,.18); border-color: var(--oro-claro); }
-.ajustes { position: absolute; right: 0; top: calc(100% + 8px); width: 320px; background: var(--superficie); color: var(--tinta); border: 1px solid var(--linea); border-radius: 8px; box-shadow: var(--sombra); padding: 12px 14px; z-index: 1100; }
+.ajustes { position: absolute; right: 0; top: calc(100% + 8px); width: 340px; max-height: calc(100dvh - 80px); overflow: auto; box-sizing: border-box; background: var(--superficie); color: var(--tinta); border: 1px solid var(--linea); border-radius: 8px; box-shadow: var(--sombra); padding: 4px 12px 12px; z-index: 1100; }
+.aj-cab { font: 400 19px/1.2 var(--serif); padding: 8px 2px 6px; }
+.aj-sec { border-top: 1px solid var(--linea); }
+.aj-sec > summary { display: flex; align-items: center; gap: 8px; list-style: none; cursor: pointer; padding: 10px 2px; font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--tinta-2); }
+.aj-sec > summary::-webkit-details-marker { display: none; }
+.aj-sec > summary::before { content: ''; width: 7px; height: 7px; border-right: 2px solid var(--oro); border-bottom: 2px solid var(--oro); transform: rotate(-45deg); transition: transform .2s; flex: none; margin-right: 2px; }
+.aj-sec[open] > summary::before { transform: rotate(45deg); }
+.aj-sec > summary:hover { color: var(--noche); }
+.aj-cuerpo { padding: 0 2px 12px; }
+.aj-cuerpo .aj-tit:not(:first-child) { margin-top: 12px; }
+.aj-cuerpo .sup { border-top: 0; padding-left: 0; padding-right: 0; }
+.aj-cuerpo .aj-nota { margin-top: 6px; }
+.aj-int { padding: 4px 0 0; font-size: 12.5px; color: var(--tinta-2); }
 .aj-grupo + .aj-grupo { margin-top: 12px; }
 .aj-tit { font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--gris); margin-bottom: 6px; }
 .aj-opc { display: grid; gap: 4px; }
@@ -802,6 +814,8 @@ body.app-mapa { overflow: hidden; }
 .etq-ancla { width: 0 !important; height: 0 !important; }
 .etq-ancla > span { position: absolute; left: 0; top: 0; transform: translate(-50%, -50%); white-space: nowrap; }
 .etq-cuad { font: 600 11px/1 var(--mono); color: var(--noche); background: rgba(252,251,249,.88); padding: 2px 4px; border-radius: 2px; white-space: nowrap; }
+.cuad-claro .etq-cuad { color: #fff; background: rgba(12,46,75,.62); }
+.cuad-claro .cuad-100k { color: rgba(255,255,255,.75); text-shadow: 0 0 4px rgba(0,0,0,.85); }
 .cuad-100k { font: 500 22px/1 var(--serif); color: rgba(12,46,75,.42); text-shadow: 0 0 3px rgba(255,255,255,.9); letter-spacing: .04em; }
 .zona-piloto-etq { font: 600 11px/1 var(--sans); letter-spacing: .08em; text-transform: uppercase; color: var(--oro-tinta); background: var(--oro-suave); border: 1px solid var(--oro-claro); padding: 4px 7px; border-radius: 3px; white-space: nowrap; width: auto !important; height: auto !important; }
 
@@ -1060,10 +1074,14 @@ body.plan-abierto .panel-elemento, body.plan-abierto #panel-medida { left: 324px
 .velo-soltar div { max-width: 460px; text-align: center; background: var(--superficie); border: 2px dashed var(--oro); border-radius: 12px; padding: 22px 26px; font-size: 15px; font-weight: 600; color: var(--tinta); }
 
 /* Diálogos */
-#dialogo { border: 0; border-radius: 10px; padding: 0; box-shadow: 0 20px 60px -20px rgba(0,0,0,.45); max-width: min(560px, calc(100% - 24px)); }
+#dialogo { border: 0; border-radius: 10px; padding: 0; box-shadow: 0 20px 60px -20px rgba(0,0,0,.45); max-width: calc(100vw - 24px); max-height: calc(100dvh - 24px); overflow: auto; box-sizing: border-box; }
+#dialogo > .dlg:not(.dlg-ancho) { max-width: 560px; }
 #dialogo::backdrop { background: rgba(12,46,75,.35); }
 .dlg { padding: 18px 20px; }
-.dlg-ancho { width: min(640px, calc(100vw - 24px)); }
+.dlg-ancho { width: min(680px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); box-sizing: border-box; display: flex; flex-direction: column; overflow: hidden; }
+.dlg-ancho > * { flex: none; }
+.dlg-ancho > .cat-lista { flex: 1 1 auto; min-height: 90px; max-height: none; }
+.dlg-ancho .cat-cab { flex-wrap: wrap; }
 .dlg h3 { font: 400 22px/1.2 var(--serif); margin: 0 0 8px; }
 .dlg p { font-size: 13.5px; color: var(--tinta-2); }
 .dlg select, .dlg input:not([type=checkbox]) { width: 100%; font: 14px var(--sans); padding: 7px 10px; border: 1px solid var(--linea-2); border-radius: var(--radio); }
@@ -1074,7 +1092,7 @@ body.plan-abierto .panel-elemento, body.plan-abierto #panel-medida { left: 324px
 .cat-cab button { border: 1px solid var(--noche); background: var(--noche); color: #fff; border-radius: var(--radio); padding: 6px 12px; font-size: 12.5px; cursor: pointer; }
 .cat-filtro { display: grid; gap: 6px; margin-bottom: 8px; font-size: 12.5px; }
 .cat-progreso { font-size: 12.5px; color: var(--oro-tinta); margin: 6px 0; }
-.cat-lista { list-style: none; margin: 0; padding: 0; max-height: 46vh; overflow: auto; border-top: 1px solid var(--linea); }
+.cat-lista { list-style: none; margin: 0; padding: 0; max-height: 50vh; overflow: auto; border-top: 1px solid var(--linea); }
 .cat-lista li { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 7px 2px; border-bottom: 1px solid var(--linea); }
 .cat-lista li div { display: grid; min-width: 0; }
 .cat-lista b { font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -1114,6 +1132,42 @@ body.plan-abierto .panel-elemento, body.plan-abierto #panel-medida { left: 324px
 .marco-mapa { animation: marco 1s ease-in-out 4; }
 @keyframes marco { 0%, 100% { stroke-width: 4px; stroke-opacity: 1; } 50% { stroke-width: 10px; stroke-opacity: .55; } }
 
+/* Creador de mapas */
+.panel-creador { width: min(380px, calc(100% - 24px)); max-height: calc(100% - 60px); }
+.panel-creador .pm-cab { align-items: center; }
+.pm-x { border: 0; background: none; font-size: 22px; line-height: 1; color: var(--gris); cursor: pointer; padding: 0 4px; }
+.pm-x:hover { color: var(--tinta); }
+.cr-paso { border: 0; border-top: 1px solid var(--linea); margin: 10px 0 0; padding: 8px 0 0; min-width: 0; }
+.cr-paso[disabled] { opacity: .55; }
+.cr-paso legend { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--tinta-2); padding: 0 6px 0 0; }
+.cr-botones { display: flex; gap: 6px; }
+.cr-botones button, .panel-creador .pm-acciones button { flex: 1; border: 1px solid var(--linea-2); background: var(--hundido); border-radius: var(--radio); padding: 7px 8px; font-size: 12.5px; cursor: pointer; color: var(--tinta); }
+.panel-creador button.primario { background: var(--noche); border-color: var(--noche); color: #fff; font-weight: 600; }
+.panel-creador button:disabled { opacity: .5; cursor: default; }
+.panel-creador select, .panel-creador input:not([type=checkbox]) { font: 12.5px var(--sans); padding: 4px 6px; border: 1px solid var(--linea-2); border-radius: var(--radio); background: var(--superficie); color: var(--tinta); max-width: 100%; }
+#cr-del-plan { width: 100%; margin-top: 6px; }
+.cr-zona { font-size: 12.5px; color: var(--tinta-2); margin: 6px 0 0; }
+.cr-capa { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 4px 6px; padding: 6px 0; border-bottom: 1px dashed var(--linea); }
+.cr-capa.off .cr-zooms { opacity: .45; }
+.cr-nom { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; min-width: 0; }
+.cr-nom input { accent-color: var(--noche); width: 16px; height: 16px; margin: 0; flex: none; }
+.cr-orden button { border: 1px solid var(--linea-2); background: var(--superficie); border-radius: var(--radio); font-size: 10px; padding: 2px 6px; cursor: pointer; }
+.cr-zooms { grid-column: 1 / -1; display: flex; gap: 10px; flex-wrap: wrap; padding-left: 24px; font-size: 12px; color: var(--gris); }
+.cr-zooms label { display: flex; align-items: center; gap: 4px; }
+.cr-modo { display: flex; margin-top: 8px; }
+.cr-modo button { flex: 1; font-size: 12px; }
+.cr-nota { font-size: 11.5px; color: var(--gris); margin: 6px 0 0; }
+.cr-aviso { color: var(--aviso, #9a5b00); font-size: 12px; margin-top: 4px; }
+.cr-formatos { margin-bottom: 8px; }
+.cr-formatos button { font-size: 13px; padding: 5px 9px; }
+.cr-campo { display: grid; gap: 3px; font-size: 12px; color: var(--gris); margin-top: 6px; }
+.cr-abrir { border-top: 0; padding: 8px 0 0; }
+.cr-resumen { margin-top: 10px; padding: 8px 10px; background: var(--hundido); border-radius: 6px; font-size: 12.5px; color: var(--tinta); }
+.cr-progreso { margin-top: 8px; font-size: 12px; color: var(--tinta-2); }
+.cr-barra { height: 6px; border-radius: 3px; background: var(--linea); overflow: hidden; margin-bottom: 4px; }
+.cr-barra span { display: block; height: 100%; width: 0; background: var(--oro); transition: width .3s; }
+.btn-crear { font-weight: 600; }
+
 </style>
 </head>
 <body class="app-mapa">
@@ -1130,16 +1184,46 @@ body.plan-abierto .panel-elemento, body.plan-abierto #panel-medida { left: 324px
         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
         <span>Ajustes</span></button>
       <div class="ajustes" id="ajustes" hidden>
-        <div class="aj-grupo"><div class="aj-tit">Coordenadas</div>
-          <div class="aj-opc" data-pref="coordenadas">
-            <button type="button" data-v="mgrs">MGRS<small>30T VL 64592 21080</small></button>
-            <button type="button" data-v="utm">UTM<small>30N 464592 E 4521080 N</small></button>
-            <button type="button" data-v="gms">Geográficas<small>40°50'24.0"N 3°25'12.0"W</small></button>
-            <button type="button" data-v="gd">Grados decimales<small>40.840000, -3.420000</small></button>
-          </div></div>
-        <div class="aj-grupo"><div class="aj-tit">Rumbos (regla)</div>
-          <div class="seg" data-pref="angulo"><button type="button" data-v="grados">Grados</button><button type="button" data-v="milesimas">Milésimas</button><button type="button" data-v="gms">G M S</button></div></div>
-        <p class="aj-nota">Coordenadas siempre al metro. Altitudes del MDT05 del IGN, redondeadas al metro.</p>
+        <div class="aj-cab">Ajustes</div>
+        <details class="aj-sec" data-aj="coordenadas" open>
+          <summary>Coordenadas y rumbos</summary>
+          <div class="aj-cuerpo">
+            <div class="aj-tit">Coordenadas (siempre al metro)</div>
+            <div class="aj-opc" data-pref="coordenadas">
+              <button type="button" data-v="mgrs">MGRS<small>30T VL 64592 21080</small></button>
+              <button type="button" data-v="utm">UTM<small>30N 464592 E 4521080 N</small></button>
+              <button type="button" data-v="gms">Geográficas<small>40°50'24.0"N 3°25'12.0"W</small></button>
+              <button type="button" data-v="gd">Grados decimales<small>40.840000, -3.420000</small></button>
+            </div>
+            <div class="aj-tit">Rumbos de la regla</div>
+            <div class="seg" data-pref="angulo"><button type="button" data-v="grados">Grados</button><button type="button" data-v="milesimas">Milésimas</button><button type="button" data-v="gms">G M S</button></div>
+          </div>
+        </details>
+        <details class="aj-sec" data-aj="imagen">
+          <summary>Imagen del híbrido</summary>
+          <div class="aj-cuerpo">
+            <div class="seg seg-imagen" id="imagen-fuente"></div>
+            <div class="oh-fecha" id="imagen-fecha"></div>
+            <label class="sup sup-auto"><input type="checkbox" id="rotulos"><span class="txt"><b>Nombres y carreteras</b><small>Rótulos encima de la imagen</small></span></label>
+          </div>
+        </details>
+        <details class="aj-sec" data-aj="fondos">
+          <summary>Mapas de fondo</summary>
+          <div class="aj-cuerpo">
+            <label class="sup sup-auto"><input type="checkbox" id="mtn-detalle">
+              <span class="txt"><b>Mantener detalle 1:25.000</b><small>Topográfico: sigue mostrando el MTN25 al alejarte (hasta zoom 13)</small></span></label>
+            <label class="sup sup-auto"><input type="checkbox" id="fondo-auto">
+              <span class="txt"><b>Híbrido al acercarte</b><small>Desde zoom 17 pasa al híbrido y al alejarte vuelve a tu mapa</small></span></label>
+          </div>
+        </details>
+        <details class="aj-sec" data-aj="cuadricula">
+          <summary>Cuadrícula MGRS</summary>
+          <div class="aj-cuerpo">
+            <label class="intensidad aj-int" title="Intensidad de las líneas de la cuadrícula">Intensidad <input type="range" id="cuad-intensidad" min="10" max="100" step="5"><output id="cuad-intensidad-v"></output></label>
+            <p class="aj-nota">Sobre el híbrido las líneas se pintan en blanco; sobre los mapas, en azul oscuro.</p>
+          </div>
+        </details>
+        <p class="aj-nota">Altitudes siempre sobre el nivel del mar (MDT05 del IGN), redondeadas al metro.</p>
       </div>
     </div>
   </header>
@@ -1202,16 +1286,6 @@ body.plan-abierto .panel-elemento, body.plan-abierto #panel-medida { left: 324px
           <summary><span>Fondo</span><span class="sec-val" id="fondo-actual"></span></summary>
           <div class="sec-cuerpo">
             <div class="fondos" id="fondos"></div>
-            <div class="opc-hibrido" id="opc-hibrido">
-              <div class="oh-tit">Imagen del híbrido</div>
-              <div class="seg seg-imagen" id="imagen-fuente"></div>
-              <div class="oh-fecha" id="imagen-fecha"></div>
-              <label class="sup sup-auto"><input type="checkbox" id="rotulos"><span class="txt"><b>Nombres y carreteras</b><small>Rótulos encima de la imagen</small></span></label>
-            </div>
-            <label class="sup sup-auto"><input type="checkbox" id="mtn-detalle">
-              <span class="txt"><b>Mantener detalle 1:25.000</b><small>Topográfico: sigue mostrando el MTN25 al alejarte (hasta zoom 13)</small></span></label>
-            <label class="sup sup-auto"><input type="checkbox" id="fondo-auto">
-              <span class="txt"><b>Híbrido al acercarte</b><small>Desde zoom 17 pasa al híbrido y al alejarte vuelve a tu mapa</small></span></label>
           </div>
         </details>
         <details class="seccion" data-sec="mapas">
@@ -1219,7 +1293,7 @@ body.plan-abierto .panel-elemento, body.plan-abierto #panel-medida { left: 324px
           <div class="sec-cuerpo">
             <label class="sup"><input type="checkbox" data-id="piloto" id="sup-piloto"><span class="txt"><b>Zona piloto</b><small>Guadarrama, unos 20 × 20 km</small></span></label>
             <div id="mapas-importados"></div>
-            <div class="pm-acciones"><button type="button" id="btn-importar-mapa">Importar mapa…</button><button type="button" id="btn-buscar-mapas">Buscar en mis mapas…</button></div>
+            <div class="pm-acciones"><button type="button" id="btn-importar-mapa">Importar mapa…</button><button type="button" id="btn-buscar-mapas">Buscar en mis mapas…</button><button type="button" id="btn-crear-mapa" class="btn-crear">Crear mapa…</button></div>
             <input type="file" id="entrada-mapa" multiple hidden accept=".sqlite,.mbtiles,.db,.tif,.tiff,.jpg,.jpeg,.png,.jgw,.pgw,.tfw,.wld,.prj,.ecw,.jp2">
           </div>
         </details>
@@ -1233,6 +1307,7 @@ body.plan-abierto .panel-elemento, body.plan-abierto #panel-medida { left: 324px
     <div class="aviso" id="aviso" hidden role="alert"></div>
     <div class="aviso-breve" id="aviso-breve" hidden role="status"></div>
     <section class="panel-medida panel-elemento" id="panel-elemento" hidden aria-live="polite"></section>
+    <section class="panel-medida panel-creador" id="panel-creador" hidden aria-label="Creador de mapas"></section>
     <section class="panel-medida" id="panel-medida" hidden aria-live="polite">
       <div class="pm-cab"><strong>Regla</strong><span id="pm-ayuda">Toca el mapa para añadir puntos</span></div>
       <div id="pm-cuerpo"></div>
@@ -4737,7 +4812,7 @@ const FONDOS = [
     id: 'mtn', nombre: 'Topográfico', detalle: 'Mapa Topográfico Nacional del IGN (MTN25 en zoom alto)',
     // PNG: más nítido que JPEG (texto y líneas finas sin artefactos)
     url: wmts('https://www.ign.es/wmts/mapa-raster', 'MTN', 'image/png'),
-    atribucion: ATRIB_IGN, maxNativo: 17, max: 19,
+    atribucion: ATRIB_IGN, maxNativo: 17, max: 21,
     // El IGN cambia de mapa según el zoom: MTN25 en 15–16, más generalizado
     // en 14 y 13. «Mantener detalle» pinta en 13–14 las teselas de zoom 15.
     zoomDetalle: 15, zoomDetalleMin: 13,
@@ -4746,7 +4821,7 @@ const FONDOS = [
   {
     id: 'base', nombre: 'Mapa base', detalle: 'IGN Base: callejero y topografía vectorial',
     url: wmts('https://www.ign.es/wmts/ign-base', 'IGNBaseTodo', 'image/png'),
-    atribucion: ATRIB_IGN, maxNativo: 17, max: 19,
+    atribucion: ATRIB_IGN, maxNativo: 17, max: 21,
   },
   { id: 'relieve', nombre: 'Relieve', detalle: 'Sombreado calculado con el MDT del IGN (5 m al acercarse)', tipo: 'relieve' },
 ];
@@ -4815,6 +4890,14 @@ function crearCapa(L, def) {
   if (def.quadkey) return new (capaQuadkey(L))(def.quadkey, opciones);
   if (def.zoomDetalle) return new (capaConDetalle(L))(def.url, { ...opciones, zoomDetalle: def.zoomDetalle, zoomDetalleMin: def.zoomDetalleMin });
   return L.tileLayer(def.url, opciones);
+}
+
+/** URL de la tesela z/x/y de una capa (para descargarla fuera de Leaflet: creador de mapas). */
+function urlTesela(def, z, x, y) {
+  const sub = def.subdominios ?? 'abc';
+  const s = sub[Math.abs(x + y) % sub.length];
+  return (def.quadkey ?? def.url).replaceAll('{s}', s).replaceAll('{q}', quadkey(x, y, z))
+    .replaceAll('{z}', z).replaceAll('{x}', x).replaceAll('{y}', y);
 }
 
 /** Clave de tesela de Bing (quadkey). */
@@ -4890,7 +4973,7 @@ async function fechaImagen(fuente, lat, lon, pedir = fetch) {
   return null;
 }
 
-return { FONDOS, IMAGENES, ROTULOS, SUPERPUESTAS, ATRIBUCION_MDT, ZONA_PILOTO, crearCapa, quadkey, fechaImagen };
+return { FONDOS, IMAGENES, ROTULOS, SUPERPUESTAS, ATRIBUCION_MDT, ZONA_PILOTO, crearCapa, urlTesela, quadkey, fechaImagen };
 })();
 
 // ── src/datos/alturas.js
@@ -5299,6 +5382,7 @@ function textoEtiqueta(valor, paso) {
 function capaCuadricula(L, mapa, opc = {}) {
   const intensidad = opc.intensidad ?? (() => 1);   // 0–1: multiplica la opacidad de las líneas
   const obstaculos = opc.obstaculos ?? (() => []);  // rectángulos {x0,y0,x1,y1} que las etiquetas no deben tapar
+  const claro = opc.claro ?? (() => false);          // true sobre imagen (híbrido): líneas y rótulos en blanco
   const grupo = L.layerGroup();
   const panel = 'cuadricula';
   if (!mapa.getPane(panel)) {
@@ -5308,13 +5392,15 @@ function capaCuadricula(L, mapa, opc = {}) {
   function redibujar() {
     grupo.clearLayers();
     if (!mapa.hasLayer(grupo)) return;
+    const blanco = claro();
+    mapa.getPane(panel).classList.toggle('cuad-claro', blanco);
     const b = mapa.getBounds().pad(0.05);
     const paso = pasoCuadricula(mapa.getZoom());
     const { lineas, etiquetas, husos } = calcularCuadricula(
       { sur: b.getSouth(), norte: b.getNorth(), oeste: b.getWest(), este: b.getEast() }, paso);
     for (const l of lineas) {
       const est = ESTILO[Math.min(l.paso, 100000)] ?? ESTILO[paso];
-      L.polyline(l.puntos, { ...est, opacity: est.opacity * intensidad(), pane: panel, interactive: false, smoothFactor: 0 }).addTo(grupo);
+      L.polyline(l.puntos, { ...est, ...(blanco ? { color: '#FFFFFF', opacity: Math.min(1, est.opacity * 1.2) * intensidad() } : { opacity: est.opacity * intensidad() }), pane: panel, interactive: false, smoothFactor: 0 }).addTo(grupo);
     }
     for (const lon of husos) {
       L.polyline([[b.getSouth(), lon], [b.getNorth(), lon]], { color: '#A3362B', weight: 2, dashArray: '8 6', pane: panel, interactive: false }).addTo(grupo);
@@ -5790,7 +5876,7 @@ function htmlTrazo({ trazo, grosor }, campo) {
 
 /** Línea de altitud de un punto (se rellena cuando llega el dato). */
 function htmlAltitud(id = 'el-altitud') {
-  return `<div class="el-altitud"><span class="el-et">Altitud</span><b id="${id}">…</b><small>MDT05 del IGN</small></div>`;
+  return `<div class="el-altitud"><span class="el-et">Altitud</span><b id="${id}">…</b><small>sobre el nivel del mar · MDT05 del IGN</small></div>`;
 }
 async function rellenarAltitud(alturas, p, id = 'el-altitud') {
   const caja = () => document.getElementById(id);
@@ -8046,11 +8132,42 @@ const base = (n) => n.replace(/\.[^./]+$/, '').toLowerCase();
 const uid = () => (crypto.randomUUID?.() ?? String(Math.random()).slice(2));
 const tam = (b) => (b >= 1e9 ? `${(b / 1e9).toFixed(1)} GB` : b >= 1e6 ? `${(b / 1e6).toFixed(0)} MB` : `${Math.max(1, Math.round(b / 1e3))} KB`);
 
+/** Pinta en `lienzo` la tesela z/x/y de la caché `t` (ver crearCapaMapa). */
+async function componerTesela(t, hay, z, x, y, lienzo) {
+  const ctx = lienzo.getContext('2d');
+  const pintar = async (blob, dx, dy, lado, recorte) => {
+    const im = await createImageBitmap(blob);
+    if (recorte) ctx.drawImage(im, recorte.sx, recorte.sy, recorte.lado, recorte.lado, 0, 0, 256, 256);
+    else ctx.drawImage(im, dx, dy, lado, lado);
+    im.close?.();
+  };
+  if (hay.has(z)) { const b = await t.tesela(z, x, y); if (b) { await pintar(b, 0, 0, 256); return true; } }
+  // Hijas (zoom más fino): 4, 16 o 64 teselas reducidas
+  for (let k = 1; k <= 3; k++) {
+    if (!hay.has(z + k)) continue;
+    const n = 2 ** k, lado = 256 / n;
+    const blobs = await Promise.all(Array.from({ length: n * n }, (_, i) => t.tesela(z + k, x * n + (i % n), y * n + Math.floor(i / n)).catch(() => null)));
+    if (!blobs.some(Boolean)) continue;
+    await Promise.all(blobs.map((b, i) => (b ? pintar(b, (i % n) * lado, Math.floor(i / n) * lado, lado) : null)));
+    return true;
+  }
+  // Madre (zoom más grueso): se amplía la parte que corresponde
+  for (let k = 1; k <= 6 && z - k >= 0; k++) {
+    if (!hay.has(z - k)) continue;
+    const n = 2 ** k, b = await t.tesela(z - k, x >> k, y >> k);
+    if (!b) continue;
+    const lado = 256 / n;
+    await pintar(b, 0, 0, 0, { sx: (x % n) * lado, sy: (y % n) * lado, lado });
+    return true;
+  }
+  return false;
+}
+
 function iniciarImportar({ L, mapa, fmt, alturas, dibujo, herramienta, alCambiarPaneles = () => {} }) {
   const $ = (id) => document.getElementById(id);
   const DUENO = 'importados';
   if (!mapa.getPane('importados')) mapa.createPane('importados').style.zIndex = 455;
-  if (!mapa.getPane('mapasImportados')) mapa.createPane('mapasImportados').style.zIndex = 250;
+  if (!mapa.getPane('mapasImportados')) mapa.createPane('mapasImportados').style.zIndex = 350; // encima de todos los fondos (200), debajo de cuadrícula y dibujos
   // El mapa seleccionado va por encima de todas las capas (fondo, sombreado, curvas)
   if (!mapa.getPane('mapaSeleccionado')) mapa.createPane('mapaSeleccionado').style.zIndex = 445;
   if (!mapa.getPane('marcoMapa')) { const p = mapa.createPane('marcoMapa'); p.style.zIndex = 480; p.style.pointerEvents = 'none'; }
@@ -8181,8 +8298,10 @@ function iniciarImportar({ L, mapa, fmt, alturas, dibujo, herramienta, alCambiar
       if (Number.isFinite(p.ele)) {
         if (e.refAltura === 'hae') {
           const h = rejillasListas() ? haeAAltitud(p.lat, p.lon, p.ele) : null;
-          deArchivo = `${Math.round(p.ele)} m elipsoidal (HAE)${h !== null ? ` ≈ ${Math.round(h)} m sobre el nivel del mar` : ''}`;
-        } else deArchivo = `${Math.round(p.ele)} m`;
+          // Siempre sobre el nivel del mar: la altura elipsoidal se corrige con el geoide EGM08-REDNAP
+          deArchivo = h !== null ? `${Math.round(h)} m s. n. m.` : '';
+          if (h === null && !rejillasListas()) { const sel = seleccion; prepararRejillas().then(() => { if (seleccion === sel) pintarFicha(); }).catch(() => {}); }
+        } else deArchivo = `${Math.round(p.ele)} m s. n. m.`;
       }
       cuerpo = `<div class="pm-total"><div class="grande mgrs">${esc(fmt.coord(p))}</div></div>${htmlAltitud()}
         ${deArchivo ? `<div class="el-altitud secundaria"><span class="el-et">En el archivo</span><span>${deArchivo}</span></div>` : ''}
@@ -8237,22 +8356,22 @@ function iniciarImportar({ L, mapa, fmt, alturas, dibujo, herramienta, alCambiar
       const t = await abrirMapaTeselas(lectorBlob(archivo), m.nombre);
       limites = t.limites;
       info = `${t.tipo} · zoom ${t.minZoom}–${t.maxZoom}`;
+      // Cada tesela de pantalla se compone con lo que tenga la caché: la del
+      // mismo zoom; si falta, sus hijas de un zoom más fino (hasta 3 niveles,
+      // reducidas), o un trozo de su madre (ampliado). Así una caché de ATAK
+      // con zooms dispersos se ve completa a cualquier escala.
+      const zooms = t.zooms ?? Array.from({ length: t.maxZoom - t.minZoom + 1 }, (_, i) => t.minZoom + i);
+      const hay = new Set(zooms);
       const Capa = L.GridLayer.extend({
         createTile(c, hecho) {
-          const img = document.createElement('img');
-          img.alt = '';
-          t.tesela(c.z, c.x, c.y).then((b) => {
-            if (!b) { hecho(null, img); return; }
-            const url = URL.createObjectURL(b);
-            img.onload = () => { URL.revokeObjectURL(url); hecho(null, img); };
-            img.onerror = () => { URL.revokeObjectURL(url); hecho(null, img); };
-            img.src = url;
-          }, (e) => hecho(e, img));
-          return img;
+          const lienzo = document.createElement('canvas');
+          lienzo.width = lienzo.height = 256;
+          componerTesela(t, hay, c.z, c.x, c.y, lienzo).then((algo) => hecho(null, lienzo), (e) => hecho(e, lienzo));
+          return lienzo;
         },
       });
       capa = new Capa({
-        pane: 'mapasImportados', minNativeZoom: t.minZoom, maxNativeZoom: t.maxZoom, maxZoom: 22, minZoom: Math.max(3, t.minZoom - 5),
+        pane: 'mapasImportados', maxNativeZoom: t.maxZoom, maxZoom: 22, minZoom: Math.max(3, t.minZoom - 3),
         bounds: L.latLngBounds([limites.sur, limites.oeste], [limites.norte, limites.este]),
       });
     } else {
@@ -8580,6 +8699,948 @@ function iniciarImportar({ L, mapa, fmt, alturas, dibujo, herramienta, alCambiar
 return { iniciarImportar };
 })();
 
+// ── src/datos/creador.js
+__mods["src/datos/creador.js"] = (function () {
+'use strict';
+// Creador de mapas: cálculos puros (sin navegador).
+//
+//   · Qué teselas de la malla web (EPSG:3857) toca una zona irregular.
+//   · Qué capa se usa en cada zoom cuando se juntan varias en un archivo.
+//   · Estimación de teselas, tamaño y tiempo.
+//
+// Las zonas se dan como polígonos {lat, lon}; sus lados son rectos en la
+// proyección web, igual que se ven dibujados en el mapa.
+
+const LIMITE_TESELAS = 250000;   // por encima no se crea (horas de descarga)
+const AVISO_TESELAS = 30000;     // por encima se avisa del tiempo
+
+/** Capas que se pueden descargar, con su zoom máximo útil y su peso medio por tesela. */
+const CAPAS_CREADOR = [
+  { id: 'mtn', nombre: 'Topográfico', detalle: 'MTN del IGN (PNG)', zMax: 17, kb: 70, porSeg: 25, ext: 'png' },
+  { id: 'hibrido', nombre: 'Híbrido', detalle: 'Imagen + nombres y carreteras (JPEG)', zMax: 20, kb: 32, porSeg: 22, ext: 'jpg' },
+  { id: 'base', nombre: 'Mapa base', detalle: 'IGN Base (PNG)', zMax: 17, kb: 30, porSeg: 25, ext: 'png' },
+  { id: 'relieve', nombre: 'Relieve', detalle: 'Sombreado del MDT del IGN (JPEG)', zMax: 17, kb: 15, porSeg: 6, ext: 'jpg' },
+];
+
+const teselaX = (lon, z) => ((lon + 180) / 360) * 2 ** z;
+function teselaY(lat, z) {
+  const f = Math.max(-85.05112878, Math.min(85.05112878, lat)) * (Math.PI / 180);
+  return ((1 - Math.log(Math.tan(f) + 1 / Math.cos(f)) / Math.PI) / 2) * 2 ** z;
+}
+const lonDeX = (x, z) => (x / 2 ** z) * 360 - 180;
+const latDeY = (y, z) => (180 / Math.PI) * Math.atan(Math.sinh(Math.PI - (2 * Math.PI * y) / 2 ** z));
+
+/** Metros por píxel de una tesela de 256 px a esa latitud y zoom. */
+const metrosPixel = (lat, z) => (156543.03392804097 * Math.cos((lat * Math.PI) / 180)) / 2 ** z;
+
+/** Límites geográficos de un polígono. */
+function limitesDe(pol) {
+  return {
+    sur: Math.min(...pol.map((p) => p.lat)), norte: Math.max(...pol.map((p) => p.lat)),
+    oeste: Math.min(...pol.map((p) => p.lon)), este: Math.max(...pol.map((p) => p.lon)),
+  };
+}
+
+/** Área aproximada (m²) de un polígono pequeño (proyección local). */
+function areaAproximada(pol) {
+  if (pol.length < 3) return 0;
+  const lat0 = pol.reduce((s, p) => s + p.lat, 0) / pol.length;
+  const kx = 111320 * Math.cos((lat0 * Math.PI) / 180), ky = 110574;
+  let a = 0;
+  for (let i = 0; i < pol.length; i++) {
+    const p = pol[i], q = pol[(i + 1) % pol.length];
+    a += p.lon * kx * q.lat * ky - q.lon * kx * p.lat * ky;
+  }
+  return Math.abs(a) / 2;
+}
+
+/**
+ * Filas de teselas que toca el polígono a zoom z:
+ * [{ y, tramos: [[x0, x1], …] }] con x0..x1 inclusivos, ordenados y sin solapes.
+ * Una tesela entra si el polígono la toca, aunque sea un poco.
+ */
+function filasPoligono(pol, z) {
+  if (pol.length < 3) return [];
+  const n = 2 ** z;
+  const P = pol.map((p) => [teselaX(p.lon, z), teselaY(p.lat, z)]);
+  const yMin = Math.max(0, Math.floor(Math.min(...P.map((p) => p[1]))));
+  const yMax = Math.min(n - 1, Math.floor(Math.max(...P.map((p) => p[1]))));
+  const filas = [];
+  for (let y = yMin; y <= yMax; y++) {
+    const tramos = [];
+    // 1) Bordes: cada lado recortado a la franja [y, y+1] toca las teselas de su recorrido
+    for (let i = 0; i < P.length; i++) {
+      let [x1, y1] = P[i], [x2, y2] = P[(i + 1) % P.length];
+      if (Math.max(y1, y2) < y || Math.min(y1, y2) > y + 1) continue;
+      if (y1 !== y2) {
+        const t = (v) => (v - y1) / (y2 - y1);
+        let ta = t(y), tb = t(y + 1);
+        if (ta > tb) [ta, tb] = [tb, ta];
+        ta = Math.max(0, ta); tb = Math.min(1, tb);
+        const xa = x1 + ta * (x2 - x1), xb = x1 + tb * (x2 - x1);
+        x1 = xa; x2 = xb;
+      }
+      tramos.push([Math.floor(Math.min(x1, x2)), Math.floor(Math.max(x1, x2))]);
+    }
+    // 2) Interior: cruces con la línea media de la franja (par-impar)
+    const ym = y + 0.5, cruces = [];
+    for (let i = 0; i < P.length; i++) {
+      const [x1, y1] = P[i], [x2, y2] = P[(i + 1) % P.length];
+      if ((y1 <= ym) !== (y2 <= ym)) cruces.push(x1 + ((ym - y1) / (y2 - y1)) * (x2 - x1));
+    }
+    cruces.sort((a, b) => a - b);
+    for (let k = 0; k + 1 < cruces.length; k += 2) tramos.push([Math.floor(cruces[k]), Math.floor(cruces[k + 1])]);
+    // Unir y recortar a la malla
+    const unidos = [];
+    for (const [a, b] of tramos.map(([a, b]) => [Math.max(0, a), Math.min(n - 1, b)]).filter(([a, b]) => a <= b).sort((p, q) => p[0] - q[0])) {
+      const u = unidos.at(-1);
+      if (u && a <= u[1] + 1) u[1] = Math.max(u[1], b); else unidos.push([a, b]);
+    }
+    if (unidos.length) filas.push({ y, tramos: unidos });
+  }
+  return filas;
+}
+
+function contarTeselas(pol, z) {
+  return filasPoligono(pol, z).reduce((s, f) => s + f.tramos.reduce((t, [a, b]) => t + b - a + 1, 0), 0);
+}
+
+function* recorrerTeselas(pol, z) {
+  for (const { y, tramos } of filasPoligono(pol, z)) for (const [a, b] of tramos) for (let x = a; x <= b; x++) yield { z, x, y };
+}
+
+/**
+ * Reparto de zooms entre capas.
+ * @param {Array<{id, zMin, zMax}>} capas en orden de preferencia
+ * @param {'junto'|'separado'} modo
+ * @returns {{ archivos: Array<{capas: string[], zooms: Array<{z, capa}>}>, solapes: Array<{z, gana, pierde}> }}
+ */
+function repartirZooms(capas, modo) {
+  const activas = capas.filter((c) => c.zMin <= c.zMax);
+  if (modo === 'separado') {
+    return { archivos: activas.map((c) => ({ capas: [c.id], zooms: rango(c.zMin, c.zMax).map((z) => ({ z, capa: c.id })) })), solapes: [] };
+  }
+  const porZoom = new Map(), solapes = [];
+  for (const c of activas) {
+    for (const z of rango(c.zMin, c.zMax)) {
+      if (porZoom.has(z)) solapes.push({ z, gana: porZoom.get(z), pierde: c.id });
+      else porZoom.set(z, c.id);
+    }
+  }
+  const zooms = [...porZoom.entries()].sort((a, b) => a[0] - b[0]).map(([z, capa]) => ({ z, capa }));
+  return { archivos: zooms.length ? [{ capas: [...new Set(zooms.map((x) => x.capa))], zooms }] : [], solapes };
+}
+const rango = (a, b) => Array.from({ length: Math.max(0, b - a + 1) }, (_, i) => a + i);
+
+/** Resumen legible del reparto: «13–15 Topográfico · 16–18 Híbrido». */
+function textoReparto(zooms, nombres) {
+  const tramos = [];
+  for (const { z, capa } of zooms) {
+    const u = tramos.at(-1);
+    if (u && u.capa === capa && u.z1 === z - 1) u.z1 = z; else tramos.push({ capa, z0: z, z1: z });
+  }
+  return tramos.map((t) => `${t.z0 === t.z1 ? t.z0 : `${t.z0}–${t.z1}`} ${nombres[t.capa] ?? t.capa}`).join(' · ');
+}
+
+/** Teselas, megas y segundos estimados de un archivo. */
+function estimar(pol, zooms, { conRotulos = true } = {}) {
+  let teselas = 0, kb = 0, seg = 0;
+  for (const { z, capa } of zooms) {
+    const def = CAPAS_CREADOR.find((c) => c.id === capa);
+    const n = contarTeselas(pol, z);
+    teselas += n;
+    kb += n * (def.kb + (capa === 'hibrido' && conRotulos ? 6 : 0));
+    seg += n / def.porSeg;
+  }
+  return { teselas, megas: kb / 1024, segundos: seg };
+}
+
+/** Píxeles (en la tesela z/x/y) de los vértices del polígono, para recortar la imagen. */
+function poligonoEnTesela(pol, z, x, y) {
+  return pol.map((p) => [(teselaX(p.lon, z) - x) * 256, (teselaY(p.lat, z) - y) * 256]);
+}
+
+return { LIMITE_TESELAS, AVISO_TESELAS, CAPAS_CREADOR, teselaX, teselaY, lonDeX, latDeY, metrosPixel, limitesDe, areaAproximada, filasPoligono, contarTeselas, recorrerTeselas, repartirZooms, textoReparto, estimar, poligonoEnTesela };
+})();
+
+// ── src/datos/sqlite-escritor.js
+__mods["src/datos/sqlite-escritor.js"] = (function () {
+'use strict';
+// Escritor SQLite mínimo (sin dependencias) para crear mapas en teselas:
+// cachés de ATAK (.sqlite) y MBTiles. Formato: sqlite.org/fileformat2.html
+//
+// Construye los b-árboles de abajo arriba a partir de filas YA ORDENADAS
+// (por rowid en las tablas; por clave en los índices). Páginas de 4096 B,
+// desbordamiento para los blobs grandes, codificación UTF-8.
+// Se verifica con el SQLite oficial (PRAGMA integrity_check) en las pruebas.
+
+const TAM = 4096;
+const U = TAM; // sin bytes reservados
+const utf8 = new TextEncoder();
+
+/** varint de SQLite (big-endian, 7 bits por byte; el 9.º byte usa 8). */
+function varint(v) {
+  if (v < 0) throw new Error('varint negativo no soportado');
+  if (v <= 0x7f) return [v];
+  if (v > 2 ** 56 - 1) throw new Error('varint demasiado grande');
+  const bytes = [];
+  let x = v;
+  while (x > 0) { bytes.unshift(x % 128); x = Math.floor(x / 128); }
+  return bytes.map((b, i) => (i < bytes.length - 1 ? b | 0x80 : b));
+}
+
+/** Codifica un registro (fila) en su formato binario. */
+function registro(valores) {
+  const tipos = [], cuerpos = [];
+  for (const v of valores) {
+    if (v === null || v === undefined) { tipos.push(0); continue; }
+    if (typeof v === 'number') {
+      if (Number.isInteger(v)) {
+        if (v === 0) { tipos.push(8); continue; }
+        if (v === 1) { tipos.push(9); continue; }
+        const tam = [[1, 1, 0x7f], [2, 2, 0x7fff], [3, 3, 0x7fffff], [4, 4, 0x7fffffff], [5, 6, 0x7fffffffffff], [6, 8, Number.MAX_SAFE_INTEGER]]
+          .find(([, , max]) => v <= max && v >= -max - 1);
+        const [tipo, n] = tam;
+        const b = new Uint8Array(n);
+        let x = v < 0 ? 2 ** (8 * n) + v : v;
+        for (let i = n - 1; i >= 0; i--) { b[i] = x % 256; x = Math.floor(x / 256); }
+        tipos.push(tipo); cuerpos.push(b);
+      } else {
+        const b = new Uint8Array(8); new DataView(b.buffer).setFloat64(0, v); tipos.push(7); cuerpos.push(b);
+      }
+    } else if (typeof v === 'string') {
+      const b = utf8.encode(v); tipos.push(13 + 2 * b.length); cuerpos.push(b);
+    } else if (v instanceof Uint8Array) {
+      tipos.push(12 + 2 * v.length); cuerpos.push(v);
+    } else throw new Error(`Valor no soportado en registro: ${typeof v}`);
+  }
+  const cab = tipos.flatMap(varint);
+  let tamCab = cab.length + 1;
+  if (varint(tamCab).length > 1) tamCab = cab.length + varint(cab.length + 2).length;
+  const head = [...varint(tamCab), ...cab];
+  const total = head.length + cuerpos.reduce((s, b) => s + b.length, 0);
+  const out = new Uint8Array(total);
+  out.set(head, 0);
+  let o = head.length;
+  for (const b of cuerpos) { out.set(b, o); o += b.length; }
+  return out;
+}
+
+/** Bytes de payload que caben en la página (el resto, a desbordamiento). */
+function local(P, esIndice) {
+  const X = esIndice ? Math.floor(((U - 12) * 64) / 255) - 23 : U - 35;
+  if (P <= X) return P;
+  const M = Math.floor(((U - 12) * 32) / 255) - 23;
+  const K = M + ((P - M) % (U - 4));
+  return K <= X ? K : M;
+}
+
+class Archivo {
+  constructor() { this.paginas = []; }
+  reservar() { this.paginas.push(null); return this.paginas.length; } // número de página (1-based)
+  poner(n, bytes) { this.paginas[n - 1] = bytes; }
+  /** Escribe el payload que no cabe en cadenas de páginas de desbordamiento; devuelve la 1.ª. */
+  desbordar(resto) {
+    let primera = 0, anterior = null;
+    for (let o = 0; o < resto.length; o += U - 4) {
+      const n = this.reservar();
+      if (anterior) new DataView(anterior.buffer).setUint32(0, n);
+      else primera = n;
+      const p = new Uint8Array(TAM);
+      p.set(resto.subarray(o, o + U - 4), 4);
+      this.poner(n, p);
+      anterior = p;
+    }
+    return primera;
+  }
+  /** Celda de payload (con desbordamiento si hace falta). */
+  celdaPayload(prefijo, payload, esIndice) {
+    const P = payload.length, k = local(P, esIndice);
+    const pre = [...prefijo];
+    const celda = new Uint8Array(pre.length + k + (k < P ? 4 : 0));
+    celda.set(pre, 0); celda.set(payload.subarray(0, k), pre.length);
+    if (k < P) new DataView(celda.buffer).setUint32(pre.length + k, this.desbordar(payload.subarray(k)));
+    return celda;
+  }
+}
+
+/** Página b-árbol a partir de sus celdas. */
+function pagina(tipo, celdas, derecha, esPrimera = false) {
+  const p = new Uint8Array(TAM);
+  const h = esPrimera ? 100 : 0;
+  const interior = tipo === 2 || tipo === 5;
+  const tamCab = interior ? 12 : 8;
+  const dv = new DataView(p.buffer);
+  let fin = TAM;
+  const punteros = [];
+  for (const c of celdas) { fin -= c.length; p.set(c, fin); punteros.push(fin); }
+  if (fin < h + tamCab + 2 * celdas.length) throw new Error('Página desbordada');
+  p[h] = tipo;
+  dv.setUint16(h + 1, 0); dv.setUint16(h + 3, celdas.length); dv.setUint16(h + 5, fin === TAM ? 0 : fin); p[h + 7] = 0;
+  if (interior) dv.setUint32(h + 8, derecha);
+  punteros.forEach((q, i) => dv.setUint16(h + tamCab + 2 * i, q));
+  return p;
+}
+const cabe = (usado, celda, n, tamCab, h = 0) => h + tamCab + 2 * (n + 1) + usado + celda.length <= TAM;
+
+/** Tabla: filas {rowid, valores} ordenadas por rowid (iterable síncrono o asíncrono). Devuelve la raíz. */
+async function escribirTabla(a, filas) {
+  const hojas = []; // [{n, max}]
+  let celdas = [], usado = 0, ultimo = -Infinity, nPag = a.reservar();
+  const cerrar = () => { a.poner(nPag, pagina(13, celdas, 0)); hojas.push({ n: nPag, max: ultimo }); };
+  for await (const f of filas) {
+    if (f.rowid <= ultimo) throw new Error('Filas sin ordenar por rowid');
+    const vals = await Promise.all(f.valores.map(async (v) => (v instanceof Blob ? new Uint8Array(await v.arrayBuffer()) : v)));
+    const payload = registro(vals);
+    const celda = a.celdaPayload([...varint(payload.length), ...varint(f.rowid)], payload, false);
+    if (celdas.length && !cabe(usado, celda, celdas.length, 8)) { cerrar(); celdas = []; usado = 0; nPag = a.reservar(); }
+    celdas.push(celda); usado += celda.length; ultimo = f.rowid;
+  }
+  cerrar();
+  // Niveles interiores: cada celda = (hijo izquierdo, rowid máximo de ese hijo); el último hijo, a la derecha
+  let nivel = hojas;
+  while (nivel.length > 1) {
+    const arriba = [];
+    let i = 0;
+    while (i < nivel.length) {
+      const n = a.reservar();
+      const cs = []; let us = 0;
+      while (i < nivel.length - 1) {
+        const c = new Uint8Array([0, 0, 0, 0, ...varint(nivel[i].max)]);
+        new DataView(c.buffer).setUint32(0, nivel[i].n);
+        if (cs.length && !cabe(us, c, cs.length, 12)) break;
+        cs.push(c); us += c.length; i++;
+      }
+      // Que la página siguiente no se quede con un solo hijo y ninguna celda
+      if (i === nivel.length - 2 && cs.length >= 2) { cs.pop(); i--; }
+      a.poner(n, pagina(5, cs, nivel[i].n));
+      arriba.push({ n, max: nivel[i].max });
+      i++;
+    }
+    nivel = arriba;
+  }
+  return nivel[0].n;
+}
+
+/** Índice: entradas (arrays de valores, la última es el rowid) ordenadas. Devuelve la raíz. */
+function escribirIndice(a, entradas) {
+  const regs = entradas.map(registro);
+  if (!regs.length) { const n = a.reservar(); a.poner(n, pagina(10, [], 0)); return n; }
+  // Hojas. En un índice, las entradas de los niveles interiores NO se repiten
+  // en las hojas: al llenarse una hoja, la entrada siguiente sube como separador.
+  const grupos = []; const seps = [];
+  let i = 0;
+  while (i < regs.length) {
+    const g = []; let us = 0;
+    while (i < regs.length) {
+      const tam = varint(regs[i].length).length + regs[i].length;
+      if (g.length && 8 + 2 * (g.length + 1) + us + tam > TAM) break;
+      g.push(regs[i]); us += tam; i++;
+    }
+    grupos.push(g);
+    if (i < regs.length) {
+      if (i === regs.length - 1) { seps.push(g.pop()); } // así la última hoja no queda vacía
+      else { seps.push(regs[i]); i++; }
+    }
+  }
+  let hijos = grupos.map((g) => { const n = a.reservar(); a.poner(n, pagina(10, g.map((r) => a.celdaPayload(varint(r.length), r, true)), 0)); return n; });
+  let sp = seps;
+  // Interiores: celdas (hijo k, separador k); el último hijo a la derecha; al llenarse, el separador sube
+  while (hijos.length > 1) {
+    const nh = [], ns = [];
+    let k = 0;
+    while (k < hijos.length) {
+      const n = a.reservar(); const cs = []; let us = 0;
+      while (k < hijos.length - 1) {
+        const c = a.celdaPayload([0, 0, 0, 0, ...varint(sp[k].length)], sp[k], true);
+        new DataView(c.buffer).setUint32(0, hijos[k]);
+        if (cs.length && !cabe(us, c, cs.length, 12)) break;
+        cs.push(c); us += c.length; k++;
+      }
+      if (k === hijos.length - 2 && cs.length >= 2) { cs.pop(); k--; }
+      a.poner(n, pagina(2, cs, hijos[k]));
+      nh.push(n);
+      if (k < hijos.length - 1) ns.push(sp[k]);
+      k++;
+    }
+    hijos = nh; sp = ns;
+  }
+  return hijos[0];
+}
+
+/**
+ * Crea una base de datos SQLite.
+ * @param {Array<{nombre, sql, filas}>} tablas   filas: iterable de {rowid, valores} ordenado por rowid
+ * @param {Array<{nombre, tabla, sql, entradas}>} [indices] entradas: arrays ordenados [..., rowid]
+ * @returns {Promise<Blob>}
+ */
+async function escribirSqlite(tablas, indices = []) {
+  const a = new Archivo();
+  a.reservar(); // página 1: cabecera + sqlite_master
+  const esquema = [];
+  for (const t of tablas) {
+    const raiz = await escribirTabla(a, t.filas);
+    esquema.push(['table', t.nombre, t.nombre, raiz, t.sql]);
+  }
+  for (const ix of indices) {
+    const raiz = escribirIndice(a, ix.entradas);
+    esquema.push(['index', ix.nombre, ix.tabla, raiz, ix.sql]);
+  }
+  // sqlite_master en la página 1
+  const celdas = esquema.map((fila, i) => { const r = registro(fila); return new Uint8Array([...varint(r.length), ...varint(i + 1), ...r]); });
+  const p1 = pagina(13, celdas, 0, true);
+  const txt = utf8.encode('SQLite format 3\0');
+  p1.set(txt, 0);
+  const dv = new DataView(p1.buffer);
+  dv.setUint16(16, TAM); p1[18] = 1; p1[19] = 1; p1[20] = 0; p1[21] = 64; p1[22] = 32; p1[23] = 32;
+  dv.setUint32(24, 1);                 // contador de cambios
+  dv.setUint32(28, a.paginas.length);  // páginas
+  dv.setUint32(32, 0); dv.setUint32(36, 0);
+  dv.setUint32(40, 1);                 // cookie del esquema
+  dv.setUint32(44, 4);                 // formato de esquema
+  dv.setUint32(48, 0); dv.setUint32(52, 0);
+  dv.setUint32(56, 1);                 // UTF-8
+  dv.setUint32(60, 0); dv.setUint32(64, 0); dv.setUint32(68, 0);
+  dv.setUint32(92, 1);                 // válido para el contador de cambios
+  dv.setUint32(96, 3045000);           // versión de SQLite (referencia)
+  a.poner(1, p1);
+  return new Blob(a.paginas, { type: 'application/vnd.sqlite3' });
+}
+
+return { varint, registro, escribirSqlite };
+})();
+
+// ── src/datos/escritores.js
+__mods["src/datos/escritores.js"] = (function () {
+'use strict';
+// Formatos de salida del creador de mapas.
+//   escribirAtak     caché de ATAK/osmdroid (.sqlite, EPSG:3857), como las de Balú
+//   escribirMbtiles  MBTiles 1.3 (tabla tiles + índice)
+//   escribirZipXyz   carpeta de teselas {z}/{x}/{y}.ext en un .zip
+//   escribirGeoTiff  mosaico de un zoom en GeoTIFF (EPSG:3857, teselas de 256 px, Deflate)
+//
+// Teselas: { z, x, y, datos: Blob|Uint8Array } con x, y de la malla web (XYZ).
+
+const { escribirSqlite } = __req("src/datos/sqlite-escritor.js");
+
+const bytes = async (d) => (d instanceof Uint8Array ? d : new Uint8Array(await d.arrayBuffer()));
+const claveOsmdroid = (z, x, y) => (z * 2 ** z + x) * 2 ** z + y;
+
+async function escribirAtak(teselas, { nombre = 'SPA' } = {}) {
+  const orden = teselas.map((t) => ({ t, k: claveOsmdroid(t.z, t.x, t.y) })).sort((a, b) => a.k - b.k);
+  const ahora = Date.now();
+  return escribirSqlite([
+    { nombre: 'tiles', sql: 'CREATE TABLE tiles (key INTEGER PRIMARY KEY, provider TEXT, tile BLOB)', filas: orden.map(({ t, k }) => ({ rowid: k, valores: [null, nombre, t.datos] })) },
+    { nombre: 'ATAK_catalog', sql: 'CREATE TABLE ATAK_catalog (key INTEGER PRIMARY KEY, access INTEGER, expiration INTEGER, size INTEGER)', filas: orden.map(({ k }) => ({ rowid: k, valores: [null, null, ahora, null] })) },
+    { nombre: 'ATAK_metadata', sql: 'CREATE TABLE ATAK_metadata (key TEXT, value TEXT)', filas: [{ rowid: 1, valores: ['srid', '3857'] }] },
+  ]);
+}
+
+async function escribirMbtiles(teselas, { nombre = 'SPA', formato = 'png', limites, descripcion = 'Creado con SPA' } = {}) {
+  const orden = teselas.map((t) => ({ t, yt: 2 ** t.z - 1 - t.y })).sort((a, b) => a.t.z - b.t.z || a.t.x - b.t.x || a.yt - b.yt);
+  const zooms = teselas.map((t) => t.z);
+  const meta = [
+    ['name', nombre], ['type', 'baselayer'], ['version', '1.3'], ['description', descripcion], ['format', formato],
+    ['minzoom', String(Math.min(...zooms))], ['maxzoom', String(Math.max(...zooms))],
+  ];
+  if (limites) {
+    meta.push(['bounds', [limites.oeste, limites.sur, limites.este, limites.norte].map((v) => +v.toFixed(6)).join(',')]);
+    meta.push(['center', `${+((limites.oeste + limites.este) / 2).toFixed(6)},${+((limites.sur + limites.norte) / 2).toFixed(6)},${Math.min(...zooms)}`]);
+  }
+  return escribirSqlite([
+    { nombre: 'metadata', sql: 'CREATE TABLE metadata (name text, value text)', filas: meta.map((v, i) => ({ rowid: i + 1, valores: v })) },
+    { nombre: 'tiles', sql: 'CREATE TABLE tiles (zoom_level integer, tile_column integer, tile_row integer, tile_data blob)', filas: orden.map(({ t, yt }, i) => ({ rowid: i + 1, valores: [t.z, t.x, yt, t.datos] })) },
+  ], [
+    { nombre: 'tile_index', tabla: 'tiles', sql: 'CREATE UNIQUE INDEX tile_index on tiles (zoom_level, tile_column, tile_row)', entradas: orden.map(({ t, yt }, i) => [t.z, t.x, yt, i + 1]) },
+  ]);
+}
+
+// ---------------------------------------------------------------- ZIP (sin comprimir: las teselas ya lo están)
+const TABLA_CRC = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+function crc32(b) { let c = 0xffffffff; for (let i = 0; i < b.length; i++) c = TABLA_CRC[(c ^ b[i]) & 255] ^ (c >>> 8); return (c ^ 0xffffffff) >>> 0; }
+
+async function escribirZipXyz(teselas, { extension = () => 'png', raiz = '' } = {}) {
+  const partes = [], central = [];
+  let off = 0;
+  const enc = new TextEncoder();
+  for (const t of teselas) {
+    const d = await bytes(t.datos);
+    const nombre = enc.encode(`${raiz}${t.z}/${t.x}/${t.y}.${extension(t)}`);
+    const crc = crc32(d);
+    const loc = new Uint8Array(30 + nombre.length); const v = new DataView(loc.buffer);
+    v.setUint32(0, 0x04034b50, true); v.setUint16(4, 20, true); v.setUint16(6, 0x800, true); v.setUint16(8, 0, true);
+    v.setUint32(14, crc, true); v.setUint32(18, d.length, true); v.setUint32(22, d.length, true); v.setUint16(26, nombre.length, true);
+    loc.set(nombre, 30);
+    const cen = new Uint8Array(46 + nombre.length); const w = new DataView(cen.buffer);
+    w.setUint32(0, 0x02014b50, true); w.setUint16(4, 20, true); w.setUint16(6, 20, true); w.setUint16(8, 0x800, true);
+    w.setUint32(16, crc, true); w.setUint32(20, d.length, true); w.setUint32(24, d.length, true); w.setUint16(28, nombre.length, true);
+    w.setUint32(42, off, true); cen.set(nombre, 46);
+    partes.push(loc, d); central.push(cen);
+    off += loc.length + d.length;
+    if (off > 0xfffffff0) throw new Error('ZIP de más de 4 GB: usa ATAK o MBTiles');
+  }
+  const tamDir = central.reduce((s, c) => s + c.length, 0);
+  const fin = new Uint8Array(22); const f = new DataView(fin.buffer);
+  f.setUint32(0, 0x06054b50, true); f.setUint16(8, central.length, true); f.setUint16(10, central.length, true);
+  f.setUint32(12, tamDir, true); f.setUint32(16, off, true);
+  if (central.length > 0xffff) throw new Error('Más de 65 535 teselas: usa ATAK o MBTiles para el ZIP');
+  return new Blob([...partes, ...central, fin], { type: 'application/zip' });
+}
+
+// ---------------------------------------------------------------- GeoTIFF
+async function deflate(b) {
+  const s = new Blob([b]).stream().pipeThrough(new CompressionStream('deflate'));
+  return new Uint8Array(await new Response(s).arrayBuffer());
+}
+
+/**
+ * Mosaico de un zoom en GeoTIFF (EPSG:3857). Cada tesela web es una tesela
+ * del TIFF (256 × 256), comprimida con Deflate. Las que faltan van vacías
+ * (transparentes si hay canal alfa).
+ * @param {Array} teselas todas del mismo zoom
+ * @param {{z:number, conAlfa?:boolean, rgbaDe:(t)=>Promise<Uint8ClampedArray>}} opc
+ */
+async function escribirGeoTiff(teselas, { z, conAlfa = true, rgbaDe }) {
+  const xs = teselas.map((t) => t.x), ys = teselas.map((t) => t.y);
+  const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
+  const nx = x1 - x0 + 1, ny = y1 - y0 + 1;
+  if (nx * ny > 40000) throw new Error('GeoTIFF demasiado grande para un solo archivo: reduce el zoom o el área');
+  const S = conAlfa ? 4 : 3;
+  const porClave = new Map(teselas.map((t) => [`${t.x},${t.y}`, t]));
+  const partes = [new Uint8Array(8)]; // cabecera (se rellena al final)
+  let off = 8;
+  const offsets = [], cuentas = [];
+  let vacia = null;
+  for (let ty = y0; ty <= y1; ty++) {
+    for (let tx = x0; tx <= x1; tx++) {
+      const t = porClave.get(`${tx},${ty}`);
+      if (!t) {
+        if (!vacia) { vacia = { datos: await deflate(new Uint8Array(256 * 256 * S)) }; vacia.off = off; partes.push(vacia.datos); off += vacia.datos.length; }
+        offsets.push(vacia.off); cuentas.push(vacia.datos.length); continue;
+      }
+      const rgba = await rgbaDe(t);
+      let px;
+      if (S === 4) px = new Uint8Array(rgba.buffer, rgba.byteOffset, rgba.length);
+      else { px = new Uint8Array(256 * 256 * 3); for (let i = 0, j = 0; i < rgba.length; i += 4, j += 3) { px[j] = rgba[i]; px[j + 1] = rgba[i + 1]; px[j + 2] = rgba[i + 2]; } }
+      const d = await deflate(px);
+      offsets.push(off); cuentas.push(d.length); partes.push(d); off += d.length;
+      if (off > 0xfff00000) throw new Error('GeoTIFF de más de 4 GB: reduce el zoom o el área');
+    }
+  }
+  if (off % 2) { partes.push(new Uint8Array(1)); off++; }
+  // IFD
+  const R = 6378137, tam = (2 * Math.PI * R) / 2 ** z / 256;
+  const X0 = -Math.PI * R + x0 * 256 * tam, Y0 = Math.PI * R - y0 * 256 * tam;
+  const tags = [
+    [256, 4, [nx * 256]], [257, 4, [ny * 256]], [258, 3, Array(S).fill(8)], [259, 3, [8]], [262, 3, [2]],
+    [277, 3, [S]], [284, 3, [1]], [305, 2, 'SPA (Planeamiento S3)'],
+    [322, 3, [256]], [323, 3, [256]], [324, 4, offsets], [325, 4, cuentas],
+    ...(conAlfa ? [[338, 3, [2]]] : []), [339, 3, Array(S).fill(1)],
+    [33550, 12, [tam, tam, 0]], [33922, 12, [0, 0, 0, X0, Y0, 0]],
+    [34735, 3, [1, 1, 0, 4, 1024, 0, 1, 1, 1025, 0, 1, 1, 3072, 0, 1, 3857, 3076, 0, 1, 9001]],
+  ].sort((a, b) => a[0] - b[0]);
+  const TAM_T = { 2: 1, 3: 2, 4: 4, 12: 8 };
+  const ifdOff = off, nTags = tags.length;
+  let extraOff = ifdOff + 2 + nTags * 12 + 4;
+  const ifd = new Uint8Array(2 + nTags * 12 + 4); const dv = new DataView(ifd.buffer);
+  const extras = [];
+  dv.setUint16(0, nTags, true);
+  tags.forEach(([tag, tipo, val], i) => {
+    const vals = typeof val === 'string' ? [...new TextEncoder().encode(`${val}\0`)] : val;
+    const n = vals.length, tamB = n * TAM_T[tipo];
+    const b = 2 + i * 12;
+    dv.setUint16(b, tag, true); dv.setUint16(b + 2, tipo, true); dv.setUint32(b + 4, n, true);
+    const escribir = (v, o) => {
+      vals.forEach((x, k) => {
+        if (tipo === 2) v.setUint8(o + k, x);
+        else if (tipo === 3) v.setUint16(o + 2 * k, x, true);
+        else if (tipo === 4) v.setUint32(o + 4 * k, x, true);
+        else v.setFloat64(o + 8 * k, x, true);
+      });
+    };
+    if (tamB <= 4) escribir(dv, b + 8);
+    else {
+      const e = new Uint8Array(tamB + (tamB % 2)); escribir(new DataView(e.buffer), 0);
+      dv.setUint32(b + 8, extraOff, true); extras.push(e); extraOff += e.length;
+    }
+  });
+  const cab = partes[0]; const cv = new DataView(cab.buffer);
+  cab[0] = 0x49; cab[1] = 0x49; cv.setUint16(2, 42, true); cv.setUint32(4, ifdOff, true);
+  return new Blob([...partes, ifd, ...extras], { type: 'image/tiff' });
+}
+
+return { escribirAtak, escribirMbtiles, crc32, escribirZipXyz, escribirGeoTiff };
+})();
+
+// ── src/ui/creador.js
+__mods["src/ui/creador.js"] = (function () {
+'use strict';
+// Creador de mapas: eliges una zona (irregular, del plan o la vista), las
+// capas y sus zooms, y SPA descarga las teselas en el navegador y escribe el
+// archivo (ATAK .sqlite, MBTiles, ZIP de teselas o GeoTIFF). Nada pasa por
+// ningún servidor propio: el navegador pide las teselas a cada servicio.
+
+const { FONDOS, IMAGENES, ROTULOS, urlTesela } = __req("src/mapa/capas.js");
+const { urlRelieve, pintarRelieve } = __req("src/mapa/relieve.js");
+const { leerAsc } = __req("src/datos/alturas.js");
+const { CAPAS_CREADOR, LIMITE_TESELAS, AVISO_TESELAS, recorrerTeselas, contarTeselas, repartirZooms, textoReparto, estimar, metrosPixel, limitesDe, areaAproximada, poligonoEnTesela } = __req("src/datos/creador.js");
+const { escribirAtak, escribirMbtiles, escribirZipXyz, escribirGeoTiff } = __req("src/datos/escritores.js");
+const { puntosDe, puntosCirculo, formatearArea, TIPOS } = __req("src/plan/plan.js");
+const { esc } = __req("src/ui/formas.js");
+
+const CLAVE = 'spa.creador';
+const FORMATOS = {
+  atak: { nombre: 'ATAK (.sqlite)', ext: 'sqlite', detalle: 'Caché de mapa para ATAK y para SPA' },
+  mbtiles: { nombre: 'MBTiles', ext: 'mbtiles', detalle: 'QGIS, OruxMaps, Locus, Gaia…' },
+  zip: { nombre: 'ZIP de teselas', ext: 'zip', detalle: 'Carpetas {z}/{x}/{y} (hasta 65 535 teselas)' },
+  geotiff: { nombre: 'GeoTIFF', ext: 'tif', detalle: 'Una imagen por capa, al zoom «hasta»; recortada a la zona' },
+};
+const CALIDADES = { alta: 0.9, media: 0.8, ligera: 0.65 };
+const SIMULTANEAS = 6;
+
+function iniciarCreador({ L, mapa, estado, dibujo, importar, elegirHerramienta, herramienta, avisar = () => {} }) {
+  const $ = (id) => document.getElementById(id);
+  const panel = $('panel-creador');
+  const conf = {
+    capas: Object.fromEntries(CAPAS_CREADOR.map((c) => [c.id, { on: c.id === 'mtn' || c.id === 'hibrido', zMin: { mtn: 13, hibrido: 17, base: 12, relieve: 11 }[c.id], zMax: { mtn: 16, hibrido: 18, base: 16, relieve: 15 }[c.id] }])),
+    orden: CAPAS_CREADOR.map((c) => c.id),
+    formato: 'atak', modo: 'junto', calidad: 'alta', nombre: 'Mapa SPA', abrir: true,
+  };
+  try { const g = JSON.parse(localStorage.getItem(CLAVE) || '{}'); Object.assign(conf, g, { capas: { ...conf.capas, ...g.capas } }); } catch { /* nada */ }
+  const guardarConf = () => { try { localStorage.setItem(CLAVE, JSON.stringify(conf)); } catch { /* nada */ } };
+
+  // ---------------------------------------------------------- zona
+  if (!mapa.getPane('zonaCreador')) { const p = mapa.createPane('zonaCreador'); p.style.zIndex = 475; p.style.pointerEvents = 'none'; }
+  const capaZona = L.layerGroup().addTo(mapa);
+  let zona = [];          // polígono {lat,lon}
+  let dibujando = false;
+  let cursor = null;
+  let origen = '';        // texto: de dónde salió la zona
+  function pintarZona() {
+    capaZona.clearLayers();
+    if (!zona.length) return;
+    const ll = zona.map((p) => [p.lat, p.lon]);
+    if (dibujando) {
+      L.polyline(cursor ? [...ll, [cursor.lat, cursor.lon]] : ll, { pane: 'zonaCreador', color: '#ff2bd6', weight: 2.5, dashArray: '6 5' }).addTo(capaZona);
+      for (const p of ll) L.circleMarker(p, { pane: 'zonaCreador', radius: 4, color: '#fff', weight: 2, fillColor: '#ff2bd6', fillOpacity: 1 }).addTo(capaZona);
+    } else if (zona.length >= 3) {
+      L.polygon(ll, { pane: 'zonaCreador', color: '#ff2bd6', weight: 3, fillColor: '#ff2bd6', fillOpacity: 0.08 }).addTo(capaZona);
+    }
+  }
+  function empezarDibujo() {
+    zona = []; dibujando = true; origen = 'dibujada'; cursor = null;
+    elegirHerramienta('zona-mapa');
+    pintarZona(); pintar();
+  }
+  function terminarDibujo() {
+    if (zona.length < 3) { avisar('La zona necesita al menos 3 vértices'); return; }
+    dibujando = false; cursor = null;
+    if (herramienta() === 'zona-mapa') elegirHerramienta('consultar');
+    pintarZona(); pintar();
+  }
+  function ponerZona(pts, de) {
+    dibujando = false; zona = pts; origen = de; cursor = null;
+    if (herramienta() === 'zona-mapa') elegirHerramienta('consultar');
+    pintarZona(); pintar();
+    if (zona.length >= 3) mapa.flyToBounds(L.latLngBounds(zona.map((p) => [p.lat, p.lon])), { padding: [60, 60], duration: 0.6 });
+  }
+  mapa.on('mousemove', (e) => { if (dibujando && zona.length) { cursor = { lat: e.latlng.lat, lon: e.latlng.lng }; pintarZona(); } });
+
+  // ---------------------------------------------------------- panel
+  const latRef = () => (zona.length ? (limitesDe(zona).sur + limitesDe(zona).norte) / 2 : mapa.getCenter().lat);
+  const mpx = (z) => { const m = metrosPixel(latRef(), z); return m >= 10 ? `${Math.round(m)} m/px` : `${m.toLocaleString('es-ES', { maximumFractionDigits: 1 })} m/px`; };
+  const zMaxDe = (id) => (id === 'hibrido' ? Math.min(CAPAS_CREADOR.find((c) => c.id === 'hibrido').zMax, IMAGENES[estado.imagen].maxNativo ?? 19) : CAPAS_CREADOR.find((c) => c.id === id).zMax);
+  const opciones = (id, sel) => Array.from({ length: zMaxDe(id) - 4 }, (_, i) => i + 5).map((z) => `<option value="${z}" ${z === sel ? 'selected' : ''}>${z} · ${mpx(z)}</option>`).join('');
+  const nombreCapa = (id) => (id === 'hibrido' ? `Híbrido (${IMAGENES[estado.imagen].nombre}${estado.rotulos ? ' + nombres' : ''})` : CAPAS_CREADOR.find((c) => c.id === id).nombre);
+
+  function plan() {
+    const capas = conf.orden.filter((id) => conf.capas[id].on).map((id) => ({ id, zMin: conf.formato === 'geotiff' ? conf.capas[id].zMax : conf.capas[id].zMin, zMax: conf.capas[id].zMax }));
+    const modo = conf.formato === 'geotiff' ? 'separado' : conf.modo;
+    const r = repartirZooms(capas, modo);
+    const archivos = r.archivos.map((a) => ({ ...a, est: zona.length >= 3 ? estimar(zona, a.zooms, { conRotulos: estado.rotulos }) : null }));
+    return { ...r, archivos, modo };
+  }
+
+  let trabajo = null; // descarga en curso
+  function pintar() {
+    if (panel.hidden) return;
+    const p = plan();
+    const total = p.archivos.reduce((s, a) => s + (a.est?.teselas ?? 0), 0);
+    const megas = p.archivos.reduce((s, a) => s + (a.est?.megas ?? 0), 0);
+    const seg = p.archivos.reduce((s, a) => s + (a.est?.segundos ?? 0), 0);
+    const varias = conf.orden.filter((id) => conf.capas[id].on).length > 1;
+    const areasPlan = dibujo.plan().elementos.filter((e) => e.tipo === 'area' || e.tipo === 'circulo');
+    const nombres = Object.fromEntries(CAPAS_CREADOR.map((c) => [c.id, c.id === 'hibrido' ? 'Híbrido' : c.nombre]));
+    const textoZona = zona.length >= 3 && !dibujando
+      ? `Zona ${esc(origen)}: <b>${formatearArea(areaAproximada(zona))}</b> · ${zona.length} vértices`
+      : dibujando ? `Haz clic en el mapa para marcar los vértices (${zona.length}). Clic derecho quita el último.` : 'Sin zona elegida';
+    const ocupado = Boolean(trabajo);
+    panel.innerHTML = `<div class="pm-cab"><strong>Creador de mapas</strong><button type="button" class="pm-x" id="cr-cerrar" aria-label="Cerrar">×</button></div>
+      <fieldset class="cr-paso" ${ocupado ? 'disabled' : ''}><legend>1 · Zona</legend>
+        <div class="cr-botones">
+          ${dibujando ? `<button type="button" id="cr-terminar" class="primario" ${zona.length >= 3 ? '' : 'disabled'}>Terminar zona</button><button type="button" id="cr-cancelar-zona">Cancelar</button>`
+            : `<button type="button" id="cr-dibujar">Dibujar en el mapa</button><button type="button" id="cr-vista">Vista actual</button>`}
+        </div>
+        ${!dibujando && areasPlan.length ? `<select id="cr-del-plan"><option value="">Usar un área o círculo del plan…</option>${areasPlan.map((e) => `<option value="${e.id}">${esc(e.propiedades.nombre || TIPOS[e.tipo].nombre)}</option>`).join('')}</select>` : ''}
+        <p class="cr-zona">${textoZona}</p>
+      </fieldset>
+      <fieldset class="cr-paso" ${ocupado ? 'disabled' : ''}><legend>2 · Capas y zooms</legend>
+        ${conf.orden.map((id, k) => { const c = conf.capas[id]; return `<div class="cr-capa ${c.on ? '' : 'off'}" data-capa="${id}">
+          <label class="cr-nom"><input type="checkbox" data-c="on" ${c.on ? 'checked' : ''}><span>${esc(nombreCapa(id))}</span></label>
+          ${p.modo === 'junto' && varias ? `<span class="cr-orden"><button type="button" data-c="subir" ${k ? '' : 'disabled'} title="Subir: gana si dos capas piden el mismo zoom">▲</button></span>` : ''}
+          <div class="cr-zooms">${conf.formato === 'geotiff' ? '' : `<label>desde <select data-c="zMin">${opciones(id, c.zMin)}</select></label>`}
+            <label>${conf.formato === 'geotiff' ? 'zoom' : 'hasta'} <select data-c="zMax">${opciones(id, c.zMax)}</select></label></div></div>`; }).join('')}
+        ${conf.formato !== 'geotiff' && varias ? `<div class="seg cr-modo"><button type="button" data-modo="junto" aria-pressed="${conf.modo === 'junto'}">Un solo archivo</button><button type="button" data-modo="separado" aria-pressed="${conf.modo === 'separado'}">Un archivo por capa</button></div>` : ''}
+        ${p.modo === 'junto' && p.archivos[0] ? `<p class="cr-nota">En el archivo: ${esc(textoReparto(p.archivos[0].zooms, nombres))}</p>` : ''}
+        ${p.solapes.length ? `<p class="cr-nota cr-aviso">Zoom ${[...new Set(p.solapes.map((s) => s.z))].join(', ')}: lo piden dos capas; se usa la de más arriba.</p>` : ''}
+        <p class="cr-nota">El híbrido usa la imagen y los nombres elegidos en Ajustes.</p>
+      </fieldset>
+      <fieldset class="cr-paso" ${ocupado ? 'disabled' : ''}><legend>3 · Archivo</legend>
+        <div class="aj-opc cr-formatos">${Object.entries(FORMATOS).map(([k, f]) => `<button type="button" data-formato="${k}" aria-pressed="${conf.formato === k}">${f.nombre}<small>${f.detalle}</small></button>`).join('')}</div>
+        <label class="cr-campo">Nombre <input id="cr-nombre" value="${esc(conf.nombre)}" maxlength="60"></label>
+        <label class="cr-campo">Calidad de imagen (híbrido y relieve) <select id="cr-calidad">${Object.keys(CALIDADES).map((q) => `<option value="${q}" ${conf.calidad === q ? 'selected' : ''}>${q[0].toUpperCase() + q.slice(1)}</option>`).join('')}</select></label>
+        <label class="sup cr-abrir"><input type="checkbox" id="cr-abrir" ${conf.abrir ? 'checked' : ''}><span class="txt"><b>Abrirlo en SPA al terminar</b></span></label>
+      </fieldset>
+      <div class="cr-resumen">${zona.length >= 3 && !dibujando ? `${p.archivos.length} archivo${p.archivos.length === 1 ? '' : 's'} · <b>${total.toLocaleString('es-ES')}</b> teselas · ≈ ${megas < 1 ? '<1' : Math.round(megas).toLocaleString('es-ES')} MB · ≈ ${tiempo(seg)}`
+        : 'Elige una zona para ver el tamaño'}${total > LIMITE_TESELAS ? `<div class="cr-aviso">Demasiadas teselas (máximo ${LIMITE_TESELAS.toLocaleString('es-ES')}): reduce la zona o el zoom.</div>` : total > AVISO_TESELAS ? '<div class="cr-aviso">Descarga larga: deja la pestaña abierta hasta que termine.</div>' : ''}</div>
+      <div id="cr-progreso" class="cr-progreso" ${ocupado ? '' : 'hidden'}><div class="cr-barra"><span id="cr-barra"></span></div><div id="cr-prog-txt"></div></div>
+      <div class="pm-acciones">${ocupado ? '<button type="button" id="cr-parar">Cancelar</button>'
+        : `<button type="button" id="cr-crear" class="primario" ${zona.length >= 3 && !dibujando && total > 0 && total <= LIMITE_TESELAS ? '' : 'disabled'}>Crear mapa</button>`}</div>`;
+    if (trabajo) trabajo.pintarProgreso?.();
+  }
+  const tiempo = (s) => (s < 60 ? `${Math.max(1, Math.round(s))} s` : s < 3600 ? `${Math.round(s / 60)} min` : `${(s / 3600).toLocaleString('es-ES', { maximumFractionDigits: 1 })} h`);
+
+  panel.addEventListener('click', (ev) => {
+    const b = ev.target.closest('button'); if (!b || b.disabled) return;
+    if (b.id === 'cr-cerrar') { abrir(false); return; }
+    if (b.id === 'cr-dibujar') { empezarDibujo(); return; }
+    if (b.id === 'cr-terminar') { terminarDibujo(); return; }
+    if (b.id === 'cr-cancelar-zona') { zona = []; dibujando = false; if (herramienta() === 'zona-mapa') elegirHerramienta('consultar'); pintarZona(); pintar(); return; }
+    if (b.id === 'cr-vista') { const v = mapa.getBounds(); ponerZona([{ lat: v.getNorth(), lon: v.getWest() }, { lat: v.getNorth(), lon: v.getEast() }, { lat: v.getSouth(), lon: v.getEast() }, { lat: v.getSouth(), lon: v.getWest() }], 'de la vista'); return; }
+    if (b.dataset.modo) { conf.modo = b.dataset.modo; guardarConf(); pintar(); return; }
+    if (b.dataset.formato) { conf.formato = b.dataset.formato; guardarConf(); pintar(); return; }
+    if (b.dataset.c === 'subir') { const id = b.closest('[data-capa]').dataset.capa; const i = conf.orden.indexOf(id); conf.orden.splice(i, 1); conf.orden.splice(i - 1, 0, id); guardarConf(); pintar(); return; }
+    if (b.id === 'cr-crear') { crear(); return; }
+    if (b.id === 'cr-parar') { trabajo?.parar.abort(); }
+  });
+  panel.addEventListener('change', (ev) => {
+    const t = ev.target;
+    if (t.id === 'cr-nombre') return; // se guarda al escribir; repintar aquí se comería el clic en «Crear mapa»
+    const fila = t.closest('[data-capa]');
+    if (fila) {
+      const c = conf.capas[fila.dataset.capa];
+      if (t.dataset.c === 'on') c.on = t.checked;
+      if (t.dataset.c === 'zMin') { c.zMin = Number(t.value); if (c.zMax < c.zMin) c.zMax = c.zMin; }
+      if (t.dataset.c === 'zMax') { c.zMax = Number(t.value); if (c.zMin > c.zMax) c.zMin = c.zMax; }
+    }
+    if (t.id === 'cr-del-plan' && t.value) {
+      const el = dibujo.plan().elementos.find((e) => e.id === t.value);
+      if (el) ponerZona(el.tipo === 'circulo' ? puntosCirculo(puntosDe(el)[0], el.propiedades.radio, 72) : puntosDe(el), `«${el.propiedades.nombre || TIPOS[el.tipo].nombre}»`);
+      return;
+    }
+    if (t.id === 'cr-calidad') conf.calidad = t.value;
+    if (t.id === 'cr-abrir') conf.abrir = t.checked;
+    guardarConf(); pintar();
+  });
+  panel.addEventListener('input', (ev) => { if (ev.target.id === 'cr-nombre') { conf.nombre = ev.target.value; guardarConf(); } });
+
+  function abrir(si = panel.hidden) {
+    panel.hidden = !si;
+    if (!si) {
+      if (dibujando) { dibujando = false; zona = []; }
+      if (herramienta() === 'zona-mapa') elegirHerramienta('consultar');
+      if (!trabajo) { zona = []; capaZona.clearLayers(); }
+    }
+    pintar();
+  }
+
+  // ---------------------------------------------------------- descarga de teselas
+  async function pedir(url, señal, { texto = false } = {}) {
+    for (let intento = 0; intento < 4; intento++) {
+      try {
+        const r = await fetch(url, { signal: señal });
+        if (r.status === 404 || r.status === 204) return null;
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        if (texto) return await r.text();
+        const tipo = r.headers.get('content-type') || '';
+        const b = await r.blob();
+        if (!b.size || (tipo && !/^image\//.test(tipo))) return null; // excepciones WMTS (XML) fuera de cobertura
+        return b;
+      } catch (e) {
+        if (señal.aborted) throw e;
+        if (intento === 3) throw e;
+        await new Promise((ok) => setTimeout(ok, 400 * 2 ** intento));
+      }
+    }
+    return null;
+  }
+  const lienzo = () => { const c = document.createElement('canvas'); c.width = c.height = 256; return c; };
+  const aJpeg = (c, q) => new Promise((ok, mal) => c.toBlob((b) => (b ? ok(b) : mal(new Error('No se pudo codificar la imagen'))), 'image/jpeg', q));
+  const extDe = (b) => (/png/.test(b.type) ? 'png' : 'jpg');
+
+  /** Tesela de una capa → { datos: Blob, ext } o null si el servicio no tiene nada ahí. */
+  async function teselaDe(capa, z, x, y, señal, q) {
+    if (capa === 'mtn' || capa === 'base') {
+      const b = await pedir(urlTesela(FONDOS.find((f) => f.id === capa), z, x, y), señal);
+      return b && { datos: b, ext: extDe(b) };
+    }
+    if (capa === 'hibrido') {
+      const [img, rot] = await Promise.all([pedir(urlTesela(IMAGENES[estado.imagen], z, x, y), señal), estado.rotulos ? pedir(urlTesela(ROTULOS, z, x, y), señal).catch(() => null) : null]);
+      if (!img) return null;
+      if (!rot) return { datos: img, ext: extDe(img) };
+      const c = lienzo(), ctx = c.getContext('2d');
+      for (const b of [img, rot]) { const bm = await createImageBitmap(b); ctx.drawImage(bm, 0, 0, 256, 256); bm.close?.(); }
+      return { datos: await aJpeg(c, q), ext: 'jpg' };
+    }
+    if (capa === 'relieve') {
+      const t = await pedir(urlRelieve(z, x, y), señal, { texto: true });
+      if (!t) return null;
+      const m = leerAsc(t);
+      const c = lienzo(), ctx = c.getContext('2d'), im = ctx.createImageData(256, 256);
+      pintarRelieve(m, { z, x, y }, 'fondo', im.data);
+      ctx.putImageData(im, 0, 0);
+      return { datos: await aJpeg(c, q), ext: 'jpg' };
+    }
+    throw new Error(`Capa desconocida: ${capa}`);
+  }
+
+  // ---------------------------------------------------------- guardar
+  const tiposArchivo = { atak: { 'application/vnd.sqlite3': ['.sqlite'] }, mbtiles: { 'application/vnd.sqlite3': ['.mbtiles'] }, zip: { 'application/zip': ['.zip'] }, geotiff: { 'image/tiff': ['.tif'] } };
+  const limpio = (s) => (s || 'Mapa SPA').replace(/[\\/:*?"<>|]+/g, '_').trim() || 'Mapa SPA';
+  function nombreArchivo(a, p) {
+    const sufijo = p.archivos.length > 1 || conf.formato === 'geotiff' ? `_${a.capas[0]}${conf.formato === 'geotiff' ? `_z${a.zooms.at(-1).z}` : ''}` : '';
+    return `${limpio(conf.nombre)}${sufijo}.${FORMATOS[conf.formato].ext}`;
+  }
+  async function destino(p) {
+    // Se pide dónde guardar ANTES de descargar (el navegador solo deja abrir el selector tras un clic)
+    try {
+      if (p.archivos.length === 1 && window.showSaveFilePicker) {
+        const nombre = nombreArchivo(p.archivos[0], p);
+        return { archivo: await window.showSaveFilePicker({ suggestedName: nombre, id: 'spa-creador', types: [{ description: FORMATOS[conf.formato].nombre, accept: tiposArchivo[conf.formato] }] }) };
+      }
+      if (p.archivos.length > 1 && window.showDirectoryPicker) return { carpeta: await window.showDirectoryPicker({ id: 'spa-creador', mode: 'readwrite' }) };
+    } catch (e) {
+      if (e.name === 'AbortError') return null; // canceló el selector
+    }
+    return { descarga: true };
+  }
+  async function escribirEn(dest, nombre, blob) {
+    let handle = null;
+    if (dest.archivo) handle = dest.archivo;
+    else if (dest.carpeta) handle = await dest.carpeta.getFileHandle(nombre, { create: true });
+    if (handle) { const w = await handle.createWritable(); await w.write(blob); await w.close(); return handle; }
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = nombre; document.body.append(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+    return null;
+  }
+
+  // ---------------------------------------------------------- crear
+  async function crear() {
+    const p = plan();
+    if (zona.length < 3 || !p.archivos.length) return;
+    const dest = await destino(p);
+    if (!dest) return;
+    const q = CALIDADES[conf.calidad] ?? 0.9;
+    const pol = zona.slice();
+    const lim = limitesDe(pol);
+    const parar = new AbortController();
+    const total = p.archivos.reduce((s, a) => s + a.zooms.reduce((t, { z }) => t + contarTeselas(pol, z), 0), 0);
+    const inicio = performance.now();
+    trabajo = { parar, hechas: 0, total, bytes: 0, fallos: 0, archivo: '' };
+    trabajo.pintarProgreso = () => {
+      const t = trabajo; if (!t || !$('cr-barra')) return;
+      $('cr-progreso').hidden = false;
+      $('cr-barra').style.width = `${(100 * t.hechas) / Math.max(1, t.total)}%`;
+      const seg = (performance.now() - inicio) / 1000, resta = t.hechas ? (seg / t.hechas) * (t.total - t.hechas) : 0;
+      $('cr-prog-txt').textContent = t.fase || `${t.archivo} · ${t.hechas.toLocaleString('es-ES')} de ${t.total.toLocaleString('es-ES')} teselas · ${(t.bytes / 1048576).toLocaleString('es-ES', { maximumFractionDigits: 1 })} MB${t.hechas > 20 ? ` · quedan ≈ ${tiempo(resta)}` : ''}${t.fallos ? ` · ${t.fallos} sin descargar` : ''}`;
+    };
+    pintar();
+    const hechos = [];
+    try {
+      for (const a of p.archivos) {
+        const nombre = nombreArchivo(a, p);
+        trabajo.archivo = nombre; trabajo.fase = '';
+        // Cola de teselas del archivo
+        const cola = [];
+        for (const { z, capa } of a.zooms) for (const t of recorrerTeselas(pol, z)) cola.push({ ...t, capa });
+        const teselas = [];
+        let i = 0;
+        const obrero = async () => {
+          while (i < cola.length) {
+            const t = cola[i++];
+            try {
+              const r = await teselaDe(t.capa, t.z, t.x, t.y, parar.signal, q);
+              if (r) { teselas.push({ z: t.z, x: t.x, y: t.y, datos: r.datos, ext: r.ext }); trabajo.bytes += r.datos.size; }
+            } catch (e) {
+              if (parar.signal.aborted) throw e;
+              trabajo.fallos++;
+            }
+            trabajo.hechas++;
+            if (trabajo.hechas % 8 === 0) trabajo.pintarProgreso();
+          }
+        };
+        await Promise.all(Array.from({ length: SIMULTANEAS }, obrero));
+        if (!teselas.length) throw new Error(`${nombre}: ningún servicio devolvió teselas para esta zona`);
+        trabajo.fase = `Escribiendo ${nombre}…`; trabajo.pintarProgreso();
+        let blob;
+        if (conf.formato === 'atak') blob = await escribirAtak(teselas, { nombre: limpio(conf.nombre) });
+        else if (conf.formato === 'mbtiles') {
+          const png = teselas.filter((t) => t.ext === 'png').length;
+          blob = await escribirMbtiles(teselas, { nombre: limpio(conf.nombre), formato: png > teselas.length / 2 ? 'png' : 'jpg', limites: lim, descripcion: `Creado con SPA: ${a.capas.map(nombreCapa).join(', ')}` });
+        } else if (conf.formato === 'zip') {
+          if (teselas.length > 65535) throw new Error('El ZIP admite hasta 65 535 teselas: elige ATAK o MBTiles');
+          blob = await escribirZipXyz(teselas, { extension: (t) => t.ext });
+        } else {
+          const z = a.zooms.at(-1).z;
+          blob = await escribirGeoTiff(teselas, { z, conAlfa: true, rgbaDe: (t) => rgbaRecortado(t, pol) });
+        }
+        const handle = await escribirEn(dest, nombre, blob);
+        hechos.push({ nombre, blob, handle, teselas: teselas.length });
+      }
+      const fallos = trabajo.fallos;
+      trabajo = null;
+      pintar();
+      const sin = fallos ? ` · ${fallos.toLocaleString('es-ES')} teselas no se pudieron descargar` : '';
+      avisar(`Mapa creado: ${hechos.map((h) => `${h.nombre} (${(h.blob.size / 1048576).toLocaleString('es-ES', { maximumFractionDigits: 1 })} MB)`).join(', ')}${sin}`);
+      if (conf.abrir) await importar.procesar(hechos.map((h) => ({ archivo: new File([h.blob], h.nombre), handle: h.handle ?? undefined })));
+    } catch (e) {
+      const cancelado = parar.signal.aborted;
+      trabajo = null; pintar();
+      avisar(cancelado ? 'Creación cancelada' : `No se pudo crear el mapa: ${e.message}`);
+    }
+  }
+
+  /** RGBA de una tesela con lo que cae fuera de la zona transparente (GeoTIFF). */
+  async function rgbaRecortado(t, pol) {
+    const c = lienzo(), ctx = c.getContext('2d');
+    const bm = await createImageBitmap(t.datos); ctx.drawImage(bm, 0, 0, 256, 256); bm.close?.();
+    const px = poligonoEnTesela(pol, t.z, t.x, t.y);
+    ctx.globalCompositeOperation = 'destination-in';
+    ctx.beginPath(); px.forEach(([x, y], k) => (k ? ctx.lineTo(x, y) : ctx.moveTo(x, y))); ctx.closePath(); ctx.fill();
+    return ctx.getImageData(0, 0, 256, 256).data;
+  }
+
+  return {
+    abrir,
+    clic(p) {
+      if (!dibujando) return;
+      const u = zona.at(-1);
+      if (u && Math.abs(u.lat - p.lat) < 1e-9 && Math.abs(u.lon - p.lon) < 1e-9) return; // segundo clic del doble clic
+      zona.push(p); pintarZona(); pintar();
+    },
+    dobleClic() { if (dibujando && zona.length >= 3) terminarDibujo(); },
+    quitarUltimo() { if (dibujando) { zona.pop(); pintarZona(); pintar(); } },
+    herramientaCambiada(h) { if (h !== 'zona-mapa' && dibujando) { dibujando = false; if (zona.length < 3) zona = []; pintarZona(); pintar(); } },
+    refrescar: pintar,
+    get zona() { return zona; },
+    get conf() { return conf; },
+  };
+}
+
+return { iniciarCreador };
+})();
+
 // ── src/ui/difuso.js
 __mods["src/ui/difuso.js"] = (function () {
 'use strict';
@@ -8744,6 +9805,7 @@ const { capaRelieve } = __req("src/mapa/relieve.js");
 const { capaCuadricula } = __req("src/mapa/cuadricula.js");
 const { iniciarDibujo, HERRAMIENTAS_DIBUJO } = __req("src/ui/dibujo.js");
 const { iniciarImportar } = __req("src/ui/importar.js");
+const { iniciarCreador } = __req("src/ui/creador.js");
 const { crearServicioAlturas } = __req("src/datos/alturas.js");
 const { prepararRejillas } = __req("src/geo/rejillas.js");
 const { crsDesdeEpsg } = __req("src/geo/crs.js");
@@ -8759,11 +9821,12 @@ const CLAVE = 'spa.mapa.estado';
 const estado = {
   angulo: 'grados', coordenadas: 'mgrs', fondo: 'mtn', imagen: 'google', rotulos: true,
   fondoAuto: false, mtnDetalle: false, intensidadCuadricula: 35,
-  superpuestas: { cuadricula: true, piloto: true }, secciones: { fondo: true }, vista: null,
+  superpuestas: { cuadricula: true, piloto: true }, secciones: { fondo: true }, ajustesAbiertos: { coordenadas: true }, vista: null,
 };
 try { Object.assign(estado, JSON.parse(localStorage.getItem(CLAVE) || '{}')); } catch { /* sin almacenamiento */ }
 if (!FONDOS.some((f) => f.id === estado.fondo)) estado.fondo = ['ortofoto', 'satelite'].includes(estado.fondo) ? 'hibrido' : 'mtn';
-if (!IMAGENES[estado.imagen]) estado.imagen = 'google';
+if (!IMAGENES[estado.imagen] || !(estado.version >= 6)) estado.imagen = 'google'; // v0.6: Google por defecto
+estado.version = 6;
 delete estado.superpuestas.vertices;
 const guardar = () => { try { localStorage.setItem(CLAVE, JSON.stringify(estado)); } catch { /* nada */ } };
 
@@ -8829,6 +9892,7 @@ function montarHibrido() {
 montarHibrido();
 
 let fondoActual = null;
+let alCambiarFondo = () => {}; // la cuadrícula se pinta en blanco sobre el híbrido
 function ponerFondo(id, { automatico = false } = {}) {
   if (!capasFondo[id]) id = 'mtn';
   if (fondoActual) mapa.removeLayer(fondoActual);
@@ -8840,8 +9904,8 @@ function ponerFondo(id, { automatico = false } = {}) {
   if (!automatico) { estado.fondo = id; guardar(); $('aviso').hidden = true; }
   document.querySelectorAll('.fondo').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.id === id)));
   $('fondo-actual').textContent = FONDOS.find((f) => f.id === id).nombre + (id === 'hibrido' ? ` · ${IMAGENES[estado.imagen].nombre}` : '');
-  $('opc-hibrido').hidden = id !== 'hibrido';
   actualizarFecha();
+  alCambiarFondo();
 }
 $('fondos').innerHTML = FONDOS.map((f) => `<button type="button" class="fondo" data-id="${f.id}" title="${esc(f.detalle)}" aria-pressed="false">
   <span class="muestra muestra-${f.id}"></span><span class="nom">${esc(f.nombre)}</span></button>`).join('');
@@ -8907,7 +9971,8 @@ function obstaculos() {
   return [...document.querySelectorAll(SELECTORES_OBSTACULO)].map((el) => el.getBoundingClientRect()).filter((r) => r.width && r.height)
     .map((r) => ({ x0: r.left - base.left - 4, y0: r.top - base.top - 4, x1: r.right - base.left + 4, y1: r.bottom - base.top + 4 }));
 }
-const cuadricula = capaCuadricula(L, mapa, { intensidad: () => estado.intensidadCuadricula / 100, obstaculos });
+const cuadricula = capaCuadricula(L, mapa, { intensidad: () => estado.intensidadCuadricula / 100, obstaculos, claro: () => fondoActual?.idSpa === 'hibrido' });
+alCambiarFondo = () => cuadricula.redibujar();
 const recolocarEtiquetas = () => requestAnimationFrame(() => { if (mapa.hasLayer(cuadricula)) cuadricula.redibujar(); });
 const zonaPiloto = L.layerGroup([
   L.rectangle(piloto, { color: '#9A7642', weight: 2, dashArray: '7 5', fill: false, interactive: false }),
@@ -8920,8 +9985,9 @@ const VISUAL = [
 ];
 const todasSup = [...VISUAL, { id: 'piloto', capa: zonaPiloto }];
 $('superpuestas').innerHTML = VISUAL.map((s) => `<label class="sup"><input type="checkbox" data-id="${s.id}">
-  <span class="txt"><b>${esc(s.nombre)}</b><small>${esc(s.detalle)}</small></span></label>${s.id === 'cuadricula'
-  ? `<label class="intensidad" title="Intensidad de las líneas de la cuadrícula">Intensidad <input type="range" id="cuad-intensidad" min="10" max="100" step="5" value="${estado.intensidadCuadricula}"><output id="cuad-intensidad-v">${estado.intensidadCuadricula} %</output></label>` : ''}`).join('');
+  <span class="txt"><b>${esc(s.nombre)}</b><small>${esc(s.detalle)}</small></span></label>`).join('');
+$('cuad-intensidad').value = estado.intensidadCuadricula;
+$('cuad-intensidad-v').textContent = `${estado.intensidadCuadricula} %`;
 $('cuad-intensidad').addEventListener('input', (ev) => {
   estado.intensidadCuadricula = Number(ev.target.value); guardar();
   $('cuad-intensidad-v').textContent = `${estado.intensidadCuadricula} %`; cuadricula.redibujar();
@@ -8968,21 +10034,34 @@ importar = iniciarImportar({
   herramienta: () => herramienta,
   alCambiarPaneles: () => recolocarEtiquetas(),
 });
+const creador = iniciarCreador({
+  L, mapa, estado, dibujo, importar,
+  herramienta: () => herramienta,
+  elegirHerramienta: (h) => elegirHerramienta(h),
+  avisar: (t) => dibujo.avisoBreve(t),
+});
+function abrirCreador() {
+  if (herramienta === 'medir' || HERRAMIENTAS_DIBUJO.includes(herramienta)) elegirHerramienta('consultar');
+  dibujo.quitarSeleccion(); importar.cerrarFicha();
+  creador.abrir(true);
+}
+$('btn-crear-mapa').addEventListener('click', abrirCreador);
 // Cuenta de mapas en el título del desplegable
 new MutationObserver(() => { const n = document.querySelectorAll('#mapas-importados .mapa-imp').length; $('mapas-cuenta').textContent = n ? `${n} importado${n > 1 ? 's' : ''}` : ''; })
   .observe($('mapas-importados'), { childList: true });
 
-const NOMBRE_HERR = { consultar: 'Mover', punto: 'Punto', linea: 'Línea', area: 'Área', circulo: 'Círculo', medir: 'Medir' };
+const NOMBRE_HERR = { consultar: 'Mover', punto: 'Punto', linea: 'Línea', area: 'Área', circulo: 'Círculo', medir: 'Medir', 'zona-mapa': 'Zona del mapa' };
 function elegirHerramienta(h) {
   herramienta = h;
   document.querySelectorAll('[data-herr]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.herr === h)));
   $('herr-actual').textContent = NOMBRE_HERR[h] ?? h;
   $('herr-pista').classList.toggle('activa', h !== 'consultar');
   $('panel-medida').hidden = h !== 'medir';
-  mapa.getContainer().classList.toggle('cursor-cruz', h === 'medir' || HERRAMIENTAS_DIBUJO.includes(h));
+  mapa.getContainer().classList.toggle('cursor-cruz', h === 'medir' || h === 'zona-mapa' || HERRAMIENTAS_DIBUJO.includes(h));
   if (h === 'medir') importar.cerrarFicha();
   pintarMedida();
   dibujo.herramientaCambiada(h);
+  creador?.herramientaCambiada(h);
   recolocarEtiquetas();
 }
 document.querySelectorAll('[data-herr]').forEach((b) => b.addEventListener('click', () => elegirHerramienta(b.dataset.herr)));
@@ -9022,7 +10101,18 @@ else {
 $('herr-pista').addEventListener('click', () => mostrarHerramientas(!$('herramientas').classList.contains('visible')));
 
 // ---------------------------------------------------------------- ajustes (icono arriba a la derecha)
-function abrirAjustes(si = $('ajustes').hidden) { $('ajustes').hidden = !si; $('btn-ajustes').setAttribute('aria-expanded', String(si)); }
+function abrirAjustes(si = $('ajustes').hidden, seccion = null) {
+  $('ajustes').hidden = !si; $('btn-ajustes').setAttribute('aria-expanded', String(si));
+  if (si && seccion) {
+    const d = document.querySelector(`.aj-sec[data-aj="${seccion}"]`);
+    if (d) { d.open = true; requestAnimationFrame(() => d.scrollIntoView({ block: 'nearest' })); }
+  }
+}
+// Apartados desplegables de Ajustes (recuerdan si estaban abiertos)
+for (const d of document.querySelectorAll('.aj-sec')) {
+  if (estado.ajustesAbiertos?.[d.dataset.aj] !== undefined) d.open = estado.ajustesAbiertos[d.dataset.aj];
+  d.addEventListener('toggle', () => { estado.ajustesAbiertos = { ...estado.ajustesAbiertos, [d.dataset.aj]: d.open }; guardar(); });
+}
 $('btn-ajustes').addEventListener('click', (ev) => { ev.stopPropagation(); abrirAjustes(); });
 document.addEventListener('click', (ev) => { if (!$('ajustes').hidden && !ev.target.closest('#ajustes, #btn-ajustes, #buscar')) abrirAjustes(false); });
 function ponerPref(clave, v) {
@@ -9039,13 +10129,15 @@ for (const grupo of document.querySelectorAll('[data-pref]')) {
 mapa.on('click', (e) => {
   const p = { lat: e.latlng.lat, lon: e.latlng.lng };
   if (herramienta === 'medir') { medida.push(p); pintarMedida(); return; }
+  if (herramienta === 'zona-mapa') { creador.clic(p); return; }
   if (HERRAMIENTAS_DIBUJO.includes(herramienta)) { dibujo.clic(p); return; }
   if (!dibujo.quitarSeleccion()) importar.cerrarFicha();
 });
-mapa.on('dblclick', () => { if (HERRAMIENTAS_DIBUJO.includes(herramienta)) dibujo.dobleClic(); });
+mapa.on('dblclick', () => { if (HERRAMIENTAS_DIBUJO.includes(herramienta)) dibujo.dobleClic(); else if (herramienta === 'zona-mapa') creador.dobleClic(); });
 mapa.on('contextmenu', (e) => {
   if (HERRAMIENTAS_DIBUJO.includes(herramienta)) { L.DomEvent.preventDefault(e.originalEvent); dibujo.quitarUltimo(); }
   else if (herramienta === 'medir') { L.DomEvent.preventDefault(e.originalEvent); medida.pop(); pintarMedida(); }
+  else if (herramienta === 'zona-mapa') { L.DomEvent.preventDefault(e.originalEvent); creador.quitarUltimo(); }
 });
 
 // ---------------------------------------------------------------- barra inferior: coordenada y altitud
@@ -9110,6 +10202,7 @@ function pintarMedida() {
 $('pm-deshacer').addEventListener('click', () => { medida.pop(); pintarMedida(); });
 $('pm-nueva').addEventListener('click', () => { medida.length = 0; pintarMedida(); });
 document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && herramienta === 'zona-mapa') { elegirHerramienta('consultar'); return; }
   if (e.key === 'Escape' && herramienta === 'medir') { if (medida.length) { medida.length = 0; pintarMedida(); } else elegirHerramienta('consultar'); }
 });
 
@@ -9123,21 +10216,21 @@ function irA(p) {
   setTimeout(() => capaBusqueda.clearLayers(), 6000);
 }
 const conmutar = (id) => ({ accion: () => { ponerSup(id, !estado.superpuestas[id]); abrirSeccion(id === 'piloto' ? 'mapas' : 'visual'); } });
-const caja = (id, abrir) => ({ accion: () => { const c = $(id); c.checked = !c.checked; c.dispatchEvent(new Event('change', { bubbles: true })); abrirSeccion(abrir); } });
+const caja = (id, ajuste) => ({ accion: () => { const c = $(id); c.checked = !c.checked; c.dispatchEvent(new Event('change', { bubbles: true })); abrirAjustes(true, ajuste); } });
 const ACCIONES = [
   ...FONDOS.map((f) => ({ texto: `Fondo ${f.nombre.toLowerCase()}`, extra: `${f.detalle} mapa fondo`, detalle: f.detalle, accion: () => { ponerFondo(f.id); abrirSeccion('fondo'); } })),
-  ...Object.entries(IMAGENES).map(([id, d]) => ({ texto: `Imagen ${d.nombre}`, extra: `híbrido satélite ortofoto foto ${d.detalle}`, detalle: d.detalle, accion: () => { ponerImagen(id); ponerFondo('hibrido'); abrirSeccion('fondo'); } })),
-  { texto: 'Nombres y carreteras del híbrido', extra: 'rótulos etiquetas', detalle: 'Activar o quitar', ...caja('rotulos', 'fondo') },
-  { texto: 'Mantener detalle 1:25.000', extra: 'mtn25 topográfico zoom', detalle: 'Activar o quitar', ...caja('mtn-detalle', 'fondo') },
-  { texto: 'Híbrido al acercarte', extra: 'automático zoom satélite', detalle: 'Activar o quitar', ...caja('fondo-auto', 'fondo') },
+  ...Object.entries(IMAGENES).map(([id, d]) => ({ texto: `Imagen ${d.nombre}`, extra: `híbrido satélite ortofoto foto ${d.detalle}`, detalle: d.detalle, accion: () => { ponerImagen(id); ponerFondo('hibrido'); abrirAjustes(true, 'imagen'); } })),
+  { texto: 'Nombres y carreteras del híbrido', extra: 'rótulos etiquetas', detalle: 'Activar o quitar', ...caja('rotulos', 'imagen') },
+  { texto: 'Mantener detalle 1:25.000', extra: 'mtn25 topográfico zoom', detalle: 'Activar o quitar', ...caja('mtn-detalle', 'fondos') },
+  { texto: 'Híbrido al acercarte', extra: 'automático zoom satélite', detalle: 'Activar o quitar', ...caja('fondo-auto', 'fondos') },
   { texto: 'Cuadrícula MGRS', extra: 'mostrar ocultar malla grid', detalle: 'Mostrar u ocultar', ...conmutar('cuadricula') },
-  { texto: 'Intensidad de la cuadrícula', extra: 'malla grid tenue opacidad', detalle: 'Ajustar', accion: () => { abrirSeccion('visual'); $('cuad-intensidad').focus(); } },
+  { texto: 'Intensidad de la cuadrícula', extra: 'malla grid tenue opacidad', detalle: 'Ajustar', accion: () => { abrirAjustes(true, 'cuadricula'); $('cuad-intensidad').focus(); } },
   { texto: 'Sombreado', extra: 'relieve mdt sombra', detalle: 'Mostrar u ocultar', ...conmutar('sombreado') },
   { texto: 'Curvas de nivel', extra: 'altura mdt', detalle: 'Mostrar u ocultar', ...conmutar('curvas') },
   { texto: 'Zona piloto', extra: 'guadarrama', detalle: 'Mostrar u ocultar', ...conmutar('piloto') },
   { texto: 'Ir a la zona piloto', extra: 'guadarrama centrar', detalle: 'Centrar el mapa', accion: () => mapa.flyToBounds(piloto, { padding: [20, 20], duration: 0.8 }) },
-  ...[['mgrs', 'MGRS'], ['utm', 'UTM'], ['gms', 'geográficas (G M S)'], ['gd', 'grados decimales']].map(([v, n]) => ({ texto: `Coordenadas en ${n}`, extra: 'formato ajustes coordenada', detalle: 'Ajustes', accion: () => ponerPref('coordenadas', v) })),
-  ...[['grados', 'grados'], ['milesimas', 'milésimas'], ['gms', 'G M S']].map(([v, n]) => ({ texto: `Rumbos en ${n}`, extra: 'ángulos ajustes regla azimut', detalle: 'Ajustes', accion: () => ponerPref('angulo', v) })),
+  ...[['mgrs', 'MGRS'], ['utm', 'UTM'], ['gms', 'geográficas (G M S)'], ['gd', 'grados decimales']].map(([v, n]) => ({ texto: `Coordenadas en ${n}`, extra: 'formato ajustes coordenada', detalle: 'Ajustes', accion: () => { ponerPref('coordenadas', v); abrirAjustes(true, 'coordenadas'); } })),
+  ...[['grados', 'grados'], ['milesimas', 'milésimas'], ['gms', 'G M S']].map(([v, n]) => ({ texto: `Rumbos en ${n}`, extra: 'ángulos ajustes regla azimut', detalle: 'Ajustes', accion: () => { ponerPref('angulo', v); abrirAjustes(true, 'coordenadas'); } })),
   ...['punto', 'linea', 'area', 'circulo'].map((h) => ({ texto: `Dibujar ${TIPOS[h].nombre.toLowerCase()}`, extra: 'herramienta nuevo crear', detalle: 'Herramienta', accion: () => elegirHerramienta(h) })),
   { texto: 'Medir', extra: 'regla distancia rumbo herramienta', detalle: 'Herramienta', accion: () => elegirHerramienta('medir') },
   { texto: 'Mover', extra: 'seleccionar herramienta', detalle: 'Herramienta', accion: () => elegirHerramienta('consultar') },
@@ -9147,6 +10240,7 @@ const ACCIONES = [
   { texto: 'Ajustes', extra: 'opciones configuración', detalle: 'Abrir', accion: () => abrirAjustes(true) },
   { texto: 'Importar archivo', extra: 'gpx kml kmz zip atak paquete datos', detalle: 'GPX, KML/KMZ, paquetes de ATAK', accion: () => $('btn-importar-datos').click() },
   { texto: 'Importar mapa', extra: 'sqlite mbtiles tif geotiff jpg', detalle: 'Mapas propios', accion: () => $('btn-importar-mapa').click() },
+  { texto: 'Crear mapa', extra: 'creador de mapas descargar zona teselas atak sqlite mbtiles geotiff offline sin conexión', detalle: 'Descargar una zona en ATAK, MBTiles, ZIP o GeoTIFF', accion: abrirCreador },
   { texto: 'Buscar en mis mapas', extra: 'carpeta catálogo', detalle: 'Mapas de tu carpeta', accion: () => importar.abrirBuscador() },
 ].map((a) => ({ grupo: 'Ajustes y acciones', ...a }));
 
@@ -9206,7 +10300,7 @@ document.addEventListener('click', (ev) => { if (!ev.target.closest('#buscar')) 
 mostrarPos(centro(), 'Centro');
 elegirHerramienta('consultar');
 // Para pruebas automáticas
-window.__spa = { mapa, estado, medida, pintarMedida, diag, dibujo, importar, cuadricula, alturas, capasFondo, capasImagen };
+window.__spa = { creador, mapa, estado, medida, pintarMedida, diag, dibujo, importar, cuadricula, alturas, capasFondo, capasImagen };
 
 return {  };
 })();

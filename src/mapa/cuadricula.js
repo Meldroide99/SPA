@@ -123,6 +123,7 @@ export function textoEtiqueta(valor, paso) {
 export function capaCuadricula(L, mapa, opc = {}) {
   const intensidad = opc.intensidad ?? (() => 1);   // 0–1: multiplica la opacidad de las líneas
   const obstaculos = opc.obstaculos ?? (() => []);  // rectángulos {x0,y0,x1,y1} que las etiquetas no deben tapar
+  const claro = opc.claro ?? (() => false);          // true sobre imagen (híbrido): líneas y rótulos en blanco
   const grupo = L.layerGroup();
   const panel = 'cuadricula';
   if (!mapa.getPane(panel)) {
@@ -132,13 +133,15 @@ export function capaCuadricula(L, mapa, opc = {}) {
   function redibujar() {
     grupo.clearLayers();
     if (!mapa.hasLayer(grupo)) return;
+    const blanco = claro();
+    mapa.getPane(panel).classList.toggle('cuad-claro', blanco);
     const b = mapa.getBounds().pad(0.05);
     const paso = pasoCuadricula(mapa.getZoom());
     const { lineas, etiquetas, husos } = calcularCuadricula(
       { sur: b.getSouth(), norte: b.getNorth(), oeste: b.getWest(), este: b.getEast() }, paso);
     for (const l of lineas) {
       const est = ESTILO[Math.min(l.paso, 100000)] ?? ESTILO[paso];
-      L.polyline(l.puntos, { ...est, opacity: est.opacity * intensidad(), pane: panel, interactive: false, smoothFactor: 0 }).addTo(grupo);
+      L.polyline(l.puntos, { ...est, ...(blanco ? { color: '#FFFFFF', opacity: Math.min(1, est.opacity * 1.2) * intensidad() } : { opacity: est.opacity * intensidad() }), pane: panel, interactive: false, smoothFactor: 0 }).addTo(grupo);
     }
     for (const lon of husos) {
       L.polyline([[b.getSouth(), lon], [b.getNorth(), lon]], { color: '#A3362B', weight: 2, dashArray: '8 6', pane: panel, interactive: false }).addTo(grupo);

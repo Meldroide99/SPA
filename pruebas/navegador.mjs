@@ -19,7 +19,7 @@ const SQLITE = existsSync('/mnt/user-data/uploads/UCEDA_25K.sqlite') ? '/mnt/use
 const servidor = spawn(process.execPath, ['herramientas/servidor.mjs', String(PUERTO)], { stdio: 'ignore' });
 await new Promise((r) => setTimeout(r, 600));
 
-const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGP4/fs3AAXnAvM7qegZAAAAAElFTkSuQmCC', 'base64');
+const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4XmM4cWIfAASqAk/sgDdwAAAAAElFTkSuQmCC', 'base64');
 // MDT simulado: plano inclinado z = 800 + 1000·(lat−40) + 500·(lon+5) (malla de 0,002°)
 const mdt = (url) => {
   const [, la0, la1] = /Lat\(([-\d.]+),([-\d.]+)\)/.exec(url).map(Number), [, lo0, lo1] = /Long\(([-\d.]+),([-\d.]+)\)/.exec(url).map(Number);
@@ -36,9 +36,9 @@ let fallos = 0;
 const ok = (cond, msg) => { console.log(`${cond ? '✔' : '✘'} ${msg}`); if (!cond) fallos++; };
 
 const nav = await chromium.launch();
-const ctx = await nav.newContext({ viewport: { width: 1366, height: 820 } });
+const ctx = await nav.newContext({ viewport: { width: 1366, height: 820 }, acceptDownloads: true });
 const pedidas = [];
-await ctx.route(/ign\.es\/wmts|idee\.es\/wmts|wms|arcgisonline|google\.com/, (r) => { pedidas.push(r.request().url()); r.fulfill({ status: 200, contentType: 'image/png', body: PNG }); });
+await ctx.route(/ign\.es\/wmts|idee\.es\/wmts|wms|arcgisonline|google\.com/, (r) => { pedidas.push(r.request().url()); r.fulfill({ status: 200, contentType: 'image/png', body: PNG, headers: { 'access-control-allow-origin': '*' } }); });
 await ctx.route(/wcs-inspire\/mdt/, (r) => { pedidas.push(r.request().url()); r.fulfill({ status: 200, contentType: 'multipart/related', body: mdt(r.request().url()), headers: { 'access-control-allow-origin': '*' } }); });
 await ctx.route(/pnoa-ma\?SERVICE=WMS&VERSION=1\.3\.0&REQUEST=GetFeatureInfo/, (r) => r.fulfill({ status: 200, contentType: 'text/html', body: '<html><body><h2>Informaci&oacute;n PNOA</h2> Fecha (a&ntilde;o-mes) 2024-07 Resoluci&oacute;n (metros) 0.25</body></html>' }));
 const pag = await ctx.newPage();
@@ -162,7 +162,7 @@ await pag.click('#importados-lista [data-g] >> nth=1 >> [data-acc="abrir"]');
 await pag.click('#importados-lista .plan-el >> text=ENE 1');
 await pag.waitForTimeout(600);
 const ficha = await pag.textContent('#panel-elemento');
-ok(/elipsoidal \(HAE\) ≈ \d+ m sobre el nivel del mar/.test(ficha), 'Punto de ATAK: altura HAE convertida con el geoide del IGN');
+ok(/En el archivo\s*\d+ m s\. n\. m\./.test(ficha) && !/HAE|elipsoidal/.test(ficha), 'Punto de ATAK: altura HAE convertida con el geoide del IGN (solo sobre el nivel del mar)');
 await pag.click('#panel-elemento [data-imp="al-plan"]');
 p = await plan();
 ok(p.elementos.some((e) => e.propiedades.nombre === 'ENE 1' && e.propiedades.bando === 'enemigo'), '«Pasar al plan» lo vuelve editable');
@@ -176,7 +176,8 @@ const ma = await mapaDe(/sqlite/);
 ok(/ATAK · zoom/.test(ma.i), `Mapa ATAK importado: ${ma.n} · ${ma.i}`);
 ok(await mapaDe(/Croquis/), 'La imagen del KMZ (dentro del paquete) entra como mapa superpuesto');
 await pag.waitForTimeout(1500);
-const teselasMapa = await motor(() => [...document.querySelectorAll('.leaflet-mapasImportados-pane img')].filter((i) => i.naturalWidth === 256).length);
+const teselasMapa = await motor(() => [...document.querySelectorAll('.leaflet-mapasImportados-pane canvas')].filter((c) => {
+  const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; for (let k = 3; k < d.length; k += 4096) if (d[k]) return true; return false; }).length);
 ok(teselasMapa > 0, `Se pintan sus teselas (${teselasMapa})`);
 await pag.setInputFiles('#entrada-mapa', ['pruebas/datos/utm25830_lzw.tif', 'pruebas/datos/ed50_23030_packbits.tif']);
 await pag.waitForFunction(() => window.__spa.importar.mapas.length >= 4 && window.__spa.importar.mapas.every((m) => m.info || m.error), null, { timeout: 15000 });
@@ -193,20 +194,39 @@ if (CAPTURAS) await pag.screenshot({ path: 'docs/capturas/v4-mapas.png' });
 await pag.click('.fondo[data-id="mtn"]');
 await vista(40.79, -4.03, 14); await pag.waitForTimeout(400);
 pedidas.length = 0;
+const abrirAjuste = async (sec) => {
+  if (await pag.locator('#ajustes').isHidden()) await pag.click('#btn-ajustes');
+  await pag.evaluate((s) => { document.querySelector(`.aj-sec[data-aj="${s}"]`).open = true; }, sec);
+};
+const cerrarAjustes = async () => { if (!(await pag.locator('#ajustes').isHidden())) await pag.click('#btn-ajustes'); };
+ok(await motor(() => !document.querySelector('#panel-capas #imagen-fuente, #panel-capas #rotulos, #panel-capas #mtn-detalle, #panel-capas #fondo-auto, #panel-capas #cuad-intensidad')), 'Capas › Fondo solo con los fondos: las opciones están en Ajustes');
+ok((await pag.locator('#ajustes .aj-sec').count()) >= 4, 'Ajustes en apartados desplegables');
+await abrirAjuste('fondos');
 await pag.check('#mtn-detalle'); await pag.waitForTimeout(600);
 const matrices = new Set(pedidas.filter((u) => /mapa-raster/.test(u)).map((u) => /TILEMATRIX=(\d+)/.exec(u)?.[1]));
 ok(matrices.has('15') && !matrices.has('14'), `Mantener detalle: a zoom 14 se piden teselas del 15 (${[...matrices].join(',')})`);
 ok(pedidas.some((u) => /FORMAT=image%2Fpng/.test(u)), 'Topográfico en PNG');
 await pag.uncheck('#mtn-detalle');
+await cerrarAjustes();
+await vista(40.79, -4.03, 21); await pag.waitForTimeout(500);
+ok(await motor(() => document.querySelectorAll('.leaflet-tile-pane img.leaflet-tile-loaded').length > 0), 'Topográfico visible también a zoom 21 (no desaparece al acercar)');
+await vista(40.79, -4.03, 14);
+const colorCuad = () => motor(() => { const p = document.querySelector('.leaflet-cuadricula-pane path'); return p ? { c: p.getAttribute('stroke'), claro: document.querySelector('.leaflet-cuadricula-pane').classList.contains('cuad-claro') } : null; });
+const cuadMtn = await colorCuad();
 ok(await pag.locator('.fondo[data-id="ortofoto"], .fondo[data-id="satelite"], input[data-id="vertices"]').count() === 0, 'Sin ortofoto suelta, sin satélite suelto y sin vértices geodésicos');
 pedidas.length = 0;
 await pag.click('.fondo[data-id="hibrido"]'); await pag.waitForTimeout(500);
 ok(pedidas.some((u) => /lyrs=s&/.test(u)) && pedidas.some((u) => /lyrs=h&/.test(u)), 'Híbrido: imagen de Google + rótulos');
+const cuadHib = await colorCuad();
+ok(!cuadMtn || (cuadMtn.c !== '#FFFFFF' && !cuadMtn.claro), 'Cuadrícula oscura sobre el topográfico');
+ok(cuadHib?.c === '#FFFFFF' && cuadHib.claro, 'Cuadrícula en blanco sobre el híbrido');
 pedidas.length = 0;
+await abrirAjuste('imagen');
 await pag.click('#imagen-fuente [data-v="pnoa"]'); await pag.waitForTimeout(1200);
 ok(pedidas.some((u) => /pnoa-ma\?SERVICE=WMTS/.test(u)), 'Híbrido con la imagen del IGN (PNOA)');
 ok(/julio 2024 · 25 cm/.test(await pag.textContent('#imagen-fecha')), `Fecha de la imagen: ${await pag.textContent('#imagen-fecha')}`);
 await pag.click('#imagen-fuente [data-v="google"]');
+await cerrarAjustes();
 pedidas.length = 0;
 await vista(40.79, -4.03, 13);
 await pag.click('.fondo[data-id="relieve"]'); await pag.waitForTimeout(1500);
@@ -223,6 +243,16 @@ await pag.click('#mapas-importados .mi-nom >> text=/sqlite/'); await pag.waitFor
 const selMapa = await motor(() => { const m = window.__spa.importar.mapas.find((x) => /sqlite/.test(x.nombre)); return { pane: m.capa.options.pane, marco: document.querySelectorAll('.leaflet-marcoMapa-pane .marco-mapa').length, zoom: window.__spa.mapa.getZoom(), dentro: window.__spa.mapa.getBounds().contains([m.limites.sur, m.limites.oeste]) }; });
 ok(selMapa.pane === 'mapaSeleccionado' && selMapa.marco === 1 && selMapa.dentro, `Clic en el mapa de la lista: lo encuadra (zoom ${selMapa.zoom}), marco llamativo y encima de todo`);
 if (CAPTURAS) await pag.screenshot({ path: 'docs/capturas/v5-mapa-seleccionado.png' });
+
+// Ventana «Buscar en mis mapas»: entera dentro de la pantalla (también en una pantalla pequeña)
+for (const [w, h] of [[1366, 820], [800, 560]]) {
+  await pag.setViewportSize({ width: w, height: h });
+  await motor(() => window.__spa.importar.abrirBuscador()); await pag.waitForTimeout(300);
+  const caja = await motor(() => { const r = document.querySelector('#dialogo .dlg').getBoundingClientRect(); const b = document.getElementById('cat-cerrar').getBoundingClientRect(); return { r: [r.left, r.top, r.right, r.bottom], b: b.bottom, w: innerWidth, h: innerHeight, sw: document.querySelector('#dialogo .dlg').scrollWidth, cw: document.querySelector('#dialogo .dlg').clientWidth }; });
+  ok(caja.r[0] >= 0 && caja.r[1] >= 0 && caja.r[2] <= caja.w && caja.r[3] <= caja.h && caja.b <= caja.h && caja.sw <= caja.cw + 1, `Buscar en mis mapas se ve entera a ${w}×${h}`);
+  await pag.click('#cat-cerrar');
+}
+await pag.setViewportSize({ width: 1366, height: 820 });
 
 // ---------------------------------------------------------------- buscador universal
 const buscarYElegir = async (texto, esperado) => {
@@ -256,6 +286,61 @@ await pag.reload(); await pag.waitForFunction(() => window.__spa?.importar);
 await pag.waitForTimeout(1500);
 const tras = await motor(() => ({ g: window.__spa.importar.grupos.length, m: window.__spa.importar.mapas.length, p: window.__spa.dibujo.plan().elementos.length }));
 ok(tras.g === 2 && tras.m === 4 && tras.p === 3, `Tras recargar siguen el plan (${tras.p}), los archivos (${tras.g}) y los mapas (${tras.m})`);
+
+// ---------------------------------------------------------------- creador de mapas
+{
+  const { spawnSync } = await import('node:child_process');
+  const { contarTeselas } = await import('../src/datos/creador.js');
+  await motor(() => { window.showSaveFilePicker = undefined; window.showDirectoryPicker = undefined; }); // descarga normal
+  await vista(40.84, -3.42, 15); await pag.waitForTimeout(300);
+  await pag.click('.seccion[data-sec="mapas"] > summary').catch(() => {});
+  if (!(await pag.locator('#btn-crear-mapa').isVisible())) await pag.click('.seccion[data-sec="mapas"] > summary');
+  await pag.click('#btn-crear-mapa');
+  ok(await pag.locator('#panel-creador').isVisible(), 'Creador de mapas: se abre el panel');
+  // Zona irregular dibujada con clics (5 vértices, cóncava)
+  await pag.click('#cr-dibujar');
+  const caja = await pag.locator('#mapa').boundingBox();
+  const cx = caja.x + caja.width / 2, cy = caja.y + caja.height / 2;
+  for (const [dx, dy] of [[-260, -170], [40, -60], [250, -190], [210, 180], [-230, 160]]) { await pag.mouse.click(cx + dx, cy + dy); await pag.waitForTimeout(80); }
+  await pag.click('#cr-terminar');
+  const zona = await motor(() => window.__spa.creador.zona);
+  ok(zona.length === 5, `Zona irregular de ${zona.length} vértices`);
+  ok(await motor(() => window.__spa.dibujo.plan().elementos.length === 3), 'Dibujar la zona no añade nada al plan');
+  // Capas: topográfico 14–15 + híbrido 16, un solo archivo ATAK
+  const ponerCapa = async (id, on, zMin, zMax) => {
+    const f = `#panel-creador [data-capa="${id}"]`;
+    if ((await pag.locator(`${f} [data-c="on"]`).isChecked()) !== on) await pag.click(`${f} [data-c="on"]`);
+    if (on) { await pag.selectOption(`${f} [data-c="zMax"]`, String(zMax)); if (zMin !== undefined) await pag.selectOption(`${f} [data-c="zMin"]`, String(zMin)); }
+  };
+  await pag.click('#panel-creador [data-formato="atak"]');
+  await ponerCapa('mtn', true, 14, 15); await ponerCapa('hibrido', true, 16, 16); await ponerCapa('base', false); await ponerCapa('relieve', false);
+  if (await pag.locator('#panel-creador [data-modo="junto"]').count()) await pag.click('#panel-creador [data-modo="junto"]');
+  const esperadas = contarTeselas(zona, 14) + contarTeselas(zona, 15) + contarTeselas(zona, 16);
+  const resumen = await pag.textContent('.cr-resumen');
+  ok(resumen.replace(/\./g, '').includes(String(esperadas)), `Estimación: ${resumen.trim()} (esperadas ${esperadas})`);
+  ok(/14–15 Topográfico · 16 Híbrido/.test(await pag.textContent('#panel-creador')), 'Reparto de zooms por capa en un solo archivo');
+  await pag.fill('#cr-nombre', 'Prueba creador');
+  const [descarga] = await Promise.all([pag.waitForEvent('download', { timeout: 30000 }).catch(async (e) => { console.log('AVISO:', JSON.stringify(await motor(() => ({ av: document.getElementById('aviso-breve').textContent, prog: document.getElementById('cr-prog-txt')?.textContent, res: document.querySelector('.cr-resumen')?.textContent, crear: document.getElementById('cr-crear')?.disabled, parar: Boolean(document.getElementById('cr-parar')) }))), errores); throw e; }), pag.click('#cr-crear')]);
+  const ruta = `/tmp/spa-creador-${Date.now()}.sqlite`; await descarga.saveAs(ruta);
+  ok(descarga.suggestedFilename() === 'Prueba creador.sqlite', `Archivo: ${descarga.suggestedFilename()}`);
+  const py = spawnSync('python3', ['-I', '-c', `
+import sqlite3,sys
+c=sqlite3.connect('file:'+sys.argv[1]+'?mode=ro',uri=True)
+print(c.execute('pragma integrity_check').fetchone()[0], c.execute('select count(*) from tiles').fetchone()[0], c.execute("select value from ATAK_metadata where key='srid'").fetchone()[0])`, ruta], { encoding: 'utf8' }).stdout.trim();
+  ok(py === `ok ${esperadas} 3857`, `ATAK creado íntegro con todas las teselas (${py})`);
+  await pag.waitForFunction(() => window.__spa.importar.mapas.some((m) => m.nombre === 'Prueba creador.sqlite' && m.info), null, { timeout: 15000 });
+  ok(/ATAK · zoom 14–16/.test((await motor(() => window.__spa.importar.mapas.find((m) => m.nombre === 'Prueba creador.sqlite').info))), 'El mapa creado se abre en SPA');
+  // GeoTIFF por capa (separado), recortado a la zona
+  await pag.click('#panel-creador [data-formato="geotiff"]');
+  await ponerCapa('hibrido', false); await ponerCapa('mtn', true, undefined, 15);
+  const [tif] = await Promise.all([pag.waitForEvent('download', { timeout: 30000 }).catch(async (e) => { console.log('TIF:', JSON.stringify(await motor(() => ({ av: document.getElementById('aviso-breve').textContent, prog: document.getElementById('cr-prog-txt')?.textContent, res: document.querySelector('.cr-resumen')?.textContent, crear: document.getElementById('cr-crear')?.disabled })))); throw e; }), pag.click('#cr-crear')]);
+  const rutaTif = `/tmp/spa-creador-${Date.now()}.tif`; await tif.saveAs(rutaTif);
+  const pil = spawnSync('python3', ['-I', '-c', `
+from PIL import Image; import sys
+im=Image.open(sys.argv[1]); a=im.getchannel('A'); print(im.mode, im.size[0]%256, im.size[1]%256, a.getextrema())`, rutaTif], { encoding: 'utf8' }).stdout.trim();
+  ok(tif.suggestedFilename() === 'Prueba creador_mtn_z15.tif' && /^RGBA 0 0 \(0, 255\)$/.test(pil), `GeoTIFF ${tif.suggestedFilename()}: ${pil} (con transparencia fuera de la zona)`);
+  await pag.click('#cr-cerrar');
+}
 
 if (CAPTURAS) {
   await pag.setViewportSize({ width: 390, height: 780 }); await pag.waitForTimeout(300);

@@ -63,7 +63,7 @@ function cargar(ruta) {
     const dep = resolve(dirname(ruta), rel); deps.push(dep); estrellas.push(dep); return '';
   });
   // export function/const/let/class NOMBRE
-  src = src.replace(/export\s+(async\s+function|function|const|let|class)\s+([A-Za-z_$][\w$]*)/g, (m, tipo, nombre) => {
+  src = src.replace(/export\s+(async\s+function\*?|function\*?|const|let|class)\s*([A-Za-z_$][\w$]*)/g, (m, tipo, nombre) => {
     exportados.push(nombre); return `${tipo} ${nombre}`;
   });
   // export default expr;

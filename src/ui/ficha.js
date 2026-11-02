@@ -26,7 +26,7 @@ export function htmlTrazo({ trazo, grosor }, campo) {
 
 /** Línea de altitud de un punto (se rellena cuando llega el dato). */
 export function htmlAltitud(id = 'el-altitud') {
-  return `<div class="el-altitud"><span class="el-et">Altitud</span><b id="${id}">…</b><small>MDT05 del IGN</small></div>`;
+  return `<div class="el-altitud"><span class="el-et">Altitud</span><b id="${id}">…</b><small>sobre el nivel del mar · MDT05 del IGN</small></div>`;
 }
 export async function rellenarAltitud(alturas, p, id = 'el-altitud') {
   const caja = () => document.getElementById(id);
