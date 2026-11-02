@@ -174,6 +174,29 @@ function crearImagen(t, lector, le) {
     const r = await decodificar(im, lector, le, i, anchoB, altoB, im.muestras);
     return r instanceof Uint8ClampedArray ? { rgba: r, ancho: anchoB, alto: altoB } : { datos: r, ancho: anchoB, alto: altoB };
   };
+  /**
+   * Varios bloques de una vez [[bx, by], …]: si están seguidos en el archivo
+   * se leen con UNA lectura (mucho más rápido en TIFF por filas de 1 px).
+   */
+  im.leerBloques = async (lista) => {
+    if (im.planar === 2 && im.muestras > 1) return Promise.all(lista.map(([bx, by]) => im.leerBloque(bx, by)));
+    const idx = lista.map(([bx, by]) => by * im.bloquesX + bx);
+    const con = idx.filter((i) => im.cuentas[i]);
+    let sub = lector;
+    if (con.length > 1) {
+      const ini = Math.min(...con.map((i) => im.offsets[i])), fin = Math.max(...con.map((i) => im.offsets[i] + im.cuentas[i]));
+      const util = con.reduce((t, i) => t + im.cuentas[i], 0);
+      if (fin - ini <= 64e6 && fin - ini <= 2 * util + 65536) {
+        const buf = await lector.leer(ini, fin - ini);
+        sub = { tamano: lector.tamano, leer: (o, n) => (o >= ini && o + n <= fin ? Promise.resolve(buf.subarray(o - ini, o - ini + n)) : lector.leer(o, n)) };
+      }
+    }
+    return Promise.all(lista.map(async ([bx, by], k) => {
+      const altoB = enTeselas ? im.bloqueAlto : Math.min(im.bloqueAlto, alto - by * im.bloqueAlto);
+      const r = await decodificar(im, sub, le, idx[k], im.bloqueAncho, altoB, im.muestras);
+      return r instanceof Uint8ClampedArray ? { rgba: r, ancho: im.bloqueAncho, alto: altoB } : { datos: r, ancho: im.bloqueAncho, alto: altoB };
+    }));
+  };
   return im;
 }
 

@@ -3,8 +3,8 @@
 // directo a él sin copiarlo) y el catálogo de la carpeta de mapas.
 // Si el navegador no deja guardar, todo sigue funcionando en la sesión.
 
-const NOMBRE = 'spa', VERSION = 1;
-const ALMACENES = ['datos', 'mapas', 'catalogo'];
+const NOMBRE = 'spa', VERSION = 2;
+const ALMACENES = ['datos', 'mapas', 'catalogo', 'piramides']; // piramides: vistas reducidas de GeoTIFF grandes
 let bd = null;
 
 function abrir() {

@@ -98,7 +98,7 @@ let fondoActual = null;
 let alCambiarFondo = () => {}; // la cuadrícula se pinta en blanco sobre el híbrido
 // eslint-disable-next-line prefer-const
 let importar = null;
-const VERSION = '0.6.1';
+const VERSION = '0.6.2';
 function ponerFondo(id, { automatico = false } = {}) {
   if (!capasFondo[id]) id = 'mtn';
   if (fondoActual) mapa.removeLayer(fondoActual);

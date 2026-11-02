@@ -54,20 +54,29 @@ export async function fuenteGeoTiff(blob, { epsgForzado, prj } = {}) {
     const v = Array.from(b.datos).filter((x) => Number.isFinite(x) && x !== g.nodata && x > -1e30).sort((p, q) => p - q);
     rango = v.length ? { min: v[Math.floor(v.length * 0.02)], max: v[Math.floor(v.length * 0.98)] } : { min: 0, max: 255 };
   }
-  const cacheBloques = new Map();
+  const cacheBloques = cacheLimitada(160 * 1048576);
   return {
     tipo: 'GeoTIFF', ancho: principal.ancho, alto: principal.alto, afin: g.afin, epsg, crs, nodata: g.nodata,
     sinSistema: !crs,
     descripcion: `${principal.ancho} × ${principal.alto} px · ${principal.muestras} banda${principal.muestras > 1 ? 's' : ''} · ${principal.bits} bits · ${tif.imagenes.length} nivel${tif.imagenes.length > 1 ? 'es' : ''}`,
     niveles: niveles.map(({ im, factor }, nivel) => ({
       factor, ancho: im.ancho, alto: im.alto, bloqueAncho: im.bloqueAncho, bloqueAlto: im.bloqueAlto,
+      /** Tanda de filas de bloques (para las vistas reducidas): [[bloques de la fila by0], …] */
+      async tanda(by0, n) {
+        const lista = [];
+        for (let by = by0; by < by0 + n; by++) for (let bx = 0; bx < im.bloquesX; bx++) lista.push([bx, by]);
+        const bs = await im.leerBloques(lista);
+        const filas = [];
+        for (let k = 0; k < n; k++) filas.push(bs.slice(k * im.bloquesX, (k + 1) * im.bloquesX).map((b) => ({ rgba: aRgba(im, b, rango, g.nodata), ancho: b.ancho, alto: b.alto })));
+        return filas;
+      },
       async bloque(bx, by) {
         const k = `${nivel}/${bx}/${by}`;
         let p = cacheBloques.get(k);
         if (!p) {
           p = im.leerBloque(bx, by).then((b) => ({ rgba: aRgba(im, b, rango, g.nodata), ancho: b.ancho, alto: b.alto }));
-          cacheBloques.set(k, p);
-          if (cacheBloques.size > 300) cacheBloques.delete(cacheBloques.keys().next().value);
+          cacheBloques.poner(k, p, im.bloqueAncho * im.bloqueAlto * 4);
+          p.catch(() => cacheBloques.delete(k));
         }
         return p;
       },
@@ -171,7 +180,10 @@ export async function pintarTesela(fuente, inv, coords, lienzo) {
   const f = nivel.factor;
   const bx0 = Math.max(0, Math.floor(x0 / f / nivel.bloqueAncho)), bx1 = Math.min(Math.ceil(nivel.ancho / nivel.bloqueAncho) - 1, Math.floor(x1 / f / nivel.bloqueAncho));
   const by0 = Math.max(0, Math.floor(y0 / f / nivel.bloqueAlto)), by1 = Math.min(Math.ceil(nivel.alto / nivel.bloqueAlto) - 1, Math.floor(y1 / f / nivel.bloqueAlto));
-  if ((bx1 - bx0 + 1) * (by1 - by0 + 1) > 256) return; // demasiado alejado: no se pinta
+  // Demasiado alejado para este nivel (no hay uno más reducido): no se pinta.
+  // Se mide en píxeles a leer, no en bloques (los TIFF por filas tienen bloques de 1 fila).
+  const nb = (bx1 - bx0 + 1) * (by1 - by0 + 1);
+  if (nb > 2048 || nb * nivel.bloqueAncho * nivel.bloqueAlto > 24e6) return;
   const bloques = new Map();
   const tareas = [];
   for (let by = by0; by <= by1; by++) for (let bx = bx0; bx <= bx1; bx++) {
@@ -204,4 +216,152 @@ export async function pintarTesela(fuente, inv, coords, lienzo) {
     }
   }
   ctx.putImageData(img, 0, 0);
+}
+
+// ---------------------------------------------------------------- caché limitada por tamaño
+function cacheLimitada(maxBytes) {
+  const m = new Map(); let bytes = 0;
+  return {
+    get: (k) => { const v = m.get(k); if (v) { m.delete(k); m.set(k, v); } return v?.p; },
+    poner(k, p, tam) {
+      m.set(k, { p, tam }); bytes += tam;
+      while (bytes > maxBytes && m.size > 1) { const [k0, v0] = m.entries().next().value; m.delete(k0); bytes -= v0.tam; }
+    },
+    delete(k) { const v = m.get(k); if (v) { bytes -= v.tam; m.delete(k); } },
+    get size() { return m.size; },
+  };
+}
+
+// ---------------------------------------------------------------- vistas reducidas
+// Muchos GeoTIFF militares no traen reducciones internas (p. ej. Alijares:
+// 19 996 × 24 008 px a 25 cm, por filas de 1 px). Sin ellas, de lejos habría
+// que leer cientos de MB por pantalla y no se pintaba hasta el zoom máximo.
+// Se crean una vez, leyendo el archivo de arriba abajo: cada nivel es la
+// mitad del anterior (media de 2 × 2 píxeles), en teselas de 256 px
+// comprimidas (JPEG; PNG si tienen transparencia).
+
+/** ¿Le hacen falta vistas reducidas? (su nivel más pequeño es grande) */
+export function necesitaPiramide(fuente) {
+  const n = fuente.niveles.at(-1);
+  return Math.max(n.ancho, n.alto) > 1024;
+}
+
+/**
+ * Calcula las vistas reducidas. Devuelve { niveles: [{factor, ancho, alto}], teselas: Map('n/x/y' → Blob) }.
+ * @param {(f:number)=>void} alProgreso fracción 0–1
+ */
+export async function calcularPiramide(fuente, { alProgreso = () => {}, cancelado = () => false } = {}) {
+  const base = fuente.niveles.at(-1);
+  const W = base.ancho, H = base.alto;
+  const niveles = [];
+  for (let w = W, h = H, f = base.factor; Math.max(w, h) > 512;) {
+    w = Math.ceil(w / 2); h = Math.ceil(h / 2); f *= 2;
+    niveles.push({ factor: f, ancho: w, alto: h, pendiente: null, banda: new Uint8ClampedArray(w * 256 * 4), filas: 0, ty: 0 });
+  }
+  const teselas = new Map();
+  const tareas = [];
+  // JPEG si la tesela es opaca (rápido y ligero), PNG si tiene transparencia
+  const codificar = async (n, k, rgba, w, h) => {
+    let opaca = true;
+    for (let i = 3; i < rgba.length; i += 4) if (rgba[i] < 255) { opaca = false; break; }
+    const tipo = opaca ? 'image/jpeg' : 'image/png';
+    let blob;
+    if (typeof OffscreenCanvas !== 'undefined') {
+      const c = new OffscreenCanvas(w, h); c.getContext('2d').putImageData(new ImageData(rgba, w, h), 0, 0);
+      blob = await c.convertToBlob({ type: tipo, quality: 0.92 });
+    } else {
+      const c = document.createElement('canvas'); c.width = w; c.height = h; c.getContext('2d').putImageData(new ImageData(rgba, w, h), 0, 0);
+      blob = await new Promise((ok) => c.toBlob(ok, tipo, 0.92));
+    }
+    teselas.set(k, blob);
+  };
+  const vaciarBanda = (i) => {
+    const n = niveles[i];
+    if (!n.filas) return;
+    const h = n.filas;
+    for (let tx = 0; tx * 256 < n.ancho; tx++) {
+      const w = Math.min(256, n.ancho - tx * 256);
+      const rgba = new Uint8ClampedArray(w * h * 4);
+      for (let y = 0; y < h; y++) rgba.set(n.banda.subarray((y * n.ancho + tx * 256) * 4, (y * n.ancho + tx * 256 + w) * 4), y * w * 4);
+      tareas.push(codificar(n, `${i}/${tx}/${n.ty}`, rgba, w, h));
+    }
+    n.ty++; n.filas = 0;
+  };
+  // Una fila del nivel i-1 (o de la base) entra en el nivel i
+  const meterFila = (i, fila, anchoFila) => {
+    const n = niveles[i]; if (!n) return;
+    if (!n.pendiente) { n.pendiente = fila.slice(); return; }
+    const a = n.pendiente, b = fila, out = new Uint8ClampedArray(n.ancho * 4);
+    for (let x = 0; x < n.ancho; x++) {
+      const x0 = 2 * x * 4, x1 = Math.min(2 * x + 1, anchoFila - 1) * 4, o = x * 4;
+      for (let c = 0; c < 4; c++) out[o + c] = (a[x0 + c] + a[x1 + c] + b[x0 + c] + b[x1 + c] + 2) >> 2;
+    }
+    n.pendiente = null;
+    n.banda.set(out, n.filas * n.ancho * 4); n.filas++;
+    if (n.filas === 256) vaciarBanda(i);
+    meterFila(i + 1, out, n.ancho);
+  };
+  const filasBloque = base.bloqueAlto, porX = Math.ceil(W / base.bloqueAncho), porY = Math.ceil(H / filasBloque);
+  const fila = new Uint8ClampedArray(W * 4);
+  // Se leen por tandas de ~2 MB de imagen en paralelo (en un TIFF por filas, cientos de filas a la vez)
+  const tanda = Math.max(1, Math.min(256, Math.floor(2e6 / (W * filasBloque))));
+  let siguientes = null, actual = null;
+  const pedirTanda = (by0) => {
+    const n = Math.min(tanda, porY - by0);
+    if (base.tanda) { const p = base.tanda(by0, n); return Array.from({ length: n }, (_, k) => p.then((f) => f[k])); }
+    return Array.from({ length: n }, (_, k) => Promise.all(Array.from({ length: porX }, (_, bx) => base.bloque(bx, by0 + k).catch(() => null))));
+  };
+  for (let by = 0; by < porY; by++) {
+    if (cancelado()) throw new Error('cancelado');
+    if (by % tanda === 0) { siguientes = siguientes ?? pedirTanda(by); actual = siguientes; siguientes = by + tanda < porY ? pedirTanda(by + tanda) : null; }
+    const bloques = await actual[by % tanda];
+    const alto = Math.min(filasBloque, H - by * filasBloque);
+    for (let y = 0; y < alto; y++) {
+      fila.fill(0);
+      bloques.forEach((bl, bx) => {
+        if (!bl || y >= bl.alto) return;
+        const w = Math.min(bl.ancho, W - bx * base.bloqueAncho);
+        fila.set(bl.rgba.subarray(y * bl.ancho * 4, (y * bl.ancho + w) * 4), bx * base.bloqueAncho * 4);
+      });
+      meterFila(0, fila, W);
+    }
+    if (by % 64 === 0) { alProgreso(by / porY); await new Promise((ok) => setTimeout(ok, 0)); }
+  }
+  // Cierre: filas impares sueltas y bandas a medias
+  for (let i = 0; i < niveles.length; i++) {
+    const n = niveles[i];
+    if (n.pendiente) meterFila(i, n.pendiente, i ? niveles[i - 1].ancho : W); // fila impar final: se empareja consigo misma
+    vaciarBanda(i);
+  }
+  await Promise.all(tareas);
+  alProgreso(1);
+  return { niveles: niveles.map(({ factor, ancho, alto }) => ({ factor, ancho, alto })), teselas };
+}
+
+/** Añade a la fuente los niveles de una pirámide ya calculada (o leída del almacén). */
+export function ponerPiramide(fuente, piramide) {
+  const cache = cacheLimitada(64 * 1048576);
+  piramide.niveles.forEach((n, i) => {
+    fuente.niveles.push({
+      factor: n.factor, ancho: n.ancho, alto: n.alto, bloqueAncho: 256, bloqueAlto: 256, reducido: true,
+      bloque(bx, by) {
+        const k = `${i}/${bx}/${by}`;
+        let p = cache.get(k);
+        if (!p) {
+          const b = piramide.teselas.get(k);
+          if (!b) return Promise.reject(new Error('sin tesela'));
+          p = createImageBitmap(b).then((bm) => {
+            const w = bm.width, h = bm.height;
+            const c = typeof OffscreenCanvas !== 'undefined' ? new OffscreenCanvas(w, h) : Object.assign(document.createElement('canvas'), { width: w, height: h });
+            const ctx = c.getContext('2d'); ctx.drawImage(bm, 0, 0); bm.close?.();
+            return { rgba: ctx.getImageData(0, 0, w, h).data, ancho: w, alto: h };
+          });
+          cache.poner(k, p, 256 * 256 * 4);
+          p.catch(() => cache.delete(k));
+        }
+        return p;
+      },
+    });
+  });
+  fuente.niveles.sort((a, b) => a.factor - b.factor);
 }

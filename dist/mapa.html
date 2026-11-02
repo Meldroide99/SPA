@@ -7423,6 +7423,29 @@ function crearImagen(t, lector, le) {
     const r = await decodificar(im, lector, le, i, anchoB, altoB, im.muestras);
     return r instanceof Uint8ClampedArray ? { rgba: r, ancho: anchoB, alto: altoB } : { datos: r, ancho: anchoB, alto: altoB };
   };
+  /**
+   * Varios bloques de una vez [[bx, by], …]: si están seguidos en el archivo
+   * se leen con UNA lectura (mucho más rápido en TIFF por filas de 1 px).
+   */
+  im.leerBloques = async (lista) => {
+    if (im.planar === 2 && im.muestras > 1) return Promise.all(lista.map(([bx, by]) => im.leerBloque(bx, by)));
+    const idx = lista.map(([bx, by]) => by * im.bloquesX + bx);
+    const con = idx.filter((i) => im.cuentas[i]);
+    let sub = lector;
+    if (con.length > 1) {
+      const ini = Math.min(...con.map((i) => im.offsets[i])), fin = Math.max(...con.map((i) => im.offsets[i] + im.cuentas[i]));
+      const util = con.reduce((t, i) => t + im.cuentas[i], 0);
+      if (fin - ini <= 64e6 && fin - ini <= 2 * util + 65536) {
+        const buf = await lector.leer(ini, fin - ini);
+        sub = { tamano: lector.tamano, leer: (o, n) => (o >= ini && o + n <= fin ? Promise.resolve(buf.subarray(o - ini, o - ini + n)) : lector.leer(o, n)) };
+      }
+    }
+    return Promise.all(lista.map(async ([bx, by], k) => {
+      const altoB = enTeselas ? im.bloqueAlto : Math.min(im.bloqueAlto, alto - by * im.bloqueAlto);
+      const r = await decodificar(im, sub, le, idx[k], im.bloqueAncho, altoB, im.muestras);
+      return r instanceof Uint8ClampedArray ? { rgba: r, ancho: im.bloqueAncho, alto: altoB } : { datos: r, ancho: im.bloqueAncho, alto: altoB };
+    }));
+  };
   return im;
 }
 
@@ -7902,20 +7925,29 @@ async function fuenteGeoTiff(blob, { epsgForzado, prj } = {}) {
     const v = Array.from(b.datos).filter((x) => Number.isFinite(x) && x !== g.nodata && x > -1e30).sort((p, q) => p - q);
     rango = v.length ? { min: v[Math.floor(v.length * 0.02)], max: v[Math.floor(v.length * 0.98)] } : { min: 0, max: 255 };
   }
-  const cacheBloques = new Map();
+  const cacheBloques = cacheLimitada(160 * 1048576);
   return {
     tipo: 'GeoTIFF', ancho: principal.ancho, alto: principal.alto, afin: g.afin, epsg, crs, nodata: g.nodata,
     sinSistema: !crs,
     descripcion: `${principal.ancho} × ${principal.alto} px · ${principal.muestras} banda${principal.muestras > 1 ? 's' : ''} · ${principal.bits} bits · ${tif.imagenes.length} nivel${tif.imagenes.length > 1 ? 'es' : ''}`,
     niveles: niveles.map(({ im, factor }, nivel) => ({
       factor, ancho: im.ancho, alto: im.alto, bloqueAncho: im.bloqueAncho, bloqueAlto: im.bloqueAlto,
+      /** Tanda de filas de bloques (para las vistas reducidas): [[bloques de la fila by0], …] */
+      async tanda(by0, n) {
+        const lista = [];
+        for (let by = by0; by < by0 + n; by++) for (let bx = 0; bx < im.bloquesX; bx++) lista.push([bx, by]);
+        const bs = await im.leerBloques(lista);
+        const filas = [];
+        for (let k = 0; k < n; k++) filas.push(bs.slice(k * im.bloquesX, (k + 1) * im.bloquesX).map((b) => ({ rgba: aRgba(im, b, rango, g.nodata), ancho: b.ancho, alto: b.alto })));
+        return filas;
+      },
       async bloque(bx, by) {
         const k = `${nivel}/${bx}/${by}`;
         let p = cacheBloques.get(k);
         if (!p) {
           p = im.leerBloque(bx, by).then((b) => ({ rgba: aRgba(im, b, rango, g.nodata), ancho: b.ancho, alto: b.alto }));
-          cacheBloques.set(k, p);
-          if (cacheBloques.size > 300) cacheBloques.delete(cacheBloques.keys().next().value);
+          cacheBloques.poner(k, p, im.bloqueAncho * im.bloqueAlto * 4);
+          p.catch(() => cacheBloques.delete(k));
         }
         return p;
       },
@@ -8019,7 +8051,10 @@ async function pintarTesela(fuente, inv, coords, lienzo) {
   const f = nivel.factor;
   const bx0 = Math.max(0, Math.floor(x0 / f / nivel.bloqueAncho)), bx1 = Math.min(Math.ceil(nivel.ancho / nivel.bloqueAncho) - 1, Math.floor(x1 / f / nivel.bloqueAncho));
   const by0 = Math.max(0, Math.floor(y0 / f / nivel.bloqueAlto)), by1 = Math.min(Math.ceil(nivel.alto / nivel.bloqueAlto) - 1, Math.floor(y1 / f / nivel.bloqueAlto));
-  if ((bx1 - bx0 + 1) * (by1 - by0 + 1) > 256) return; // demasiado alejado: no se pinta
+  // Demasiado alejado para este nivel (no hay uno más reducido): no se pinta.
+  // Se mide en píxeles a leer, no en bloques (los TIFF por filas tienen bloques de 1 fila).
+  const nb = (bx1 - bx0 + 1) * (by1 - by0 + 1);
+  if (nb > 2048 || nb * nivel.bloqueAncho * nivel.bloqueAlto > 24e6) return;
   const bloques = new Map();
   const tareas = [];
   for (let by = by0; by <= by1; by++) for (let bx = bx0; bx <= bx1; bx++) {
@@ -8054,7 +8089,155 @@ async function pintarTesela(fuente, inv, coords, lienzo) {
   ctx.putImageData(img, 0, 0);
 }
 
-return { invertirAfin, limitesFuente, fuenteGeoTiff, fuenteImagen, fuenteSuperposicion, capaRaster, pintarTesela };
+// ---------------------------------------------------------------- caché limitada por tamaño
+function cacheLimitada(maxBytes) {
+  const m = new Map(); let bytes = 0;
+  return {
+    get: (k) => { const v = m.get(k); if (v) { m.delete(k); m.set(k, v); } return v?.p; },
+    poner(k, p, tam) {
+      m.set(k, { p, tam }); bytes += tam;
+      while (bytes > maxBytes && m.size > 1) { const [k0, v0] = m.entries().next().value; m.delete(k0); bytes -= v0.tam; }
+    },
+    delete(k) { const v = m.get(k); if (v) { bytes -= v.tam; m.delete(k); } },
+    get size() { return m.size; },
+  };
+}
+
+// ---------------------------------------------------------------- vistas reducidas
+// Muchos GeoTIFF militares no traen reducciones internas (p. ej. Alijares:
+// 19 996 × 24 008 px a 25 cm, por filas de 1 px). Sin ellas, de lejos habría
+// que leer cientos de MB por pantalla y no se pintaba hasta el zoom máximo.
+// Se crean una vez, leyendo el archivo de arriba abajo: cada nivel es la
+// mitad del anterior (media de 2 × 2 píxeles), en teselas de 256 px
+// comprimidas (JPEG; PNG si tienen transparencia).
+
+/** ¿Le hacen falta vistas reducidas? (su nivel más pequeño es grande) */
+function necesitaPiramide(fuente) {
+  const n = fuente.niveles.at(-1);
+  return Math.max(n.ancho, n.alto) > 1024;
+}
+
+/**
+ * Calcula las vistas reducidas. Devuelve { niveles: [{factor, ancho, alto}], teselas: Map('n/x/y' → Blob) }.
+ * @param {(f:number)=>void} alProgreso fracción 0–1
+ */
+async function calcularPiramide(fuente, { alProgreso = () => {}, cancelado = () => false } = {}) {
+  const base = fuente.niveles.at(-1);
+  const W = base.ancho, H = base.alto;
+  const niveles = [];
+  for (let w = W, h = H, f = base.factor; Math.max(w, h) > 512;) {
+    w = Math.ceil(w / 2); h = Math.ceil(h / 2); f *= 2;
+    niveles.push({ factor: f, ancho: w, alto: h, pendiente: null, banda: new Uint8ClampedArray(w * 256 * 4), filas: 0, ty: 0 });
+  }
+  const teselas = new Map();
+  const tareas = [];
+  // JPEG si la tesela es opaca (rápido y ligero), PNG si tiene transparencia
+  const codificar = async (n, k, rgba, w, h) => {
+    let opaca = true;
+    for (let i = 3; i < rgba.length; i += 4) if (rgba[i] < 255) { opaca = false; break; }
+    const tipo = opaca ? 'image/jpeg' : 'image/png';
+    let blob;
+    if (typeof OffscreenCanvas !== 'undefined') {
+      const c = new OffscreenCanvas(w, h); c.getContext('2d').putImageData(new ImageData(rgba, w, h), 0, 0);
+      blob = await c.convertToBlob({ type: tipo, quality: 0.92 });
+    } else {
+      const c = document.createElement('canvas'); c.width = w; c.height = h; c.getContext('2d').putImageData(new ImageData(rgba, w, h), 0, 0);
+      blob = await new Promise((ok) => c.toBlob(ok, tipo, 0.92));
+    }
+    teselas.set(k, blob);
+  };
+  const vaciarBanda = (i) => {
+    const n = niveles[i];
+    if (!n.filas) return;
+    const h = n.filas;
+    for (let tx = 0; tx * 256 < n.ancho; tx++) {
+      const w = Math.min(256, n.ancho - tx * 256);
+      const rgba = new Uint8ClampedArray(w * h * 4);
+      for (let y = 0; y < h; y++) rgba.set(n.banda.subarray((y * n.ancho + tx * 256) * 4, (y * n.ancho + tx * 256 + w) * 4), y * w * 4);
+      tareas.push(codificar(n, `${i}/${tx}/${n.ty}`, rgba, w, h));
+    }
+    n.ty++; n.filas = 0;
+  };
+  // Una fila del nivel i-1 (o de la base) entra en el nivel i
+  const meterFila = (i, fila, anchoFila) => {
+    const n = niveles[i]; if (!n) return;
+    if (!n.pendiente) { n.pendiente = fila.slice(); return; }
+    const a = n.pendiente, b = fila, out = new Uint8ClampedArray(n.ancho * 4);
+    for (let x = 0; x < n.ancho; x++) {
+      const x0 = 2 * x * 4, x1 = Math.min(2 * x + 1, anchoFila - 1) * 4, o = x * 4;
+      for (let c = 0; c < 4; c++) out[o + c] = (a[x0 + c] + a[x1 + c] + b[x0 + c] + b[x1 + c] + 2) >> 2;
+    }
+    n.pendiente = null;
+    n.banda.set(out, n.filas * n.ancho * 4); n.filas++;
+    if (n.filas === 256) vaciarBanda(i);
+    meterFila(i + 1, out, n.ancho);
+  };
+  const filasBloque = base.bloqueAlto, porX = Math.ceil(W / base.bloqueAncho), porY = Math.ceil(H / filasBloque);
+  const fila = new Uint8ClampedArray(W * 4);
+  // Se leen por tandas de ~2 MB de imagen en paralelo (en un TIFF por filas, cientos de filas a la vez)
+  const tanda = Math.max(1, Math.min(256, Math.floor(2e6 / (W * filasBloque))));
+  let siguientes = null, actual = null;
+  const pedirTanda = (by0) => {
+    const n = Math.min(tanda, porY - by0);
+    if (base.tanda) { const p = base.tanda(by0, n); return Array.from({ length: n }, (_, k) => p.then((f) => f[k])); }
+    return Array.from({ length: n }, (_, k) => Promise.all(Array.from({ length: porX }, (_, bx) => base.bloque(bx, by0 + k).catch(() => null))));
+  };
+  for (let by = 0; by < porY; by++) {
+    if (cancelado()) throw new Error('cancelado');
+    if (by % tanda === 0) { siguientes = siguientes ?? pedirTanda(by); actual = siguientes; siguientes = by + tanda < porY ? pedirTanda(by + tanda) : null; }
+    const bloques = await actual[by % tanda];
+    const alto = Math.min(filasBloque, H - by * filasBloque);
+    for (let y = 0; y < alto; y++) {
+      fila.fill(0);
+      bloques.forEach((bl, bx) => {
+        if (!bl || y >= bl.alto) return;
+        const w = Math.min(bl.ancho, W - bx * base.bloqueAncho);
+        fila.set(bl.rgba.subarray(y * bl.ancho * 4, (y * bl.ancho + w) * 4), bx * base.bloqueAncho * 4);
+      });
+      meterFila(0, fila, W);
+    }
+    if (by % 64 === 0) { alProgreso(by / porY); await new Promise((ok) => setTimeout(ok, 0)); }
+  }
+  // Cierre: filas impares sueltas y bandas a medias
+  for (let i = 0; i < niveles.length; i++) {
+    const n = niveles[i];
+    if (n.pendiente) meterFila(i, n.pendiente, i ? niveles[i - 1].ancho : W); // fila impar final: se empareja consigo misma
+    vaciarBanda(i);
+  }
+  await Promise.all(tareas);
+  alProgreso(1);
+  return { niveles: niveles.map(({ factor, ancho, alto }) => ({ factor, ancho, alto })), teselas };
+}
+
+/** Añade a la fuente los niveles de una pirámide ya calculada (o leída del almacén). */
+function ponerPiramide(fuente, piramide) {
+  const cache = cacheLimitada(64 * 1048576);
+  piramide.niveles.forEach((n, i) => {
+    fuente.niveles.push({
+      factor: n.factor, ancho: n.ancho, alto: n.alto, bloqueAncho: 256, bloqueAlto: 256, reducido: true,
+      bloque(bx, by) {
+        const k = `${i}/${bx}/${by}`;
+        let p = cache.get(k);
+        if (!p) {
+          const b = piramide.teselas.get(k);
+          if (!b) return Promise.reject(new Error('sin tesela'));
+          p = createImageBitmap(b).then((bm) => {
+            const w = bm.width, h = bm.height;
+            const c = typeof OffscreenCanvas !== 'undefined' ? new OffscreenCanvas(w, h) : Object.assign(document.createElement('canvas'), { width: w, height: h });
+            const ctx = c.getContext('2d'); ctx.drawImage(bm, 0, 0); bm.close?.();
+            return { rgba: ctx.getImageData(0, 0, w, h).data, ancho: w, alto: h };
+          });
+          cache.poner(k, p, 256 * 256 * 4);
+          p.catch(() => cache.delete(k));
+        }
+        return p;
+      },
+    });
+  });
+  fuente.niveles.sort((a, b) => a.factor - b.factor);
+}
+
+return { invertirAfin, limitesFuente, fuenteGeoTiff, fuenteImagen, fuenteSuperposicion, capaRaster, pintarTesela, necesitaPiramide, calcularPiramide, ponerPiramide };
 })();
 
 // ── src/datos/almacen.js
@@ -8065,8 +8248,8 @@ __mods["src/datos/almacen.js"] = (function () {
 // directo a él sin copiarlo) y el catálogo de la carpeta de mapas.
 // Si el navegador no deja guardar, todo sigue funcionando en la sesión.
 
-const NOMBRE = 'spa', VERSION = 1;
-const ALMACENES = ['datos', 'mapas', 'catalogo'];
+const NOMBRE = 'spa', VERSION = 2;
+const ALMACENES = ['datos', 'mapas', 'catalogo', 'piramides']; // piramides: vistas reducidas de GeoTIFF grandes
 let bd = null;
 
 function abrir() {
@@ -8118,7 +8301,7 @@ __mods["src/ui/importar.js"] = (function () {
 const { importarDatos, esDatos } = __req("src/datos/vectorial.js");
 const { abrirMapaTeselas } = __req("src/datos/teselas.js");
 const { lectorBlob } = __req("src/datos/tiff.js");
-const { fuenteGeoTiff, fuenteImagen, fuenteSuperposicion, capaRaster, limitesFuente } = __req("src/datos/raster.js");
+const { fuenteGeoTiff, fuenteImagen, fuenteSuperposicion, capaRaster, limitesFuente, necesitaPiramide, calcularPiramide, ponerPiramide } = __req("src/datos/raster.js");
 const { guardar, borrar, todos, leer } = __req("src/datos/almacen.js");
 const { crsDesdeEpsg, CRS_COMUNES } = __req("src/geo/crs.js");
 const { haeAAltitud, rejillasListas, prepararRejillas } = __req("src/geo/rejillas.js");
@@ -8391,12 +8574,37 @@ function iniciarImportar({ L, mapa, fmt, alturas, dibujo, herramienta, alCambiar
       limites = limitesFuente(f);
       info = `${f.tipo} · ${f.crs.nombre} · ${f.descripcion}`;
       capa = capaRaster(L, f, { pane: 'mapasImportados' });
+      if (necesitaPiramide(f)) prepararVistas(m, f, capa, archivo);
     }
     capa.setOpacity?.(m.opacidad ?? 1);
     m.capa = capa; m.limites = limites; m.info = info; m.error = null;
     if (seleccionMapa === m) capa.options.pane = 'mapaSeleccionado';
     if (m.visible) capa.addTo(mapa);
     ponerContorno(m);
+  }
+
+  // ---------------------------------------------------------- vistas reducidas (GeoTIFF sin reducciones internas)
+  async function prepararVistas(m, f, capa, archivo) {
+    const id = `${archivo.name}|${archivo.size}|${archivo.lastModified}`;
+    const guardada = await leer('piramides', id);
+    if (guardada?.niveles) {
+      ponerPiramide(f, { niveles: guardada.niveles, teselas: new Map(Object.entries(guardada.teselas)) });
+      capa.redraw(); return;
+    }
+    m.preparando = 0; pintarMapas();
+    let ultimo = 0;
+    try {
+      const p = await calcularPiramide(f, {
+        cancelado: () => !mapas.includes(m) || m.capa !== capa,
+        alProgreso: (x) => { m.preparando = x; if (x - ultimo >= 0.02 || x === 1) { ultimo = x; pintarMapas(); } },
+      });
+      ponerPiramide(f, p);
+      capa.redraw();
+      guardar('piramides', { id, niveles: p.niveles, teselas: Object.fromEntries(p.teselas) });
+    } catch (e) {
+      if (e.message !== 'cancelado') m.aviso = `No se pudo preparar la vista de lejos: ${e.message}`;
+    }
+    m.preparando = null; pintarMapas(); ponerContorno(m);
   }
 
   // ---------------------------------------------------------- selección de un mapa
@@ -8412,7 +8620,7 @@ function iniciarImportar({ L, mapa, fmt, alturas, dibujo, herramienta, alCambiar
   function ponerContorno(m) {
     m.contorno?.remove(); m.marco?.remove(); m.contorno = m.marco = null;
     if (!m.limites || !m.visible) return;
-    const lejos = m.capa?.options.minZoom !== undefined && mapa.getZoom() < m.capa.options.minZoom;
+    const lejos = (m.capa?.options.minZoom !== undefined && mapa.getZoom() < m.capa.options.minZoom) || m.preparando != null;
     if (seleccionMapa === m) {
       m.marco = L.rectangle(limitesL(m), { pane: 'marcoMapa', className: 'marco-mapa', color: '#ff2bd6', weight: 4, fill: true, fillOpacity: 0.06, interactive: false }).addTo(mapa);
     } else if (lejos) {
@@ -8451,17 +8659,18 @@ function iniciarImportar({ L, mapa, fmt, alturas, dibujo, herramienta, alCambiar
     pintarMapas();
     return m;
   }
-  const guardable = ({ capa, info, error, marco, contorno, ...m }) => m;
+  const guardable = ({ capa, info, error, marco, contorno, preparando, aviso, ...m }) => m;
 
   function pintarMapas() {
     const caja = $('mapas-importados'); if (!caja) return;
     if (!mapas.length) { caja.innerHTML = '<p class="plan-vacio">Ninguno. Arrastra un mapa (.sqlite, .mbtiles, .tif o .jpg con su .jgw) o usa los botones.</p>'; return; }
     caja.innerHTML = mapas.map((m) => `<div class="mapa-imp${seleccionMapa === m ? ' sel' : ''}" data-m="${m.id}">
       <div class="mi-cab"><input type="checkbox" data-acc="ver" title="Ver u ocultar" ${m.visible ? 'checked' : ''} ${m.error ? 'disabled' : ''}>
-        <button type="button" class="mi-nom" data-acc="sel" aria-pressed="${seleccionMapa === m}" title="Encontrarlo en el mapa y ponerlo encima de todo" ${m.limites ? '' : 'disabled'}><b>${esc(m.nombre)}</b><small>${m.error ? `<span class="error-txt">${esc(m.error)}</span>` : esc(m.info || 'Cargando…')}</small></button></div>
+        <button type="button" class="mi-nom" data-acc="sel" aria-pressed="${seleccionMapa === m}" title="${esc(m.info ? `${m.info} · ` : '')}Clic: encontrarlo en el mapa y ponerlo encima de todo" ${m.limites ? '' : 'disabled'}><b>${esc(m.nombre)}</b>${m.error ? `<small><span class="error-txt">${esc(m.error)}</span></small>` : m.info ? '' : '<small>Cargando…</small>'}</button></div>
       ${m.error && m.handle ? '<button type="button" class="mi-btn" data-acc="permiso">Dar acceso de nuevo</button>' : ''}
-      ${!m.error && m.visible && m.fuente && m.fuente === fondo() ? `<p class="mi-nota">Es la misma imagen que el fondo ${m.fuente === 'hibrido' ? 'Híbrido' : 'Topográfico'}: encima se ve igual. Para distinguirlo, cambia el fondo o baja su opacidad.</p>` : ''}
-      ${!m.error && m.zoomMax ? `<p class="mi-nota mi-zoom">Detalle propio hasta el zoom ${m.zoomMax}; más cerca se amplía.</p>` : ''}
+      ${m.preparando != null ? `<p class="mi-nota">Preparando para verlo de lejos: ${Math.round(m.preparando * 100)} %</p>` : ''}
+      ${m.aviso ? `<p class="mi-nota">${esc(m.aviso)}</p>` : ''}
+
       <div class="mi-fila"><span>Opacidad</span><input type="range" min="10" max="100" step="5" value="${Math.round((m.opacidad ?? 1) * 100)}" data-acc="opacidad" ${m.error ? 'disabled' : ''}>
         <button type="button" class="gi-mini" data-acc="centrar" title="Centrar en el mapa" ${m.limites ? '' : 'disabled'}>⌖</button>
         <button type="button" class="gi-mini peligro" data-acc="quitar" title="Quitar">×</button></div></div>`).join('');
@@ -9904,7 +10113,7 @@ let fondoActual = null;
 let alCambiarFondo = () => {}; // la cuadrícula se pinta en blanco sobre el híbrido
 // eslint-disable-next-line prefer-const
 let importar = null;
-const VERSION = '0.6.1';
+const VERSION = '0.6.2';
 function ponerFondo(id, { automatico = false } = {}) {
   if (!capasFondo[id]) id = 'mtn';
   if (fondoActual) mapa.removeLayer(fondoActual);

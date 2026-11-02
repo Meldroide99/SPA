@@ -12,7 +12,7 @@
 import { importarDatos, esDatos } from '../datos/vectorial.js';
 import { abrirMapaTeselas } from '../datos/teselas.js';
 import { lectorBlob } from '../datos/tiff.js';
-import { fuenteGeoTiff, fuenteImagen, fuenteSuperposicion, capaRaster, limitesFuente } from '../datos/raster.js';
+import { fuenteGeoTiff, fuenteImagen, fuenteSuperposicion, capaRaster, limitesFuente, necesitaPiramide, calcularPiramide, ponerPiramide } from '../datos/raster.js';
 import { guardar, borrar, todos, leer } from '../datos/almacen.js';
 import { crsDesdeEpsg, CRS_COMUNES } from '../geo/crs.js';
 import { haeAAltitud, rejillasListas, prepararRejillas } from '../geo/rejillas.js';
@@ -285,12 +285,37 @@ export function iniciarImportar({ L, mapa, fmt, alturas, dibujo, herramienta, al
       limites = limitesFuente(f);
       info = `${f.tipo} · ${f.crs.nombre} · ${f.descripcion}`;
       capa = capaRaster(L, f, { pane: 'mapasImportados' });
+      if (necesitaPiramide(f)) prepararVistas(m, f, capa, archivo);
     }
     capa.setOpacity?.(m.opacidad ?? 1);
     m.capa = capa; m.limites = limites; m.info = info; m.error = null;
     if (seleccionMapa === m) capa.options.pane = 'mapaSeleccionado';
     if (m.visible) capa.addTo(mapa);
     ponerContorno(m);
+  }
+
+  // ---------------------------------------------------------- vistas reducidas (GeoTIFF sin reducciones internas)
+  async function prepararVistas(m, f, capa, archivo) {
+    const id = `${archivo.name}|${archivo.size}|${archivo.lastModified}`;
+    const guardada = await leer('piramides', id);
+    if (guardada?.niveles) {
+      ponerPiramide(f, { niveles: guardada.niveles, teselas: new Map(Object.entries(guardada.teselas)) });
+      capa.redraw(); return;
+    }
+    m.preparando = 0; pintarMapas();
+    let ultimo = 0;
+    try {
+      const p = await calcularPiramide(f, {
+        cancelado: () => !mapas.includes(m) || m.capa !== capa,
+        alProgreso: (x) => { m.preparando = x; if (x - ultimo >= 0.02 || x === 1) { ultimo = x; pintarMapas(); } },
+      });
+      ponerPiramide(f, p);
+      capa.redraw();
+      guardar('piramides', { id, niveles: p.niveles, teselas: Object.fromEntries(p.teselas) });
+    } catch (e) {
+      if (e.message !== 'cancelado') m.aviso = `No se pudo preparar la vista de lejos: ${e.message}`;
+    }
+    m.preparando = null; pintarMapas(); ponerContorno(m);
   }
 
   // ---------------------------------------------------------- selección de un mapa
@@ -306,7 +331,7 @@ export function iniciarImportar({ L, mapa, fmt, alturas, dibujo, herramienta, al
   function ponerContorno(m) {
     m.contorno?.remove(); m.marco?.remove(); m.contorno = m.marco = null;
     if (!m.limites || !m.visible) return;
-    const lejos = m.capa?.options.minZoom !== undefined && mapa.getZoom() < m.capa.options.minZoom;
+    const lejos = (m.capa?.options.minZoom !== undefined && mapa.getZoom() < m.capa.options.minZoom) || m.preparando != null;
     if (seleccionMapa === m) {
       m.marco = L.rectangle(limitesL(m), { pane: 'marcoMapa', className: 'marco-mapa', color: '#ff2bd6', weight: 4, fill: true, fillOpacity: 0.06, interactive: false }).addTo(mapa);
     } else if (lejos) {
@@ -345,17 +370,18 @@ export function iniciarImportar({ L, mapa, fmt, alturas, dibujo, herramienta, al
     pintarMapas();
     return m;
   }
-  const guardable = ({ capa, info, error, marco, contorno, ...m }) => m;
+  const guardable = ({ capa, info, error, marco, contorno, preparando, aviso, ...m }) => m;
 
   function pintarMapas() {
     const caja = $('mapas-importados'); if (!caja) return;
     if (!mapas.length) { caja.innerHTML = '<p class="plan-vacio">Ninguno. Arrastra un mapa (.sqlite, .mbtiles, .tif o .jpg con su .jgw) o usa los botones.</p>'; return; }
     caja.innerHTML = mapas.map((m) => `<div class="mapa-imp${seleccionMapa === m ? ' sel' : ''}" data-m="${m.id}">
       <div class="mi-cab"><input type="checkbox" data-acc="ver" title="Ver u ocultar" ${m.visible ? 'checked' : ''} ${m.error ? 'disabled' : ''}>
-        <button type="button" class="mi-nom" data-acc="sel" aria-pressed="${seleccionMapa === m}" title="Encontrarlo en el mapa y ponerlo encima de todo" ${m.limites ? '' : 'disabled'}><b>${esc(m.nombre)}</b><small>${m.error ? `<span class="error-txt">${esc(m.error)}</span>` : esc(m.info || 'Cargando…')}</small></button></div>
+        <button type="button" class="mi-nom" data-acc="sel" aria-pressed="${seleccionMapa === m}" title="${esc(m.info ? `${m.info} · ` : '')}Clic: encontrarlo en el mapa y ponerlo encima de todo" ${m.limites ? '' : 'disabled'}><b>${esc(m.nombre)}</b>${m.error ? `<small><span class="error-txt">${esc(m.error)}</span></small>` : m.info ? '' : '<small>Cargando…</small>'}</button></div>
       ${m.error && m.handle ? '<button type="button" class="mi-btn" data-acc="permiso">Dar acceso de nuevo</button>' : ''}
-      ${!m.error && m.visible && m.fuente && m.fuente === fondo() ? `<p class="mi-nota">Es la misma imagen que el fondo ${m.fuente === 'hibrido' ? 'Híbrido' : 'Topográfico'}: encima se ve igual. Para distinguirlo, cambia el fondo o baja su opacidad.</p>` : ''}
-      ${!m.error && m.zoomMax ? `<p class="mi-nota mi-zoom">Detalle propio hasta el zoom ${m.zoomMax}; más cerca se amplía.</p>` : ''}
+      ${m.preparando != null ? `<p class="mi-nota">Preparando para verlo de lejos: ${Math.round(m.preparando * 100)} %</p>` : ''}
+      ${m.aviso ? `<p class="mi-nota">${esc(m.aviso)}</p>` : ''}
+
       <div class="mi-fila"><span>Opacidad</span><input type="range" min="10" max="100" step="5" value="${Math.round((m.opacidad ?? 1) * 100)}" data-acc="opacidad" ${m.error ? 'disabled' : ''}>
         <button type="button" class="gi-mini" data-acc="centrar" title="Centrar en el mapa" ${m.limites ? '' : 'disabled'}>⌖</button>
         <button type="button" class="gi-mini peligro" data-acc="quitar" title="Quitar">×</button></div></div>`).join('');
