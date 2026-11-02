@@ -35,6 +35,9 @@ export function iniciarImportar({ L, mapa, fmt, alturas, dibujo, herramienta, al
   const DUENO = 'importados';
   if (!mapa.getPane('importados')) mapa.createPane('importados').style.zIndex = 455;
   if (!mapa.getPane('mapasImportados')) mapa.createPane('mapasImportados').style.zIndex = 250;
+  // El mapa seleccionado va por encima de todas las capas (fondo, sombreado, curvas)
+  if (!mapa.getPane('mapaSeleccionado')) mapa.createPane('mapaSeleccionado').style.zIndex = 445;
+  if (!mapa.getPane('marcoMapa')) { const p = mapa.createPane('marcoMapa'); p.style.zIndex = 480; p.style.pointerEvents = 'none'; }
 
   const grupos = [];   // datos importados
   const mapas = [];    // mapas importados
@@ -233,7 +236,7 @@ export function iniciarImportar({ L, mapa, fmt, alturas, dibujo, herramienta, al
         },
       });
       capa = new Capa({
-        pane: 'mapasImportados', minNativeZoom: t.minZoom, maxNativeZoom: t.maxZoom, maxZoom: 22, minZoom: Math.max(3, t.minZoom - 3),
+        pane: 'mapasImportados', minNativeZoom: t.minZoom, maxNativeZoom: t.maxZoom, maxZoom: 22, minZoom: Math.max(3, t.minZoom - 5),
         bounds: L.latLngBounds([limites.sur, limites.oeste], [limites.norte, limites.este]),
       });
     } else {
@@ -249,7 +252,42 @@ export function iniciarImportar({ L, mapa, fmt, alturas, dibujo, herramienta, al
     }
     capa.setOpacity?.(m.opacidad ?? 1);
     m.capa = capa; m.limites = limites; m.info = info; m.error = null;
+    if (seleccionMapa === m) capa.options.pane = 'mapaSeleccionado';
     if (m.visible) capa.addTo(mapa);
+    ponerContorno(m);
+  }
+
+  // ---------------------------------------------------------- selección de un mapa
+  let seleccionMapa = null;
+  const limitesL = (m) => L.latLngBounds([m.limites.sur, m.limites.oeste], [m.limites.norte, m.limites.este]);
+  function moverPane(m, pane) {
+    if (!m.capa || m.capa.options.pane === pane) return;
+    const vis = mapa.hasLayer(m.capa);
+    m.capa.remove(); m.capa.options.pane = pane;
+    if (vis) m.capa.addTo(mapa);
+  }
+  /** Contorno discreto: se ve cuando, por el zoom, el mapa aún no se pinta. */
+  function ponerContorno(m) {
+    m.contorno?.remove(); m.marco?.remove(); m.contorno = m.marco = null;
+    if (!m.limites || !m.visible) return;
+    const lejos = m.capa?.options.minZoom !== undefined && mapa.getZoom() < m.capa.options.minZoom;
+    if (seleccionMapa === m) {
+      m.marco = L.rectangle(limitesL(m), { pane: 'marcoMapa', className: 'marco-mapa', color: '#ff2bd6', weight: 4, fill: true, fillOpacity: 0.06, interactive: false }).addTo(mapa);
+    } else if (lejos) {
+      m.contorno = L.rectangle(limitesL(m), { pane: 'marcoMapa', color: '#ff2bd6', weight: 1.5, dashArray: '6 5', opacity: 0.8, fill: false, interactive: false }).addTo(mapa);
+    }
+  }
+  mapa.on('zoomend', () => mapas.forEach(ponerContorno));
+  function seleccionarMapa(m, { centrar = true } = {}) {
+    const antes = seleccionMapa;
+    if (antes && antes !== m) { seleccionMapa = null; moverPane(antes, 'mapasImportados'); ponerContorno(antes); }
+    if (antes === m && !centrar) { seleccionMapa = null; moverPane(m, 'mapasImportados'); ponerContorno(m); pintarMapas(); return; }
+    seleccionMapa = m;
+    if (!m.visible && m.capa) { m.visible = true; m.capa.addTo(mapa); guardar('mapas', guardable(m)); }
+    moverPane(m, 'mapaSeleccionado');
+    ponerContorno(m);
+    if (centrar && m.limites) mapa.flyToBounds(limitesL(m), { padding: [60, 60], duration: 0.8 });
+    pintarMapas();
   }
 
   async function anadirMapa(m, { centrar = true } = {}) {
@@ -271,14 +309,14 @@ export function iniciarImportar({ L, mapa, fmt, alturas, dibujo, herramienta, al
     pintarMapas();
     return m;
   }
-  const guardable = ({ capa, info, error, ...m }) => m;
+  const guardable = ({ capa, info, error, marco, contorno, ...m }) => m;
 
   function pintarMapas() {
     const caja = $('mapas-importados'); if (!caja) return;
     if (!mapas.length) { caja.innerHTML = '<p class="plan-vacio">Ninguno. Arrastra un mapa (.sqlite, .mbtiles, .tif o .jpg con su .jgw) o usa los botones.</p>'; return; }
-    caja.innerHTML = mapas.map((m) => `<div class="mapa-imp" data-m="${m.id}">
-      <label class="sup"><input type="checkbox" data-acc="ver" ${m.visible ? 'checked' : ''} ${m.error ? 'disabled' : ''}>
-        <span class="txt"><b>${esc(m.nombre)}</b><small>${m.error ? `<span class="error-txt">${esc(m.error)}</span>` : esc(m.info || 'Cargando…')}</small></span></label>
+    caja.innerHTML = mapas.map((m) => `<div class="mapa-imp${seleccionMapa === m ? ' sel' : ''}" data-m="${m.id}">
+      <div class="mi-cab"><input type="checkbox" data-acc="ver" title="Ver u ocultar" ${m.visible ? 'checked' : ''} ${m.error ? 'disabled' : ''}>
+        <button type="button" class="mi-nom" data-acc="sel" aria-pressed="${seleccionMapa === m}" title="Encontrarlo en el mapa y ponerlo encima de todo" ${m.limites ? '' : 'disabled'}><b>${esc(m.nombre)}</b><small>${m.error ? `<span class="error-txt">${esc(m.error)}</span>` : esc(m.info || 'Cargando…')}</small></button></div>
       ${m.error && m.handle ? '<button type="button" class="mi-btn" data-acc="permiso">Dar acceso de nuevo</button>' : ''}
       <div class="mi-fila"><span>Opacidad</span><input type="range" min="10" max="100" step="5" value="${Math.round((m.opacidad ?? 1) * 100)}" data-acc="opacidad" ${m.error ? 'disabled' : ''}>
         <button type="button" class="gi-mini" data-acc="centrar" title="Centrar en el mapa" ${m.limites ? '' : 'disabled'}>⌖</button>
@@ -288,15 +326,20 @@ export function iniciarImportar({ L, mapa, fmt, alturas, dibujo, herramienta, al
     const caja = ev.target.closest('[data-m]'); if (!caja) return;
     const m = mapas.find((x) => x.id === caja.dataset.m); const acc = ev.target.closest('[data-acc]')?.dataset.acc;
     if (!m || !acc) return;
-    if (acc === 'centrar' && m.limites) mapa.flyToBounds([[m.limites.sur, m.limites.oeste], [m.limites.norte, m.limites.este]], { padding: [30, 30], duration: 0.7 });
-    if (acc === 'quitar') { m.capa?.remove(); mapas.splice(mapas.indexOf(m), 1); borrar('mapas', m.id); pintarMapas(); }
+    if (acc === 'sel' && m.limites) seleccionarMapa(m, { centrar: seleccionMapa !== m });
+    if (acc === 'centrar' && m.limites) seleccionarMapa(m);
+    if (acc === 'quitar') {
+      if (seleccionMapa === m) seleccionMapa = null;
+      m.capa?.remove(); m.marco?.remove(); m.contorno?.remove();
+      mapas.splice(mapas.indexOf(m), 1); borrar('mapas', m.id); pintarMapas();
+    }
     if (acc === 'permiso' && m.handle) {
       if ((await m.handle.requestPermission?.({ mode: 'read' })) === 'granted') { try { await crearCapaMapa(m); } catch (e) { m.error = e.message; } pintarMapas(); }
     }
   });
   $('mapas-importados')?.addEventListener('change', (ev) => {
     const m = mapas.find((x) => x.id === ev.target.closest('[data-m]')?.dataset.m); if (!m) return;
-    if (ev.target.dataset.acc === 'ver') { m.visible = ev.target.checked; if (m.visible) m.capa?.addTo(mapa); else m.capa?.remove(); guardar('mapas', guardable(m)); }
+    if (ev.target.dataset.acc === 'ver') { m.visible = ev.target.checked; if (m.visible) m.capa?.addTo(mapa); else m.capa?.remove(); ponerContorno(m); guardar('mapas', guardable(m)); }
   });
   $('mapas-importados')?.addEventListener('input', (ev) => {
     const m = mapas.find((x) => x.id === ev.target.closest('[data-m]')?.dataset.m); if (!m || ev.target.dataset.acc !== 'opacidad') return;
@@ -488,5 +531,32 @@ export function iniciarImportar({ L, mapa, fmt, alturas, dibujo, herramienta, al
     catalogo = await leer('catalogo', 'carpeta');
   })();
 
-  return { procesar, puntosVisibles, grupos, mapas, abrirBuscador, cerrarFicha };
+  /** Candidatos para el buscador universal. */
+  function candidatosBusqueda() {
+    const out = [];
+    const nomTipo = { punto: 'punto', linea: 'línea track ruta', area: 'área', circulo: 'círculo' };
+    for (const g of grupos) {
+      out.push({ grupo: 'Archivos', texto: g.nombre, extra: `${g.formato} archivo importado`, detalle: `${g.formato} · ${g.elementos.length} elementos`, accion: () => { g.visible = true; g.capa.addTo(mapa); const b = limitesGrupo(g); if (b) mapa.flyToBounds(b, { padding: [60, 60], maxZoom: 15, duration: 0.7 }); pintarGrupos(); } });
+      g.elementos.forEach((e, i) => { if (e.nombre) out.push({ grupo: 'Archivos', texto: e.nombre, extra: `${nomTipo[e.tipo]} ${g.nombre}`, detalle: `${nomTipo[e.tipo].split(' ')[0]} de «${g.nombre}»`, accion: () => { if (!g.visible) { g.visible = true; g.capa.addTo(mapa); } seleccionar(g, i, { centrar: true }); } }); });
+    }
+    for (const m of mapas) out.push({ grupo: 'Mapas', texto: m.nombre, extra: `mapa importado ${m.info || ''}`, detalle: m.info || '', accion: () => m.limites && seleccionarMapa(m) });
+    for (const [k, a] of (catalogo?.archivos || []).entries()) {
+      if (mapas.some((m) => m.nombre === a.nombre)) continue;
+      out.push({ grupo: 'Mis mapas (carpeta)', texto: a.nombre, extra: `mapa carpeta ${a.ruta} ${a.tipo || ''}`, detalle: `${a.ruta}${a.tamano ? ` · ${tam(a.tamano)}` : ''}`, accion: () => abrirDeCatalogo(k) });
+    }
+    return out;
+  }
+  async function abrirDeCatalogo(k) {
+    const a = catalogo.archivos[k];
+    if (a.convertir) { mostrarAvisos([`${a.nombre}: hay que convertirlo a GeoTIFF para poder verlo.`]); return; }
+    if (catalogo.handle.queryPermission && (await catalogo.handle.queryPermission({ mode: 'read' })) !== 'granted') {
+      if ((await catalogo.handle.requestPermission({ mode: 'read' })) !== 'granted') return;
+    }
+    const entradas = [{ archivo: await a.handle.getFile(), handle: a.handle }];
+    const dir = a.ruta.replace(/[^/]+$/, '');
+    for (const x of (catalogo.acompanantes || [])) if (x.ruta.startsWith(dir) && base(x.nombre) === base(a.nombre)) entradas.push({ archivo: await x.handle.getFile() });
+    await procesar(entradas);
+  }
+
+  return { procesar, puntosVisibles, grupos, mapas, abrirBuscador, cerrarFicha, candidatosBusqueda, seleccionarMapa };
 }

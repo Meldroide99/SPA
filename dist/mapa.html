@@ -771,8 +771,13 @@ body.app-mapa { overflow: hidden; }
 .buscar input::placeholder { color: rgba(255,255,255,.55); font-family: var(--sans); }
 .buscar input:focus { outline: none; background: rgba(255,255,255,.16); border-color: var(--oro-claro); }
 .buscar button { border: 1px solid var(--oro-claro); background: var(--oro); color: #fff; padding: 0 14px; border-radius: 0 var(--radio) var(--radio) 0; font-weight: 600; cursor: pointer; }
-.buscar-error { position: absolute; top: calc(100% + 6px); left: 0; right: 0; background: var(--error-suave); color: var(--error); border: 1px solid #ecc8c2; border-radius: var(--radio); padding: 6px 10px; font-size: 13px; display: none; }
-.buscar-error.visible { display: block; }
+.buscar-res { position: absolute; top: calc(100% + 6px); left: 0; right: 0; max-height: min(460px, 70vh); overflow: auto; background: var(--superficie); color: var(--tinta); border: 1px solid var(--linea); border-radius: 8px; box-shadow: 0 16px 40px -16px rgba(0,0,0,.35); padding: 4px; z-index: 1200; }
+.br-grupo { font-size: 10.5px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--gris); padding: 8px 10px 3px; }
+.buscar .br-item { display: grid; width: 100%; text-align: left; border: 0; background: none; border-radius: 6px; padding: 6px 10px; cursor: pointer; color: var(--tinta); font-weight: 400; }
+.buscar .br-item b { font-size: 13.5px; font-weight: 600; }
+.buscar .br-item small { font-size: 11.5px; color: var(--gris); }
+.buscar .br-item[aria-selected="true"], .buscar .br-item:hover { background: var(--oro-suave); }
+.br-vacio { padding: 10px 12px; font-size: 13px; color: var(--gris); }
 .sup-der { margin-left: auto; position: relative; }
 .btn-ajustes { display: flex; align-items: center; gap: 7px; border: 1px solid rgba(255,255,255,.25); background: rgba(255,255,255,.08); color: #fff; border-radius: var(--radio); padding: 6px 11px; font-size: 13px; font-weight: 600; cursor: pointer; }
 .btn-ajustes svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.6; }
@@ -801,7 +806,13 @@ body.app-mapa { overflow: hidden; }
 .zona-piloto-etq { font: 600 11px/1 var(--sans); letter-spacing: .08em; text-transform: uppercase; color: var(--oro-tinta); background: var(--oro-suave); border: 1px solid var(--oro-claro); padding: 4px 7px; border-radius: 3px; white-space: nowrap; width: auto !important; height: auto !important; }
 
 /* Herramientas (barra horizontal arriba a la izquierda) */
-.herramientas { position: absolute; z-index: 1000; left: 12px; top: 12px; display: flex; gap: 6px; max-width: calc(100% - 310px); overflow-x: auto; scrollbar-width: none; }
+.herramientas { position: absolute; z-index: 1010; left: 12px; top: 10px; display: flex; gap: 6px; max-width: calc(100% - 310px); overflow-x: auto; scrollbar-width: none;
+  transform: translateY(calc(-100% - 16px)); opacity: 0; pointer-events: none; transition: transform .28s var(--curva), opacity .2s; }
+.herramientas.visible { transform: none; opacity: 1; pointer-events: auto; }
+.herr-pista { position: absolute; z-index: 1005; left: 12px; top: 8px; display: flex; align-items: center; gap: 4px; border: 1px solid var(--linea-2); background: rgba(255,255,255,.92); border-radius: 999px; padding: 3px 8px 3px 11px; font-size: 11.5px; font-weight: 600; color: var(--tinta-2); box-shadow: var(--sombra); cursor: pointer; transition: opacity .2s; }
+.herr-pista svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; }
+.herr-pista.activa { background: var(--noche); color: #fff; border-color: var(--noche); }
+body.herr-visibles .herr-pista { opacity: 0; }
 .h-grupo { display: flex; background: var(--superficie); border: 1px solid var(--linea-2); border-radius: 7px; box-shadow: var(--sombra); overflow: hidden; flex: none; }
 .herramientas button { display: grid; justify-items: center; align-content: center; gap: 3px; width: 60px; height: 52px; padding: 6px 2px 5px; background: none; border: 0; border-left: 1px solid var(--linea); cursor: pointer; font-size: 10.5px; font-weight: 600; color: var(--tinta-2); }
 .herramientas button:first-child { border-left: 0; }
@@ -827,8 +838,7 @@ body.app-mapa { overflow: hidden; }
 .muestra-mtn { background: repeating-linear-gradient(35deg, #efe6cf 0 6px, #e7dcbf 6px 7px), #efe6cf; }
 .muestra-ortofoto { background: radial-gradient(circle at 30% 40%, #6e7b52, #4a5638 60%, #3c4430); }
 .muestra-base { background: linear-gradient(90deg, transparent 46%, #fff 46% 54%, transparent 54%), linear-gradient(0deg, transparent 46%, #f6d58c 46% 54%, transparent 54%), #f2efe9; }
-.muestra-relieve { background: radial-gradient(ellipse at 35% 35%, #fafafa, #b9b9b9 55%, #8f8f8f); }
-.muestra-satelite { background: radial-gradient(circle at 70% 30%, #5d6b45, #39432b 55%, #2a3122); }
+.muestra-relieve { background: linear-gradient(135deg, #f4f2ee 0 30%, #bdbab3 30% 45%, #e6e3dc 45% 60%, #9e9b94 60% 70%, #dcd9d2 70%); }
 .muestra-hibrido { background: linear-gradient(120deg, transparent 44%, #f4d27a 44% 50%, transparent 50%), radial-gradient(circle at 70% 30%, #5d6b45, #39432b 55%, #2a3122); }
 .sup { display: flex; align-items: center; gap: 10px; padding: 7px 4px; border-top: 1px solid var(--linea); cursor: pointer; }
 .sup:first-child { border-top: 0; }
@@ -838,7 +848,7 @@ body.app-mapa { overflow: hidden; }
 .sup .txt small { font-size: 11.5px; color: var(--gris); }
 
 /* Panel de medida */
-.panel-medida { position: absolute; z-index: 1000; left: 12px; top: 76px; transition: left .15s var(--curva); width: min(360px, calc(100% - 24px)); max-height: calc(100% - 150px); overflow: auto; background: var(--superficie); border: 1px solid var(--linea); border-radius: 8px; box-shadow: var(--sombra); padding: 12px 14px; }
+.panel-medida { position: absolute; z-index: 1000; left: 12px; top: 44px; transition: left .15s var(--curva); width: min(360px, calc(100% - 24px)); max-height: calc(100% - 150px); overflow: auto; background: var(--superficie); border: 1px solid var(--linea); border-radius: 8px; box-shadow: var(--sombra); padding: 12px 14px; }
 .pm-cab { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
 .pm-cab strong { font: 400 20px/1 var(--serif); }
 .pm-cab span { font-size: 12px; color: var(--gris); }
@@ -976,7 +986,7 @@ body.app-mapa { overflow: hidden; }
 .aviso-breve { position: absolute; z-index: 1003; left: 50%; bottom: 18px; transform: translateX(-50%); background: var(--noche); color: #fff; padding: 8px 14px; border-radius: 999px; font-size: 13px; box-shadow: var(--sombra); white-space: nowrap; max-width: calc(100% - 24px); overflow: hidden; text-overflow: ellipsis; }
 
 /* Panel «Plan» (izquierda) */
-.panel-plan { position: absolute; z-index: 1000; left: 12px; top: 76px; width: 300px; max-height: calc(100% - 150px); overflow: auto; background: var(--superficie); border: 1px solid var(--linea); border-radius: 8px; box-shadow: var(--sombra); padding: 10px 12px 12px; }
+.panel-plan { position: absolute; z-index: 1000; left: 12px; top: 44px; width: 300px; max-height: calc(100% - 150px); overflow: auto; background: var(--superficie); border: 1px solid var(--linea); border-radius: 8px; box-shadow: var(--sombra); padding: 10px 12px 12px; }
 .pp-cab { display: flex; justify-content: space-between; align-items: center; }
 .pp-cab strong { font: 400 20px/1 var(--serif); }
 body.plan-abierto .panel-elemento, body.plan-abierto #panel-medida { left: 324px; }
@@ -1076,6 +1086,34 @@ body.plan-abierto .panel-elemento, body.plan-abierto #panel-medida { left: 324px
 /* Lo oculto siempre oculto, aunque su clase le dé otro display */
 [hidden] { display: none !important; }
 
+/* Panel de capas en desplegables */
+.panel-capas .panel-cuerpo { padding: 0 8px 10px; }
+.seccion { border-top: 1px solid var(--linea); }
+.seccion > summary { display: flex; align-items: center; gap: 8px; list-style: none; cursor: pointer; padding: 10px 6px; font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--tinta-2); }
+.seccion > summary::-webkit-details-marker { display: none; }
+.seccion > summary::before { content: ''; width: 7px; height: 7px; border-right: 2px solid var(--oro); border-bottom: 2px solid var(--oro); transform: rotate(-45deg); transition: transform .2s; flex: none; margin-right: 2px; }
+.seccion[open] > summary::before { transform: rotate(45deg); }
+.seccion > summary:hover { color: var(--noche); }
+.sec-val { margin-left: auto; font-size: 11px; font-weight: 600; letter-spacing: 0; text-transform: none; color: var(--gris); }
+.sec-cuerpo { padding: 0 4px 6px; }
+.opc-hibrido { margin: 8px 0 2px; padding: 8px; background: var(--hundido); border-radius: 6px; }
+.oh-tit { font-size: 11px; font-weight: 600; color: var(--gris); margin-bottom: 5px; }
+.seg-imagen { display: flex; width: 100%; }
+.seg-imagen button { flex: 1; padding: 4px 6px; font-size: 12px; }
+.oh-fecha { font-size: 11.5px; color: var(--tinta-2); margin: 6px 2px 0; min-height: 15px; }
+.opc-hibrido .sup { border-top: 0; padding-bottom: 0; }
+
+/* Mapas importados: selección */
+.mi-cab { display: flex; align-items: center; gap: 8px; padding: 6px 4px 2px; }
+.mi-cab input { accent-color: var(--noche); width: 16px; height: 16px; flex: none; margin: 0; }
+.mi-nom { display: grid; text-align: left; border: 1px solid transparent; background: none; border-radius: 6px; padding: 3px 6px; cursor: pointer; min-width: 0; flex: 1; }
+.mi-nom b { font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mi-nom small { font-size: 11px; color: var(--gris); }
+.mi-nom:hover { background: var(--hundido); }
+.mapa-imp.sel .mi-nom { border-color: #ff2bd6; background: #fff0fc; }
+.marco-mapa { animation: marco 1s ease-in-out 4; }
+@keyframes marco { 0%, 100% { stroke-width: 4px; stroke-opacity: 1; } 50% { stroke-width: 10px; stroke-opacity: .55; } }
+
 </style>
 </head>
 <body class="app-mapa">
@@ -1083,9 +1121,9 @@ body.plan-abierto .panel-elemento, body.plan-abierto #panel-medida { left: 324px
   <header class="barra-sup">
     <div class="marca"><span class="sello-spa">SPA</span><span class="marca-txt"><strong>Mapa piloto</strong><small>Planeamiento · S3</small></span></div>
     <form class="buscar" id="buscar" autocomplete="off">
-      <input id="buscar-txt" spellcheck="false" placeholder="Ir a… MGRS, UTM o geográficas" aria-label="Ir a una posición">
+      <input id="buscar-txt" spellcheck="false" placeholder="Buscar: coordenadas, archivos, puntos, mapas, ajustes…" aria-label="Buscar" aria-autocomplete="list" aria-controls="buscar-res">
       <button type="submit">Ir</button>
-      <div class="buscar-error" id="buscar-error" role="alert"></div>
+      <div class="buscar-res" id="buscar-res" hidden role="listbox"></div>
     </form>
     <div class="sup-der">
       <button type="button" class="btn-ajustes" id="btn-ajustes" aria-expanded="false" aria-controls="ajustes" title="Ajustes">
@@ -1109,7 +1147,9 @@ body.plan-abierto .panel-elemento, body.plan-abierto #panel-medida { left: 324px
   <div id="contenido">
     <div id="mapa" aria-label="Mapa"></div>
 
-    <div class="herramientas" role="toolbar" aria-label="Herramientas">
+    <div class="herr-zona" id="herr-zona"></div>
+    <button type="button" class="herr-pista" id="herr-pista" title="Herramientas (acerca el ratón arriba)"><span id="herr-actual">Mover</span><svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button>
+    <div class="herramientas" id="herramientas" role="toolbar" aria-label="Herramientas">
       <div class="h-grupo">
         <button type="button" data-herr="consultar" aria-pressed="true" title="Mover el mapa y seleccionar elementos">
           <svg viewBox="0 0 24 24"><path d="M5 3l13 8-6 1.5L9 19z"/></svg><span>Mover</span></button>
@@ -1158,18 +1198,35 @@ body.plan-abierto .panel-elemento, body.plan-abierto #panel-medida { left: 324px
       <button type="button" class="panel-tit" id="capas-toggle" aria-expanded="true">
         <svg viewBox="0 0 24 24"><path d="M12 3 2 8l10 5 10-5z"/><path d="m2 13 10 5 10-5"/></svg>Capas</button>
       <div class="panel-cuerpo" id="capas-cuerpo">
-        <div class="grupo-tit">Fondo</div>
-        <div class="fondos" id="fondos"></div>
-        <label class="sup sup-auto"><input type="checkbox" id="mtn-detalle">
-          <span class="txt"><b>Mantener detalle 1:25.000</b><small>Topográfico: sigue mostrando el MTN25 al alejarte (hasta zoom 13)</small></span></label>
-        <label class="sup sup-auto"><input type="checkbox" id="fondo-auto">
-          <span class="txt"><b>Ortofoto al acercarte</b><small>Desde zoom 17 pasa a ortofoto y al alejarte vuelve a tu mapa</small></span></label>
-        <div class="grupo-tit">Mapas importados</div>
-        <div id="mapas-importados"></div>
-        <div class="pm-acciones"><button type="button" id="btn-importar-mapa">Importar mapa…</button><button type="button" id="btn-buscar-mapas">Buscar en mis mapas…</button></div>
-        <input type="file" id="entrada-mapa" multiple hidden accept=".sqlite,.mbtiles,.db,.tif,.tiff,.jpg,.jpeg,.png,.jgw,.pgw,.tfw,.wld,.prj,.ecw,.jp2">
-        <div class="grupo-tit">Encima</div>
-        <div class="superpuestas" id="superpuestas"></div>
+        <details class="seccion" data-sec="fondo" open>
+          <summary><span>Fondo</span><span class="sec-val" id="fondo-actual"></span></summary>
+          <div class="sec-cuerpo">
+            <div class="fondos" id="fondos"></div>
+            <div class="opc-hibrido" id="opc-hibrido">
+              <div class="oh-tit">Imagen del híbrido</div>
+              <div class="seg seg-imagen" id="imagen-fuente"></div>
+              <div class="oh-fecha" id="imagen-fecha"></div>
+              <label class="sup sup-auto"><input type="checkbox" id="rotulos"><span class="txt"><b>Nombres y carreteras</b><small>Rótulos encima de la imagen</small></span></label>
+            </div>
+            <label class="sup sup-auto"><input type="checkbox" id="mtn-detalle">
+              <span class="txt"><b>Mantener detalle 1:25.000</b><small>Topográfico: sigue mostrando el MTN25 al alejarte (hasta zoom 13)</small></span></label>
+            <label class="sup sup-auto"><input type="checkbox" id="fondo-auto">
+              <span class="txt"><b>Híbrido al acercarte</b><small>Desde zoom 17 pasa al híbrido y al alejarte vuelve a tu mapa</small></span></label>
+          </div>
+        </details>
+        <details class="seccion" data-sec="mapas">
+          <summary><span>Mapas</span><span class="sec-val" id="mapas-cuenta"></span></summary>
+          <div class="sec-cuerpo">
+            <label class="sup"><input type="checkbox" data-id="piloto" id="sup-piloto"><span class="txt"><b>Zona piloto</b><small>Guadarrama, unos 20 × 20 km</small></span></label>
+            <div id="mapas-importados"></div>
+            <div class="pm-acciones"><button type="button" id="btn-importar-mapa">Importar mapa…</button><button type="button" id="btn-buscar-mapas">Buscar en mis mapas…</button></div>
+            <input type="file" id="entrada-mapa" multiple hidden accept=".sqlite,.mbtiles,.db,.tif,.tiff,.jpg,.jpeg,.png,.jgw,.pgw,.tfw,.wld,.prj,.ecw,.jp2">
+          </div>
+        </details>
+        <details class="seccion" data-sec="visual">
+          <summary><span>Visualización</span><span class="sec-val" id="visual-cuenta"></span></summary>
+          <div class="sec-cuerpo"><div class="superpuestas" id="superpuestas"></div></div>
+        </details>
       </div>
     </aside>
 
@@ -4650,22 +4707,20 @@ return { ...__req("src/geo/constantes.js"), ...__req("src/geo/angulos.js"), ..._
 // ── src/mapa/capas.js
 __mods["src/mapa/capas.js"] = (function () {
 'use strict';
-// Catálogo de capas cartográficas (servicios públicos del IGN y la IDEE).
+// Catálogo de capas cartográficas.
 //
-// Fuentes de los nombres de servicio y de capa:
-//   - IGN, "API de Google Maps con servicios IDE" (ign.es/web/ign/portal/ide-api-google):
-//     pnoa-ma → OI.OrthoimageCoverage; mapa-raster → MTN; TileMatrixSet
-//     GoogleMapsCompatible; formato image/jpeg.
-//   - Catálogo de proveedores del paquete mapSpain (rOpenSpain), que recoge
-//     ign-base (IGNBaseTodo), servicios.idee.es/wmts/mdt (Relieve) y
-//     wms-inspire/mdt (EL.ContourLine).
-// Todos son servicios WMTS/WMS oficiales y gratuitos. El navegador del usuario
-// los pide directamente al IGN; la aplicación no guarda ni copia teselas.
+// Fondos (se elige uno): Topográfico (IGN), Híbrido (imagen + rótulos),
+// Mapa base (IGN) y Relieve (sombreado propio con el MDT05 del IGN, ver
+// relieve.js). Encima: sombreado, curvas de nivel, cuadrícula MGRS.
+//
+// La imagen del Híbrido se elige: Google, IGN PNOA, Esri o Bing. Solo el IGN
+// y Esri publican la fecha de su imagen (se consulta para el centro del mapa).
+// Google y Bing: acceso no oficial a sus teselas (sus condiciones no lo
+// permiten y pueden cortarlo); decisión de Balú por calidad de imagen.
 //
 // IMPORTANTE (precisión): el mapa se PINTA en la proyección web (EPSG:3857),
 // pero TODAS las coordenadas, la cuadrícula MGRS, distancias y rumbos se
-// calculan con el motor geodésico sobre el elipsoide WGS84. La proyección de
-// pantalla no afecta a ningún número que se muestre.
+// calculan con el motor geodésico sobre el elipsoide WGS84.
 
 const ATRIB_IGN = '© <a href="https://www.ign.es" target="_blank" rel="noopener">Instituto Geográfico Nacional</a> · CC BY 4.0 scne.es';
 const ATRIB_IDEE = '© <a href="https://www.idee.es" target="_blank" rel="noopener">IGN · IDEE</a> · CC BY 4.0 scne.es';
@@ -4679,9 +4734,7 @@ function wmts(base, capa, formato) {
 /** Mapas de fondo (se elige uno). */
 const FONDOS = [
   {
-    id: 'mtn',
-    nombre: 'Topográfico',
-    detalle: 'Mapa Topográfico Nacional (MTN25 en zoom alto)',
+    id: 'mtn', nombre: 'Topográfico', detalle: 'Mapa Topográfico Nacional del IGN (MTN25 en zoom alto)',
     // PNG: más nítido que JPEG (texto y líneas finas sin artefactos)
     url: wmts('https://www.ign.es/wmts/mapa-raster', 'MTN', 'image/png'),
     atribucion: ATRIB_IGN, maxNativo: 17, max: 19,
@@ -4689,97 +4742,54 @@ const FONDOS = [
     // en 14 y 13. «Mantener detalle» pinta en 13–14 las teselas de zoom 15.
     zoomDetalle: 15, zoomDetalleMin: 13,
   },
+  { id: 'hibrido', nombre: 'Híbrido', detalle: 'Imagen aérea o de satélite con nombres y carreteras', tipo: 'hibrido' },
   {
-    id: 'ortofoto',
-    nombre: 'Ortofoto',
-    detalle: 'PNOA máxima actualidad',
-    url: wmts('https://www.ign.es/wmts/pnoa-ma', 'OI.OrthoimageCoverage', 'image/jpeg'),
-    atribucion: ATRIB_IGN, maxNativo: 19, max: 20,
-    // Si el WMTS no responde, se prueba la MISMA ortofoto por el servicio WMS
-    // del IGN, y como último recurso la imagen de satélite de Esri.
-    alternativas: ['ortofoto-wms', 'satelite-esri'],
-  },
-  {
-    id: 'satelite',
-    nombre: 'Satélite',
-    detalle: 'Google satélite (acceso no oficial: Google puede cortarlo)',
-    url: 'https://mt{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', subdominios: '0123',
-    atribucion: 'Imágenes © Google', maxNativo: 20, max: 21,
-  },
-  {
-    id: 'hibrido',
-    nombre: 'Híbrido',
-    detalle: 'Google satélite con nombres y carreteras (acceso no oficial)',
-    url: 'https://mt{s}.google.com/vt/lyrs=y&hl=es&x={x}&y={y}&z={z}', subdominios: '0123',
-    atribucion: 'Imágenes y datos © Google', maxNativo: 20, max: 21,
-  },
-  {
-    id: 'base',
-    nombre: 'Mapa base',
-    detalle: 'IGN Base: callejero y topografía vectorial',
+    id: 'base', nombre: 'Mapa base', detalle: 'IGN Base: callejero y topografía vectorial',
     url: wmts('https://www.ign.es/wmts/ign-base', 'IGNBaseTodo', 'image/png'),
     atribucion: ATRIB_IGN, maxNativo: 17, max: 19,
   },
-  {
-    id: 'relieve',
-    nombre: 'Relieve',
-    detalle: 'Sombreado del Modelo Digital del Terreno',
-    url: wmts('https://servicios.idee.es/wmts/mdt', 'Relieve', 'image/png'),
-    atribucion: ATRIB_IDEE, maxNativo: 17, max: 19,
-  },
+  { id: 'relieve', nombre: 'Relieve', detalle: 'Sombreado calculado con el MDT del IGN (5 m al acercarse)', tipo: 'relieve' },
 ];
 
-/**
- * Rutas alternativas (no salen en el selector; se usan si la principal falla
- * o si el usuario las elige desde el aviso de diagnóstico).
- */
-const ALTERNATIVAS = [
-  {
-    id: 'ortofoto-wms',
-    nombre: 'Ortofoto (IGN, vía WMS)',
-    detalle: 'PNOA máxima actualidad por el servicio WMS del IGN',
-    tipo: 'wms', url: 'https://www.ign.es/wms-inspire/pnoa-ma', capas: 'OI.OrthoimageCoverage',
-    formato: 'image/jpeg', transparente: false, atribucion: ATRIB_IGN,
+/** Imágenes para el Híbrido. */
+const IMAGENES = {
+  google: {
+    nombre: 'Google', detalle: 'Google satélite (fecha no publicada)',
+    url: 'https://mt{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', subdominios: '0123',
+    atribucion: 'Imágenes © Google', maxNativo: 20, max: 21,
   },
-  {
-    id: 'satelite-esri',
-    nombre: 'Satélite (Esri)',
-    detalle: 'Esri World Imagery. Útil fuera de España o si el IGN no responde',
+  pnoa: {
+    nombre: 'IGN PNOA', detalle: 'Ortofoto PNOA de máxima actualidad del IGN (25 cm o mejor; fecha conocida)',
+    url: wmts('https://www.ign.es/wmts/pnoa-ma', 'OI.OrthoimageCoverage', 'image/jpeg'),
+    atribucion: ATRIB_IGN, maxNativo: 19, max: 21, fecha: 'pnoa',
+  },
+  esri: {
+    nombre: 'Esri', detalle: 'Esri World Imagery (fecha conocida)',
     url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-    atribucion: 'Imágenes: Esri, Maxar, Earthstar Geographics y colaboradores · Powered by Esri',
-    maxNativo: 19, max: 20,
+    atribucion: 'Imágenes: Esri, Maxar, Earthstar Geographics y colaboradores', maxNativo: 19, max: 21, fecha: 'esri',
   },
-];
+  bing: {
+    nombre: 'Bing', detalle: 'Bing aéreo (fecha no publicada)',
+    quadkey: 'https://ecn.t{s}.tiles.virtualearth.net/tiles/a{q}.jpeg?g=14000', subdominios: '0123',
+    atribucion: 'Imágenes © Microsoft', maxNativo: 19, max: 21,
+  },
+};
 
-/** Capas superpuestas (se pueden activar varias). */
+/** Rótulos (nombres, carreteras) transparentes para poner sobre la imagen. */
+const ROTULOS = {
+  url: 'https://mt{s}.google.com/vt/lyrs=h&hl=es&x={x}&y={y}&z={z}', subdominios: '0123',
+  atribucion: 'Rótulos © Google', maxNativo: 20, max: 21,
+};
+
+/** Capas superpuestas del IGN (se pueden activar varias). */
 const SUPERPUESTAS = [
   {
-    id: 'sombreado',
-    nombre: 'Sombreado',
-    detalle: 'Relieve semitransparente sobre el fondo',
-    tipo: 'wmts',
-    url: wmts('https://servicios.idee.es/wmts/mdt', 'Relieve', 'image/png'),
-    atribucion: ATRIB_IDEE, opacidad: 0.35, mezcla: 'multiply', maxNativo: 17,
-  },
-  {
-    id: 'curvas',
-    nombre: 'Curvas de nivel',
-    detalle: 'MDT del IGN (visibles desde zoom 12)',
-    tipo: 'wms',
-    url: 'https://servicios.idee.es/wms-inspire/mdt',
-    capas: 'EL.ContourLine',
-    atribucion: ATRIB_IDEE, opacidad: 0.9, zoomMin: 12,
-  },
-  {
-    id: 'vertices',
-    nombre: 'Vértices geodésicos',
-    detalle: 'Red REGENTE del IGN (en pruebas)',
-    tipo: 'wms',
-    url: 'https://www.ign.es/wms-inspire/redes-geodesicas',
-    capas: 'RED_REGENTE',
-    atribucion: ATRIB_IGN, opacidad: 1, zoomMin: 9,
+    id: 'curvas', nombre: 'Curvas de nivel', detalle: 'MDT del IGN (visibles desde zoom 12)',
+    tipo: 'wms', url: 'https://servicios.idee.es/wms-inspire/mdt', capas: 'EL.ContourLine',
+    atribucion: ATRIB_IDEE, opacidad: 0.9, zoomMin: 12, zIndex: 4,
   },
 ];
+const ATRIBUCION_MDT = ATRIB_IDEE;
 
 /** Zona piloto A — Sierra de Guadarrama (Cercedilla–Navacerrada). */
 const ZONA_PILOTO = {
@@ -4787,23 +4797,43 @@ const ZONA_PILOTO = {
   sur: 40.70, norte: 40.88, oeste: -4.15, este: -3.91,
 };
 
-/** Crea la capa Leaflet de un fondo o de una superpuesta. */
+/** Crea una capa de teselas (o WMS) a partir de su definición. */
 function crearCapa(L, def) {
   if (def.tipo === 'wms') {
     return L.tileLayer.wms(def.url, {
       layers: def.capas, format: def.formato ?? 'image/png', transparent: def.transparente ?? true, version: '1.3.0',
-      opacity: def.opacidad ?? 1, minZoom: def.zoomMin ?? 0, maxZoom: 21,
+      opacity: def.opacidad ?? 1, minZoom: def.zoomMin ?? 0, maxZoom: 21, zIndex: def.zIndex ?? 1,
       attribution: def.atribucion,
     });
   }
   const opciones = {
     maxNativeZoom: def.maxNativo ?? 18, maxZoom: def.max ?? 21, minZoom: 5,
-    opacity: def.opacidad ?? 1, attribution: def.atribucion,
+    opacity: def.opacidad ?? 1, attribution: def.atribucion, zIndex: def.zIndex ?? 1,
     className: def.mezcla ? `mezcla-${def.mezcla}` : '',
     subdomains: def.subdominios ?? 'abc',
   };
+  if (def.quadkey) return new (capaQuadkey(L))(def.quadkey, opciones);
   if (def.zoomDetalle) return new (capaConDetalle(L))(def.url, { ...opciones, zoomDetalle: def.zoomDetalle, zoomDetalleMin: def.zoomDetalleMin });
   return L.tileLayer(def.url, opciones);
+}
+
+/** Clave de tesela de Bing (quadkey). */
+function quadkey(x, y, z) {
+  let q = '';
+  for (let i = z; i > 0; i--) {
+    let d = 0; const m = 1 << (i - 1);
+    if (x & m) d++;
+    if (y & m) d += 2;
+    q += d;
+  }
+  return q;
+}
+function capaQuadkey(L) {
+  return L.TileLayer.extend({
+    getTileUrl(c) {
+      return L.Util.template(this._url, { s: this._getSubdomain(c), q: quadkey(c.x, c.y, this._getZoomForUrl()) });
+    },
+  });
 }
 
 /**
@@ -4835,7 +4865,310 @@ function capaConDetalle(L) {
   });
 }
 
-return { FONDOS, ALTERNATIVAS, SUPERPUESTAS, ZONA_PILOTO, crearCapa };
+/**
+ * Fecha de la imagen en un punto (solo IGN PNOA y Esri la publican).
+ * @returns {Promise<string|null>} p. ej. "julio 2024 · 25 cm"
+ */
+async function fechaImagen(fuente, lat, lon, pedir = fetch) {
+  const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+  if (fuente === 'pnoa') {
+    const d = 0.0005;
+    const u = `https://www.ign.es/wms-inspire/pnoa-ma?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetFeatureInfo&LAYERS=OI.MosaicElement&QUERY_LAYERS=OI.MosaicElement&CRS=EPSG:4258&BBOX=${lat - d},${lon - d},${lat + d},${lon + d}&WIDTH=101&HEIGHT=101&I=50&J=50&INFO_FORMAT=text/html&STYLES=`;
+    const t = (await (await pedir(u)).text()).replace(/<[^>]+>/g, ' ');
+    const f = /(\d{4})-(\d{2})/.exec(t), r = /Resoluci\S*\s*\(metros\)\s*([\d.]+)/i.exec(t);
+    if (!f) return null;
+    return `${MESES[Number(f[2]) - 1]} ${f[1]}${r ? ` · ${Math.round(Number(r[1]) * 100)} cm` : ''}`;
+  }
+  if (fuente === 'esri') {
+    const u = `https://services.arcgisonline.com/arcgis/rest/services/World_Imagery/MapServer/identify?geometry=${lon},${lat}&geometryType=esriGeometryPoint&sr=4326&layers=all&tolerance=1&mapExtent=${lon - 0.01},${lat - 0.01},${lon + 0.01},${lat + 0.01}&imageDisplay=400,400,96&returnGeometry=false&f=json`;
+    const j = await (await pedir(u)).json();
+    const r = (j.results || []).find((x) => /\d/.test(x.attributes?.SRC_DATE2 ?? x.attributes?.SRC_DATE ?? ''));
+    const s = r && String(r.attributes.SRC_DATE2 ?? r.attributes.SRC_DATE);
+    const m = s && /(\d{1,2})\/(\d{1,2})\/(\d{4})/.exec(s);
+    return m ? `${MESES[Number(m[1]) - 1]} ${m[3]}` : (s || null);
+  }
+  return null;
+}
+
+return { FONDOS, IMAGENES, ROTULOS, SUPERPUESTAS, ATRIBUCION_MDT, ZONA_PILOTO, crearCapa, quadkey, fechaImagen };
+})();
+
+// ── src/datos/alturas.js
+__mods["src/datos/alturas.js"] = (function () {
+'use strict';
+// Altitudes del terreno: Modelo Digital del Terreno del IGN (MDT05, malla de
+// 5 m, altitud ortométrica sobre el nivel medio del mar en Alicante).
+//
+// Servicio: WCS 2.0.1 de la IDEE, cobertura Elevacion4258_5 (ETRS89
+// geográficas). Permite peticiones desde cualquier página (CORS *), también
+// desde el archivo abierto con doble clic.
+//
+// Se pide por bloques fijos de 0,004° (≈ 450 × 340 m) con 2 celdas de margen,
+// que se guardan en memoria: el cursor, los puntos y los perfiles reutilizan
+// lo ya descargado. Interpolación bilineal entre centros de celda.
+// Fuera de España (sin datos) se prueba el MDT25 y luego se devuelve null.
+
+const SERVICIO_MDT = 'https://servicios.idee.es/wcs-inspire/mdt';
+const BLOQUE = 0.004;
+
+/** Lee la respuesta (multipart con un ASCII Grid de ESRI). */
+function leerAsc(texto) {
+  const i = texto.search(/ncols/i);
+  if (i < 0) throw new Error('Respuesta del MDT sin datos');
+  const lineas = texto.slice(i).split(/\r?\n/);
+  const cab = {};
+  let k = 0;
+  for (; k < lineas.length; k++) {
+    const m = /^\s*([a-z_]+)\s+(-?[\d.eE+-]+)\s*$/i.exec(lineas[k]);
+    if (!m) break;
+    cab[m[1].toLowerCase()] = Number(m[2]);
+  }
+  const ncols = cab.ncols, nrows = cab.nrows;
+  const dx = cab.dx ?? cab.cellsize, dy = cab.dy ?? cab.cellsize;
+  const valores = new Float32Array(ncols * nrows);
+  let n = 0;
+  for (; k < lineas.length && n < valores.length; k++) {
+    if (lineas[k].startsWith('--')) break;
+    for (const t of lineas[k].trim().split(/\s+/)) { if (t !== '') valores[n++] = Number(t); }
+  }
+  if (n < valores.length) throw new Error('ASCII Grid incompleto');
+  return {
+    ncols, nrows, dx, dy, nodata: cab.nodata_value ?? null, valores,
+    // centro de la celda superior izquierda
+    oeste: (cab.xllcorner ?? cab.xllcenter - dx / 2) + dx / 2,
+    norte: (cab.yllcorner ?? cab.yllcenter - dy / 2) + nrows * dy - dy / 2,
+  };
+}
+
+/** Interpolación bilineal en una malla ASC. null si cae fuera o en «sin datos». */
+function interpolarAsc(m, lat, lon) {
+  const fx = (lon - m.oeste) / m.dx, fy = (m.norte - lat) / m.dy;
+  if (fx < 0 || fy < 0 || fx > m.ncols - 1 || fy > m.nrows - 1) return null;
+  const x0 = Math.min(Math.floor(fx), m.ncols - 2), y0 = Math.min(Math.floor(fy), m.nrows - 2);
+  const tx = fx - x0, ty = fy - y0;
+  const v = (x, y) => m.valores[y * m.ncols + x];
+  const c = [v(x0, y0), v(x0 + 1, y0), v(x0, y0 + 1), v(x0 + 1, y0 + 1)];
+  if (c.some((z) => z === m.nodata || !Number.isFinite(z) || z < -1000)) return null;
+  return (1 - ty) * ((1 - tx) * c[0] + tx * c[1]) + ty * ((1 - tx) * c[2] + tx * c[3]);
+}
+
+/**
+ * @param {{fetch?:Function, cobertura?:string, servicio?:string, maxParalelo?:number}} [opc]
+ */
+function crearServicioAlturas(opc = {}) {
+  const pedir = opc.fetch ?? ((...a) => fetch(...a));
+  const servicio = opc.servicio ?? SERVICIO_MDT;
+  const coberturas = opc.coberturas ?? ['Elevacion4258_5', 'Elevacion4258_25'];
+  const maxParalelo = opc.maxParalelo ?? 6;
+  const cache = new Map();       // clave → Promise<malla|null>
+  let activas = 0; const cola = [];
+  const turno = () => new Promise((r) => { if (activas < maxParalelo) { activas++; r(); } else cola.push(r); });
+  const liberar = () => { const s = cola.shift(); if (s) s(); else activas--; };
+
+  async function descargar(cob, bx, by) {
+    const margen = 0.00012; // ≈ 2 celdas del MDT05
+    const s = by * BLOQUE - margen, n = (by + 1) * BLOQUE + margen;
+    const o = bx * BLOQUE - margen, e = (bx + 1) * BLOQUE + margen;
+    const url = `${servicio}?SERVICE=WCS&VERSION=2.0.1&REQUEST=GetCoverage&CoverageId=${cob}`
+      + `&SUBSET=Lat(${s.toFixed(6)},${n.toFixed(6)})&SUBSET=Long(${o.toFixed(6)},${e.toFixed(6)})&FORMAT=application/asc`;
+    await turno();
+    try {
+      const r = await pedir(url);
+      if (!r.ok) throw new Error(`MDT: respuesta ${r.status}`);
+      return leerAsc(await r.text());
+    } finally { liberar(); }
+  }
+
+  function bloque(cob, bx, by) {
+    const clave = `${cob}/${bx}/${by}`;
+    if (!cache.has(clave)) {
+      const p = descargar(cob, bx, by).catch((err) => { cache.delete(clave); throw err; });
+      cache.set(clave, p);
+      if (cache.size > 4000) cache.delete(cache.keys().next().value);
+    }
+    return cache.get(clave);
+  }
+
+  /** Altitud (m, sin redondear) o null si no hay datos. */
+  async function altura(lat, lon) {
+    const bx = Math.floor(lon / BLOQUE), by = Math.floor(lat / BLOQUE);
+    for (const cob of coberturas) {
+      const m = await bloque(cob, bx, by);
+      const v = interpolarAsc(m, lat, lon);
+      if (v !== null) return v;
+    }
+    return null;
+  }
+
+  /** Altitudes de muchos puntos (en paralelo, reutilizando bloques). */
+  const alturas = (puntos) => Promise.all(puntos.map((p) => altura(p.lat, p.lon).catch(() => null)));
+
+  return { altura, alturas, cache };
+}
+
+/** Redondeo al metro (como se muestra siempre). */
+const alMetro = (v) => (v === null || v === undefined ? null : Math.round(v));
+
+/**
+ * Resumen de un perfil: desnivel acumulado de subida y bajada, mínimo y máximo.
+ * Para no sumar el «ruido» de la malla se usa un umbral de histéresis (por
+ * defecto 1 m): solo cuenta un cambio cuando supera el umbral.
+ * @param {Array<{d:number, z:number|null}>} muestras
+ */
+function resumenPerfil(muestras, umbral = 1) {
+  const v = muestras.filter((m) => m.z !== null);
+  if (!v.length) return { subida: 0, bajada: 0, min: null, max: null, inicio: null, fin: null };
+  let subida = 0, bajada = 0, ref = v[0].z, min = Infinity, max = -Infinity;
+  for (const m of v) {
+    min = Math.min(min, m.z); max = Math.max(max, m.z);
+    const d = m.z - ref;
+    if (d >= umbral) { subida += d; ref = m.z; } else if (d <= -umbral) { bajada -= d; ref = m.z; }
+  }
+  return { subida, bajada, min, max, inicio: v[0].z, fin: v.at(-1).z };
+}
+
+return { SERVICIO_MDT, leerAsc, interpolarAsc, crearServicioAlturas, alMetro, resumenPerfil };
+})();
+
+// ── src/mapa/relieve.js
+__mods["src/mapa/relieve.js"] = (function () {
+'use strict';
+// Relieve propio: sombreado calculado en el navegador con el Modelo Digital
+// del Terreno del IGN (WCS de la IDEE), con más detalle que el sombreado
+// publicado por el IGN (que en zoom alto viene de una malla de ~25 m).
+//
+//   zoom ≥ 16  MDT05 a su resolución original (malla de 5 m)
+//   zoom 14–15 MDT05 reducido (≈ 200 puntos por tesela)
+//   zoom 11–13 MDT25 · zoom 8–10 MDT200 · zoom < 8 MDT1000
+//
+// Cada tesela: una petición (ASCII Grid, con decimales) con margen, se calcula
+// el sombreado en la malla (método de Horn, luz del NO a 45°) y se interpola
+// bilinealmente a los 256 × 256 píxeles. Modos:
+//   'fondo'     gris opaco
+//   'sombreado' transparente: oscurece las laderas en sombra y aclara poco
+//               las iluminadas (para ponerlo encima de cualquier fondo)
+
+const { leerAsc } = __req("src/datos/alturas.js");
+
+const SERVICIO = 'https://servicios.idee.es/wcs-inspire/mdt';
+const R = 6378137 * Math.PI / 180;
+const lonX = (X, z) => (X / 2 ** z) * 360 - 180;
+const latY = (Y, z) => (180 / Math.PI) * Math.atan(Math.sinh(Math.PI - (2 * Math.PI * Y) / 2 ** z));
+
+/** Cobertura y tamaño de petición según el zoom. */
+function planRelieve(z) {
+  if (z >= 16) return { cobertura: 'Elevacion4258_5', n: null, exageracion: 1 };
+  if (z === 15) return { cobertura: 'Elevacion4258_5', n: 200, exageracion: 1 };
+  if (z === 14) return { cobertura: 'Elevacion4258_5', n: 192, exageracion: 1.2 };
+  if (z >= 11) return { cobertura: 'Elevacion4258_25', n: 160, exageracion: 1.5 };
+  if (z >= 8) return { cobertura: 'Elevacion4258_200', n: 128, exageracion: 2.5 };
+  return { cobertura: 'Elevacion4258_1000', n: 96, exageracion: 4 };
+}
+
+function urlRelieve(z, x, y) {
+  const p = planRelieve(z);
+  const o = lonX(x, z), e = lonX(x + 1, z), n = latY(y, z), s = latY(y + 1, z);
+  const mx = (e - o) * 0.04, my = (n - s) * 0.04; // margen para el borde
+  const tam = p.n ? `&SCALESIZE=Long(${Math.round(p.n * 1.08)}),Lat(${Math.round(p.n * 1.08)})` : '';
+  return `${SERVICIO}?SERVICE=WCS&VERSION=2.0.1&REQUEST=GetCoverage&CoverageId=${p.cobertura}`
+    + `&SUBSET=Lat(${(s - my).toFixed(7)},${(n + my).toFixed(7)})&SUBSET=Long(${(o - mx).toFixed(7)},${(e + mx).toFixed(7)})&FORMAT=application/asc${tam}`;
+}
+
+/**
+ * Sombreado en cada nodo de la malla (0 = sombra total, 1 = luz de frente).
+ * Método de Horn (8 vecinos). Devuelve Float32Array (NaN sin datos).
+ */
+function sombrearMalla(m, { azimut = 315, altura = 45, exageracion = 1 } = {}) {
+  const { ncols: W, nrows: H, valores: v } = m;
+  const latC = m.norte - (H / 2) * m.dy;
+  const cx = m.dx * R * Math.cos((latC * Math.PI) / 180), cy = m.dy * R;
+  const az = (azimut * Math.PI) / 180, al = (altura * Math.PI) / 180;
+  const out = new Float32Array(W * H).fill(NaN);
+  const malo = (z) => z === m.nodata || !Number.isFinite(z) || z < -1000;
+  for (let j = 1; j < H - 1; j++) {
+    for (let i = 1; i < W - 1; i++) {
+      const Z = (a, b) => v[(j + b) * W + (i + a)];
+      const c = [Z(-1, -1), Z(0, -1), Z(1, -1), Z(-1, 0), Z(1, 0), Z(-1, 1), Z(0, 1), Z(1, 1)];
+      if (c.some(malo)) continue;
+      const [a, b, cc, d, f, g, h, k] = c;
+      // Pendientes hacia el este y hacia el norte (las filas crecen hacia el sur)
+      const ze = ((cc + 2 * f + k) - (a + 2 * d + g)) / (8 * cx) * exageracion;
+      const zn = -((g + 2 * h + k) - (a + 2 * b + cc)) / (8 * cy) * exageracion;
+      // Normal del terreno (−ze, −zn, 1) · dirección del sol (sen A cos h, cos A cos h, sen h)
+      const luz = (-ze * Math.sin(az) * Math.cos(al) - zn * Math.cos(az) * Math.cos(al) + Math.sin(al)) / Math.sqrt(1 + ze * ze + zn * zn);
+      out[j * W + i] = Math.max(0, luz);
+    }
+  }
+  return out;
+}
+
+/** Interpolación bilineal del sombreado en (lat, lon). NaN si no hay datos. */
+function muestrear(m, s, lat, lon) {
+  const fx = (lon - m.oeste) / m.dx, fy = (m.norte - lat) / m.dy;
+  const x0 = Math.floor(fx), y0 = Math.floor(fy);
+  if (x0 < 1 || y0 < 1 || x0 >= m.ncols - 2 || y0 >= m.nrows - 2) return NaN;
+  const tx = fx - x0, ty = fy - y0, W = m.ncols;
+  const a = s[y0 * W + x0], b = s[y0 * W + x0 + 1], c = s[(y0 + 1) * W + x0], d = s[(y0 + 1) * W + x0 + 1];
+  return (1 - ty) * ((1 - tx) * a + tx * b) + ty * ((1 - tx) * c + tx * d);
+}
+
+/** Pinta una tesela de relieve en un array RGBA de 256 × 256. */
+function pintarRelieve(m, coords, modo, rgba) {
+  const p = planRelieve(coords.z);
+  const s = sombrearMalla(m, { exageracion: p.exageracion });
+  const plano = Math.sin((45 * Math.PI) / 180); // brillo del terreno llano (sol a 45°)
+  for (let j = 0; j < 256; j++) {
+    const lat = latY(coords.y + (j + 0.5) / 256, coords.z);
+    for (let i = 0; i < 256; i++) {
+      const lon = lonX(coords.x + (i + 0.5) / 256, coords.z);
+      const h = muestrear(m, s, lat, lon);
+      const q = (j * 256 + i) * 4;
+      if (Number.isNaN(h)) { rgba[q + 3] = 0; continue; }
+      if (modo === 'fondo') {
+        // gris con un toque cálido en las luces
+        const v = 70 + h * 185;
+        rgba[q] = Math.min(255, v + 4); rgba[q + 1] = Math.min(255, v + 2); rgba[q + 2] = v; rgba[q + 3] = 255;
+      } else if (h < plano) {
+        rgba[q] = 20; rgba[q + 1] = 28; rgba[q + 2] = 40; rgba[q + 3] = Math.min(170, (plano - h) * 330);
+      } else {
+        rgba[q] = rgba[q + 1] = rgba[q + 2] = 255; rgba[q + 3] = Math.min(90, (h - plano) * 260);
+      }
+    }
+  }
+}
+
+/**
+ * Capa Leaflet de relieve.
+ * @param {'fondo'|'sombreado'} modo
+ */
+function capaRelieve(L, modo, { pedir = (u) => fetch(u), atribucion = '', zIndex = 1, opacidad = 1 } = {}) {
+  const cache = new Map();
+  const Capa = L.GridLayer.extend({
+    createTile(c, hecho) {
+      const lienzo = document.createElement('canvas');
+      lienzo.width = lienzo.height = 256;
+      const clave = `${c.z}/${c.x}/${c.y}`;
+      let p = cache.get(clave);
+      if (!p) {
+        p = pedir(urlRelieve(c.z, c.x, c.y)).then((r) => { if (!r.ok) throw new Error(`MDT ${r.status}`); return r.text(); }).then(leerAsc);
+        cache.set(clave, p);
+        p.catch(() => cache.delete(clave));
+        if (cache.size > 160) cache.delete(cache.keys().next().value);
+      }
+      p.then((m) => {
+        const ctx = lienzo.getContext('2d');
+        const img = ctx.createImageData(256, 256);
+        pintarRelieve(m, c, modo, img.data);
+        ctx.putImageData(img, 0, 0);
+        hecho(null, lienzo);
+      }, (e) => hecho(e, lienzo));
+      return lienzo;
+    },
+  });
+  return new Capa({ tileSize: 256, minZoom: 5, maxZoom: 21, maxNativeZoom: 18, attribution: atribucion, zIndex, opacity: opacidad, updateWhenZooming: false });
+}
+
+return { planRelieve, urlRelieve, sombrearMalla, pintarRelieve, capaRelieve };
 })();
 
 // ── src/mapa/cuadricula.js
@@ -5364,143 +5697,6 @@ const ICONOS = {
 };
 
 return { esc, trazo, centroTramoLargo, capaForma, ICONOS };
-})();
-
-// ── src/datos/alturas.js
-__mods["src/datos/alturas.js"] = (function () {
-'use strict';
-// Altitudes del terreno: Modelo Digital del Terreno del IGN (MDT05, malla de
-// 5 m, altitud ortométrica sobre el nivel medio del mar en Alicante).
-//
-// Servicio: WCS 2.0.1 de la IDEE, cobertura Elevacion4258_5 (ETRS89
-// geográficas). Permite peticiones desde cualquier página (CORS *), también
-// desde el archivo abierto con doble clic.
-//
-// Se pide por bloques fijos de 0,004° (≈ 450 × 340 m) con 2 celdas de margen,
-// que se guardan en memoria: el cursor, los puntos y los perfiles reutilizan
-// lo ya descargado. Interpolación bilineal entre centros de celda.
-// Fuera de España (sin datos) se prueba el MDT25 y luego se devuelve null.
-
-const SERVICIO_MDT = 'https://servicios.idee.es/wcs-inspire/mdt';
-const BLOQUE = 0.004;
-
-/** Lee la respuesta (multipart con un ASCII Grid de ESRI). */
-function leerAsc(texto) {
-  const i = texto.search(/ncols/i);
-  if (i < 0) throw new Error('Respuesta del MDT sin datos');
-  const lineas = texto.slice(i).split(/\r?\n/);
-  const cab = {};
-  let k = 0;
-  for (; k < lineas.length; k++) {
-    const m = /^\s*([a-z_]+)\s+(-?[\d.eE+-]+)\s*$/i.exec(lineas[k]);
-    if (!m) break;
-    cab[m[1].toLowerCase()] = Number(m[2]);
-  }
-  const ncols = cab.ncols, nrows = cab.nrows;
-  const dx = cab.dx ?? cab.cellsize, dy = cab.dy ?? cab.cellsize;
-  const valores = new Float32Array(ncols * nrows);
-  let n = 0;
-  for (; k < lineas.length && n < valores.length; k++) {
-    if (lineas[k].startsWith('--')) break;
-    for (const t of lineas[k].trim().split(/\s+/)) { if (t !== '') valores[n++] = Number(t); }
-  }
-  if (n < valores.length) throw new Error('ASCII Grid incompleto');
-  return {
-    ncols, nrows, dx, dy, nodata: cab.nodata_value ?? null, valores,
-    // centro de la celda superior izquierda
-    oeste: (cab.xllcorner ?? cab.xllcenter - dx / 2) + dx / 2,
-    norte: (cab.yllcorner ?? cab.yllcenter - dy / 2) + nrows * dy - dy / 2,
-  };
-}
-
-/** Interpolación bilineal en una malla ASC. null si cae fuera o en «sin datos». */
-function interpolarAsc(m, lat, lon) {
-  const fx = (lon - m.oeste) / m.dx, fy = (m.norte - lat) / m.dy;
-  if (fx < 0 || fy < 0 || fx > m.ncols - 1 || fy > m.nrows - 1) return null;
-  const x0 = Math.min(Math.floor(fx), m.ncols - 2), y0 = Math.min(Math.floor(fy), m.nrows - 2);
-  const tx = fx - x0, ty = fy - y0;
-  const v = (x, y) => m.valores[y * m.ncols + x];
-  const c = [v(x0, y0), v(x0 + 1, y0), v(x0, y0 + 1), v(x0 + 1, y0 + 1)];
-  if (c.some((z) => z === m.nodata || !Number.isFinite(z) || z < -1000)) return null;
-  return (1 - ty) * ((1 - tx) * c[0] + tx * c[1]) + ty * ((1 - tx) * c[2] + tx * c[3]);
-}
-
-/**
- * @param {{fetch?:Function, cobertura?:string, servicio?:string, maxParalelo?:number}} [opc]
- */
-function crearServicioAlturas(opc = {}) {
-  const pedir = opc.fetch ?? ((...a) => fetch(...a));
-  const servicio = opc.servicio ?? SERVICIO_MDT;
-  const coberturas = opc.coberturas ?? ['Elevacion4258_5', 'Elevacion4258_25'];
-  const maxParalelo = opc.maxParalelo ?? 6;
-  const cache = new Map();       // clave → Promise<malla|null>
-  let activas = 0; const cola = [];
-  const turno = () => new Promise((r) => { if (activas < maxParalelo) { activas++; r(); } else cola.push(r); });
-  const liberar = () => { const s = cola.shift(); if (s) s(); else activas--; };
-
-  async function descargar(cob, bx, by) {
-    const margen = 0.00012; // ≈ 2 celdas del MDT05
-    const s = by * BLOQUE - margen, n = (by + 1) * BLOQUE + margen;
-    const o = bx * BLOQUE - margen, e = (bx + 1) * BLOQUE + margen;
-    const url = `${servicio}?SERVICE=WCS&VERSION=2.0.1&REQUEST=GetCoverage&CoverageId=${cob}`
-      + `&SUBSET=Lat(${s.toFixed(6)},${n.toFixed(6)})&SUBSET=Long(${o.toFixed(6)},${e.toFixed(6)})&FORMAT=application/asc`;
-    await turno();
-    try {
-      const r = await pedir(url);
-      if (!r.ok) throw new Error(`MDT: respuesta ${r.status}`);
-      return leerAsc(await r.text());
-    } finally { liberar(); }
-  }
-
-  function bloque(cob, bx, by) {
-    const clave = `${cob}/${bx}/${by}`;
-    if (!cache.has(clave)) {
-      const p = descargar(cob, bx, by).catch((err) => { cache.delete(clave); throw err; });
-      cache.set(clave, p);
-      if (cache.size > 4000) cache.delete(cache.keys().next().value);
-    }
-    return cache.get(clave);
-  }
-
-  /** Altitud (m, sin redondear) o null si no hay datos. */
-  async function altura(lat, lon) {
-    const bx = Math.floor(lon / BLOQUE), by = Math.floor(lat / BLOQUE);
-    for (const cob of coberturas) {
-      const m = await bloque(cob, bx, by);
-      const v = interpolarAsc(m, lat, lon);
-      if (v !== null) return v;
-    }
-    return null;
-  }
-
-  /** Altitudes de muchos puntos (en paralelo, reutilizando bloques). */
-  const alturas = (puntos) => Promise.all(puntos.map((p) => altura(p.lat, p.lon).catch(() => null)));
-
-  return { altura, alturas, cache };
-}
-
-/** Redondeo al metro (como se muestra siempre). */
-const alMetro = (v) => (v === null || v === undefined ? null : Math.round(v));
-
-/**
- * Resumen de un perfil: desnivel acumulado de subida y bajada, mínimo y máximo.
- * Para no sumar el «ruido» de la malla se usa un umbral de histéresis (por
- * defecto 1 m): solo cuenta un cambio cuando supera el umbral.
- * @param {Array<{d:number, z:number|null}>} muestras
- */
-function resumenPerfil(muestras, umbral = 1) {
-  const v = muestras.filter((m) => m.z !== null);
-  if (!v.length) return { subida: 0, bajada: 0, min: null, max: null, inicio: null, fin: null };
-  let subida = 0, bajada = 0, ref = v[0].z, min = Infinity, max = -Infinity;
-  for (const m of v) {
-    min = Math.min(min, m.z); max = Math.max(max, m.z);
-    const d = m.z - ref;
-    if (d >= umbral) { subida += d; ref = m.z; } else if (d <= -umbral) { bajada -= d; ref = m.z; }
-  }
-  return { subida, bajada, min, max, inicio: v[0].z, fin: v.at(-1).z };
-}
-
-return { SERVICIO_MDT, leerAsc, interpolarAsc, crearServicioAlturas, alMetro, resumenPerfil };
 })();
 
 // ── src/ui/perfil.js
@@ -7855,6 +8051,9 @@ function iniciarImportar({ L, mapa, fmt, alturas, dibujo, herramienta, alCambiar
   const DUENO = 'importados';
   if (!mapa.getPane('importados')) mapa.createPane('importados').style.zIndex = 455;
   if (!mapa.getPane('mapasImportados')) mapa.createPane('mapasImportados').style.zIndex = 250;
+  // El mapa seleccionado va por encima de todas las capas (fondo, sombreado, curvas)
+  if (!mapa.getPane('mapaSeleccionado')) mapa.createPane('mapaSeleccionado').style.zIndex = 445;
+  if (!mapa.getPane('marcoMapa')) { const p = mapa.createPane('marcoMapa'); p.style.zIndex = 480; p.style.pointerEvents = 'none'; }
 
   const grupos = [];   // datos importados
   const mapas = [];    // mapas importados
@@ -8053,7 +8252,7 @@ function iniciarImportar({ L, mapa, fmt, alturas, dibujo, herramienta, alCambiar
         },
       });
       capa = new Capa({
-        pane: 'mapasImportados', minNativeZoom: t.minZoom, maxNativeZoom: t.maxZoom, maxZoom: 22, minZoom: Math.max(3, t.minZoom - 3),
+        pane: 'mapasImportados', minNativeZoom: t.minZoom, maxNativeZoom: t.maxZoom, maxZoom: 22, minZoom: Math.max(3, t.minZoom - 5),
         bounds: L.latLngBounds([limites.sur, limites.oeste], [limites.norte, limites.este]),
       });
     } else {
@@ -8069,7 +8268,42 @@ function iniciarImportar({ L, mapa, fmt, alturas, dibujo, herramienta, alCambiar
     }
     capa.setOpacity?.(m.opacidad ?? 1);
     m.capa = capa; m.limites = limites; m.info = info; m.error = null;
+    if (seleccionMapa === m) capa.options.pane = 'mapaSeleccionado';
     if (m.visible) capa.addTo(mapa);
+    ponerContorno(m);
+  }
+
+  // ---------------------------------------------------------- selección de un mapa
+  let seleccionMapa = null;
+  const limitesL = (m) => L.latLngBounds([m.limites.sur, m.limites.oeste], [m.limites.norte, m.limites.este]);
+  function moverPane(m, pane) {
+    if (!m.capa || m.capa.options.pane === pane) return;
+    const vis = mapa.hasLayer(m.capa);
+    m.capa.remove(); m.capa.options.pane = pane;
+    if (vis) m.capa.addTo(mapa);
+  }
+  /** Contorno discreto: se ve cuando, por el zoom, el mapa aún no se pinta. */
+  function ponerContorno(m) {
+    m.contorno?.remove(); m.marco?.remove(); m.contorno = m.marco = null;
+    if (!m.limites || !m.visible) return;
+    const lejos = m.capa?.options.minZoom !== undefined && mapa.getZoom() < m.capa.options.minZoom;
+    if (seleccionMapa === m) {
+      m.marco = L.rectangle(limitesL(m), { pane: 'marcoMapa', className: 'marco-mapa', color: '#ff2bd6', weight: 4, fill: true, fillOpacity: 0.06, interactive: false }).addTo(mapa);
+    } else if (lejos) {
+      m.contorno = L.rectangle(limitesL(m), { pane: 'marcoMapa', color: '#ff2bd6', weight: 1.5, dashArray: '6 5', opacity: 0.8, fill: false, interactive: false }).addTo(mapa);
+    }
+  }
+  mapa.on('zoomend', () => mapas.forEach(ponerContorno));
+  function seleccionarMapa(m, { centrar = true } = {}) {
+    const antes = seleccionMapa;
+    if (antes && antes !== m) { seleccionMapa = null; moverPane(antes, 'mapasImportados'); ponerContorno(antes); }
+    if (antes === m && !centrar) { seleccionMapa = null; moverPane(m, 'mapasImportados'); ponerContorno(m); pintarMapas(); return; }
+    seleccionMapa = m;
+    if (!m.visible && m.capa) { m.visible = true; m.capa.addTo(mapa); guardar('mapas', guardable(m)); }
+    moverPane(m, 'mapaSeleccionado');
+    ponerContorno(m);
+    if (centrar && m.limites) mapa.flyToBounds(limitesL(m), { padding: [60, 60], duration: 0.8 });
+    pintarMapas();
   }
 
   async function anadirMapa(m, { centrar = true } = {}) {
@@ -8091,14 +8325,14 @@ function iniciarImportar({ L, mapa, fmt, alturas, dibujo, herramienta, alCambiar
     pintarMapas();
     return m;
   }
-  const guardable = ({ capa, info, error, ...m }) => m;
+  const guardable = ({ capa, info, error, marco, contorno, ...m }) => m;
 
   function pintarMapas() {
     const caja = $('mapas-importados'); if (!caja) return;
     if (!mapas.length) { caja.innerHTML = '<p class="plan-vacio">Ninguno. Arrastra un mapa (.sqlite, .mbtiles, .tif o .jpg con su .jgw) o usa los botones.</p>'; return; }
-    caja.innerHTML = mapas.map((m) => `<div class="mapa-imp" data-m="${m.id}">
-      <label class="sup"><input type="checkbox" data-acc="ver" ${m.visible ? 'checked' : ''} ${m.error ? 'disabled' : ''}>
-        <span class="txt"><b>${esc(m.nombre)}</b><small>${m.error ? `<span class="error-txt">${esc(m.error)}</span>` : esc(m.info || 'Cargando…')}</small></span></label>
+    caja.innerHTML = mapas.map((m) => `<div class="mapa-imp${seleccionMapa === m ? ' sel' : ''}" data-m="${m.id}">
+      <div class="mi-cab"><input type="checkbox" data-acc="ver" title="Ver u ocultar" ${m.visible ? 'checked' : ''} ${m.error ? 'disabled' : ''}>
+        <button type="button" class="mi-nom" data-acc="sel" aria-pressed="${seleccionMapa === m}" title="Encontrarlo en el mapa y ponerlo encima de todo" ${m.limites ? '' : 'disabled'}><b>${esc(m.nombre)}</b><small>${m.error ? `<span class="error-txt">${esc(m.error)}</span>` : esc(m.info || 'Cargando…')}</small></button></div>
       ${m.error && m.handle ? '<button type="button" class="mi-btn" data-acc="permiso">Dar acceso de nuevo</button>' : ''}
       <div class="mi-fila"><span>Opacidad</span><input type="range" min="10" max="100" step="5" value="${Math.round((m.opacidad ?? 1) * 100)}" data-acc="opacidad" ${m.error ? 'disabled' : ''}>
         <button type="button" class="gi-mini" data-acc="centrar" title="Centrar en el mapa" ${m.limites ? '' : 'disabled'}>⌖</button>
@@ -8108,15 +8342,20 @@ function iniciarImportar({ L, mapa, fmt, alturas, dibujo, herramienta, alCambiar
     const caja = ev.target.closest('[data-m]'); if (!caja) return;
     const m = mapas.find((x) => x.id === caja.dataset.m); const acc = ev.target.closest('[data-acc]')?.dataset.acc;
     if (!m || !acc) return;
-    if (acc === 'centrar' && m.limites) mapa.flyToBounds([[m.limites.sur, m.limites.oeste], [m.limites.norte, m.limites.este]], { padding: [30, 30], duration: 0.7 });
-    if (acc === 'quitar') { m.capa?.remove(); mapas.splice(mapas.indexOf(m), 1); borrar('mapas', m.id); pintarMapas(); }
+    if (acc === 'sel' && m.limites) seleccionarMapa(m, { centrar: seleccionMapa !== m });
+    if (acc === 'centrar' && m.limites) seleccionarMapa(m);
+    if (acc === 'quitar') {
+      if (seleccionMapa === m) seleccionMapa = null;
+      m.capa?.remove(); m.marco?.remove(); m.contorno?.remove();
+      mapas.splice(mapas.indexOf(m), 1); borrar('mapas', m.id); pintarMapas();
+    }
     if (acc === 'permiso' && m.handle) {
       if ((await m.handle.requestPermission?.({ mode: 'read' })) === 'granted') { try { await crearCapaMapa(m); } catch (e) { m.error = e.message; } pintarMapas(); }
     }
   });
   $('mapas-importados')?.addEventListener('change', (ev) => {
     const m = mapas.find((x) => x.id === ev.target.closest('[data-m]')?.dataset.m); if (!m) return;
-    if (ev.target.dataset.acc === 'ver') { m.visible = ev.target.checked; if (m.visible) m.capa?.addTo(mapa); else m.capa?.remove(); guardar('mapas', guardable(m)); }
+    if (ev.target.dataset.acc === 'ver') { m.visible = ev.target.checked; if (m.visible) m.capa?.addTo(mapa); else m.capa?.remove(); ponerContorno(m); guardar('mapas', guardable(m)); }
   });
   $('mapas-importados')?.addEventListener('input', (ev) => {
     const m = mapas.find((x) => x.id === ev.target.closest('[data-m]')?.dataset.m); if (!m || ev.target.dataset.acc !== 'opacidad') return;
@@ -8308,25 +8547,208 @@ function iniciarImportar({ L, mapa, fmt, alturas, dibujo, herramienta, alCambiar
     catalogo = await leer('catalogo', 'carpeta');
   })();
 
-  return { procesar, puntosVisibles, grupos, mapas, abrirBuscador, cerrarFicha };
+  /** Candidatos para el buscador universal. */
+  function candidatosBusqueda() {
+    const out = [];
+    const nomTipo = { punto: 'punto', linea: 'línea track ruta', area: 'área', circulo: 'círculo' };
+    for (const g of grupos) {
+      out.push({ grupo: 'Archivos', texto: g.nombre, extra: `${g.formato} archivo importado`, detalle: `${g.formato} · ${g.elementos.length} elementos`, accion: () => { g.visible = true; g.capa.addTo(mapa); const b = limitesGrupo(g); if (b) mapa.flyToBounds(b, { padding: [60, 60], maxZoom: 15, duration: 0.7 }); pintarGrupos(); } });
+      g.elementos.forEach((e, i) => { if (e.nombre) out.push({ grupo: 'Archivos', texto: e.nombre, extra: `${nomTipo[e.tipo]} ${g.nombre}`, detalle: `${nomTipo[e.tipo].split(' ')[0]} de «${g.nombre}»`, accion: () => { if (!g.visible) { g.visible = true; g.capa.addTo(mapa); } seleccionar(g, i, { centrar: true }); } }); });
+    }
+    for (const m of mapas) out.push({ grupo: 'Mapas', texto: m.nombre, extra: `mapa importado ${m.info || ''}`, detalle: m.info || '', accion: () => m.limites && seleccionarMapa(m) });
+    for (const [k, a] of (catalogo?.archivos || []).entries()) {
+      if (mapas.some((m) => m.nombre === a.nombre)) continue;
+      out.push({ grupo: 'Mis mapas (carpeta)', texto: a.nombre, extra: `mapa carpeta ${a.ruta} ${a.tipo || ''}`, detalle: `${a.ruta}${a.tamano ? ` · ${tam(a.tamano)}` : ''}`, accion: () => abrirDeCatalogo(k) });
+    }
+    return out;
+  }
+  async function abrirDeCatalogo(k) {
+    const a = catalogo.archivos[k];
+    if (a.convertir) { mostrarAvisos([`${a.nombre}: hay que convertirlo a GeoTIFF para poder verlo.`]); return; }
+    if (catalogo.handle.queryPermission && (await catalogo.handle.queryPermission({ mode: 'read' })) !== 'granted') {
+      if ((await catalogo.handle.requestPermission({ mode: 'read' })) !== 'granted') return;
+    }
+    const entradas = [{ archivo: await a.handle.getFile(), handle: a.handle }];
+    const dir = a.ruta.replace(/[^/]+$/, '');
+    for (const x of (catalogo.acompanantes || [])) if (x.ruta.startsWith(dir) && base(x.nombre) === base(a.nombre)) entradas.push({ archivo: await x.handle.getFile() });
+    await procesar(entradas);
+  }
+
+  return { procesar, puntosVisibles, grupos, mapas, abrirBuscador, cerrarFicha, candidatosBusqueda, seleccionarMapa };
 }
 
 return { iniciarImportar };
 })();
 
+// ── src/ui/difuso.js
+__mods["src/ui/difuso.js"] = (function () {
+'use strict';
+// Búsqueda aproximada (tolerante a erratas, acentos y sinónimos) y lectura
+// flexible de coordenadas, para el buscador universal.
+
+const { leerPosicion, geoAUtm, bandaLatitud } = __req("src/geo/index.js");
+
+/** Minúsculas, sin acentos ni signos raros, espacios simples. */
+function normalizar(s) {
+  return String(s ?? '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9ñ.,:/\-\s]/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+/** Distancia de Damerau-Levenshtein (transposiciones adyacentes). */
+function distancia(a, b, max = 99) {
+  if (Math.abs(a.length - b.length) > max) return max + 1;
+  const d = Array.from({ length: a.length + 1 }, (_, i) => [i, ...Array(b.length).fill(0)]);
+  for (let j = 1; j <= b.length; j++) d[0][j] = j;
+  for (let i = 1; i <= a.length; i++) {
+    for (let j = 1; j <= b.length; j++) {
+      const c = a[i - 1] === b[j - 1] ? 0 : 1;
+      d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + c);
+      if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) d[i][j] = Math.min(d[i][j], d[i - 2][j - 2] + 1);
+    }
+  }
+  return d[a.length][b.length];
+}
+
+/** Grupos de palabras equivalentes (se buscan como si fueran la misma). */
+const SINONIMOS = [
+  ['linea', 'track', 'ruta', 'itinerario', 'recorrido', 'camino', 'traza', 'polilinea'],
+  ['punto', 'waypoint', 'wpt', 'marca', 'pv', 'cp', 'hito'],
+  ['area', 'zona', 'poligono', 'superficie', 'recinto'],
+  ['circulo', 'radio', 'alcance', 'circunferencia'],
+  ['hibrido', 'satelite', 'foto', 'ortofoto', 'imagen', 'aerea', 'pnoa', 'google', 'esri', 'bing', 'orto'],
+  ['topografico', 'mtn', 'mapa', 'carta', '25k', '25000', 'raster'],
+  ['relieve', 'sombreado', 'sombra', 'mdt', 'terreno', 'altura', 'altitud', 'elevacion', 'cota'],
+  ['curvas', 'nivel', 'isohipsas'],
+  ['cuadricula', 'malla', 'grid', 'mgrs', 'reticula', 'reticulo'],
+  ['milesimas', 'mils', 'mil', '6400'],
+  ['grados', 'sexagesimales', 'gms'],
+  ['medir', 'regla', 'distancia', 'rumbo', 'azimut', 'acimut'],
+  ['importar', 'abrir', 'cargar', 'subir', 'gpx', 'kml', 'kmz', 'zip', 'atak', 'paquete'],
+  ['ajustes', 'opciones', 'configuracion', 'preferencias'],
+  ['borrar', 'eliminar', 'quitar', 'suprimir'],
+  ['deshacer', 'atras', 'volver'],
+  ['coordenadas', 'coordenada', 'posicion', 'formato'],
+];
+const mapaSin = new Map();
+for (const g of SINONIMOS) for (const w of g) mapaSin.set(w, g);
+
+/** Puntuación de una palabra de la consulta contra una del texto (0–100). */
+function palabra(q, t) {
+  if (t === q) return 100;
+  if (t.startsWith(q)) return 92 - Math.min(10, t.length - q.length);
+  if (q.length >= 3 && t.includes(q)) return 80;
+  const max = q.length <= 3 ? (q.length === 3 ? 1 : 0) : q.length <= 6 ? 1 : 2;
+  if (max) {
+    const d = distancia(q, t.slice(0, q.length + max), max);
+    const d2 = distancia(q, t, max);
+    const dm = Math.min(d, d2);
+    if (dm <= max) return 72 - dm * 12;
+  }
+  return 0;
+}
+
+/**
+ * Puntuación (0–100) de un texto para una consulta. Todas las palabras de la
+ * consulta tienen que encajar (exactas, prefijo, con erratas o por sinónimo).
+ * @param {string} texto  texto principal (nombre)
+ * @param {string} [extra] palabras clave adicionales
+ */
+function puntuar(consulta, texto, extra = '') {
+  const q = normalizar(consulta).split(' ').filter(Boolean);
+  if (!q.length) return 0;
+  const tN = normalizar(texto), palabras = `${tN} ${normalizar(extra)}`.split(' ').filter(Boolean);
+  if (tN === normalizar(consulta)) return 100;
+  let total = 0;
+  for (const w of q) {
+    let mejor = 0;
+    for (const t of palabras) mejor = Math.max(mejor, palabra(w, t));
+    if (mejor < 60) {
+      // ¿Sinónimo?
+      const grupo = mapaSin.get(w) ?? [...mapaSin.keys()].filter((k) => k.length > 3 && palabra(w, k) >= 60).map((k) => mapaSin.get(k))[0];
+      if (grupo) for (const t of palabras) if (grupo.includes(t)) mejor = Math.max(mejor, 58);
+    }
+    if (!mejor) return 0;
+    total += mejor;
+  }
+  // Pequeña ventaja si la consulta aparece seguida en el nombre
+  const seguido = tN.includes(normalizar(consulta)) ? 4 : 0;
+  return Math.min(99, total / q.length + seguido);
+}
+
+/** Ordena candidatos {texto, extra, ...} por puntuación (descarta < umbral). */
+function buscar(consulta, candidatos, umbral = 55) {
+  return candidatos.map((c) => ({ ...c, puntos: puntuar(consulta, c.texto, c.extra) }))
+    .filter((c) => c.puntos >= umbral).sort((a, b) => b.puntos - a.puntos);
+}
+
+/**
+ * Lee una coordenada escrita de muchas formas. Si falta la zona (MGRS o UTM
+ * sin huso), usa la del centro de la vista. Devuelve {lat, lon, lado, como}
+ * o null.
+ * @param {{lat:number, lon:number}} centro centro de la vista
+ * @param {(epsg:number)=>{aGeo:Function}|null} [crs] para ED50
+ */
+function leerCoordenadaFlexible(texto, centro, crs) {
+  const t0 = String(texto).trim();
+  if (!t0) return null;
+  const intentos = [];
+  const t = t0.replace(/[;|]/g, ' ').replace(/\s+/g, ' ');
+  intentos.push([t, 'tal cual']);
+  // Coma decimal: "40,84 -3,42" → "40.84 -3.42"
+  if (/^-?\d+,\d+\s+-?\d+,\d+$/.test(t)) intentos.push([t.replace(/,/g, '.'), 'coma decimal']);
+  // Sin letras sueltas tipo E/N: "E440290 N4474257"
+  const sinEN = t.replace(/\b([EN])\s*(?=\d)/gi, '').replace(/(\d)\s*([EN])\b/gi, '$1');
+  if (sinEN !== t) intentos.push([sinEN, 'UTM']);
+  let zona = null, banda = null;
+  try { const u = geoAUtm(centro.lat, centro.lon); zona = u.zona; banda = bandaLatitud(centro.lat); } catch { /* fuera */ }
+  // MGRS sin zona: "VK 4029 7425" / "vk40297425"
+  if (zona && /^[a-z]{2}\s*\d/i.test(t)) intentos.push([`${zona}${banda} ${t}`, `MGRS (zona ${zona}${banda} de la vista)`]);
+  // UTM sin huso: "440290 4474257"
+  const dos = /^(\d{6}(?:\.\d+)?)\s+(\d{7}(?:\.\d+)?)$/.exec(sinEN.trim());
+  if (zona && dos) intentos.push([`${zona}N ${dos[1]} ${dos[2]}`, `UTM (huso ${zona} de la vista)`]);
+  for (const [s, como] of intentos) {
+    try {
+      const p = leerPosicion(s);
+      if (Number.isFinite(p.lat) && Number.isFinite(p.lon)) return { ...p, como, texto: s };
+    } catch { /* siguiente */ }
+  }
+  // ED50: "ED50 30 440400 4474465"
+  const ed = /ed\s*50/i.test(t) && /(\d{2})?\D*(\d{6}(?:\.\d+)?)\D+(\d{7}(?:\.\d+)?)/.exec(t.replace(/ed\s*50/i, ''));
+  if (ed && crs) {
+    const z = Number(ed[1] || zona);
+    const c = crs(23000 + z);
+    const g = c?.aGeo(Number(ed[2]), Number(ed[3]));
+    if (g) return { lat: g.lat, lon: g.lon, lado: 1, como: `ED50 UTM ${z} (rejilla del IGN)`, texto: t };
+  }
+  return null;
+}
+
+/** Texto MGRS de la zona de cuadrícula (p. ej. «30T») de un punto. */
+function zonaMgrs(p) {
+  try { const u = geoAUtm(p.lat, p.lon); return `${u.zona}${bandaLatitud(p.lat)}`; } catch { return ''; }
+}
+
+return { normalizar, distancia, SINONIMOS, puntuar, buscar, leerCoordenadaFlexible, zonaMgrs };
+})();
+
 // ── src/ui/mapa.js
 __mods["src/ui/mapa.js"] = (function () {
 'use strict';
-// Página del mapa: capas (IGN, Google, importadas), cuadrícula MGRS,
-// coordenada y altitud bajo el cursor, ajustes, regla, dibujo (dibujo.js) e
-// importación (importar.js). Usa Leaflet (global L).
-const { formatearPosicion, leerPosicion, medir, puntosGeodesica, formatearRumbo } = __req("src/geo/index.js");
-const { FONDOS, SUPERPUESTAS, ALTERNATIVAS, ZONA_PILOTO, crearCapa } = __req("src/mapa/capas.js");
+// Página del mapa: fondos (IGN, híbrido con imagen elegible, relieve propio),
+// mapas importados, visualización (cuadrícula, sombreado, curvas), buscador
+// universal, ajustes, regla, dibujo (dibujo.js) e importación (importar.js).
+// Usa Leaflet (global L).
+const { formatearPosicion, medir, puntosGeodesica, formatearRumbo } = __req("src/geo/index.js");
+const { FONDOS, IMAGENES, ROTULOS, SUPERPUESTAS, ZONA_PILOTO, ATRIBUCION_MDT, crearCapa, fechaImagen } = __req("src/mapa/capas.js");
+const { capaRelieve } = __req("src/mapa/relieve.js");
 const { capaCuadricula } = __req("src/mapa/cuadricula.js");
 const { iniciarDibujo, HERRAMIENTAS_DIBUJO } = __req("src/ui/dibujo.js");
 const { iniciarImportar } = __req("src/ui/importar.js");
 const { crearServicioAlturas } = __req("src/datos/alturas.js");
 const { prepararRejillas } = __req("src/geo/rejillas.js");
+const { crsDesdeEpsg } = __req("src/geo/crs.js");
+const { buscar, leerCoordenadaFlexible } = __req("src/ui/difuso.js");
+const { TIPOS } = __req("src/plan/plan.js");
 
 const L = window.L;
 const $ = (id) => document.getElementById(id);
@@ -8335,10 +8757,14 @@ const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&l
 // ---------------------------------------------------------------- estado y ajustes
 const CLAVE = 'spa.mapa.estado';
 const estado = {
-  angulo: 'grados', coordenadas: 'mgrs', fondo: 'mtn', fondoAuto: false, mtnDetalle: false, intensidadCuadricula: 35,
-  superpuestas: { cuadricula: true, piloto: true }, vista: null,
+  angulo: 'grados', coordenadas: 'mgrs', fondo: 'mtn', imagen: 'google', rotulos: true,
+  fondoAuto: false, mtnDetalle: false, intensidadCuadricula: 35,
+  superpuestas: { cuadricula: true, piloto: true }, secciones: { fondo: true }, vista: null,
 };
 try { Object.assign(estado, JSON.parse(localStorage.getItem(CLAVE) || '{}')); } catch { /* sin almacenamiento */ }
+if (!FONDOS.some((f) => f.id === estado.fondo)) estado.fondo = ['ortofoto', 'satelite'].includes(estado.fondo) ? 'hibrido' : 'mtn';
+if (!IMAGENES[estado.imagen]) estado.imagen = 'google';
+delete estado.superpuestas.vertices;
 const guardar = () => { try { localStorage.setItem(CLAVE, JSON.stringify(estado)); } catch { /* nada */ } };
 
 const metros = (m) => (m >= 1000 ? `${(m / 1000).toLocaleString('es-ES', { minimumFractionDigits: 3, maximumFractionDigits: 3 })} km` : `${m.toLocaleString('es-ES', { maximumFractionDigits: 1 })} m`);
@@ -8346,7 +8772,7 @@ const coord = (p) => formatearPosicion(p, { formato: estado.coordenadas, precisi
 const rumbo = (g) => formatearRumbo(g, estado.angulo, estado.angulo === 'grados' ? 1 : 0);
 
 const alturas = crearServicioAlturas();
-prepararRejillas().catch(() => {}); // ED50 y geoide (para mapas antiguos y alturas de ATAK)
+prepararRejillas().catch(() => {}); // ED50 y geoide (mapas antiguos, alturas de ATAK, búsqueda en ED50)
 
 // ---------------------------------------------------------------- mapa
 const piloto = L.latLngBounds([ZONA_PILOTO.sur, ZONA_PILOTO.oeste], [ZONA_PILOTO.norte, ZONA_PILOTO.este]);
@@ -8356,6 +8782,7 @@ L.control.scale({ metric: true, imperial: false, maxWidth: 160, position: 'botto
 if (estado.vista) mapa.setView(estado.vista.centro, estado.vista.zoom); else mapa.fitBounds(piloto, { padding: [20, 20] });
 new ResizeObserver(() => mapa.invalidateSize({ pan: false })).observe($('mapa'));
 mapa.on('moveend', () => { const c = mapa.getCenter(); estado.vista = { centro: [c.lat, c.lng], zoom: mapa.getZoom() }; guardar(); });
+const centro = () => { const c = mapa.getCenter(); return { lat: c.lat, lon: c.lng }; };
 
 // ---------------------------------------------------------------- diagnóstico de capas
 const diag = {};
@@ -8366,69 +8793,102 @@ function vigilar(id, capa) {
   capa.on('tileerror', (e) => { diag[id].err++; diag[id].url = e.tile?.src || diag[id].url; setTimeout(revisarCapas, 0); });
   return capa;
 }
-
-const defsFondo = [...FONDOS, ...ALTERNATIVAS];
-const capasFondo = Object.fromEntries(defsFondo.map((f) => [f.id, vigilar(f.id, crearCapa(L, f))]));
-capasFondo.mtn.ponerDetalle?.(Boolean(estado.mtnDetalle));
-let fondoActual = null, fondoElegido = null;
-const alternativasProbadas = new Set();
-function ponerFondo(id, { automatico = false } = {}) {
-  if (!capasFondo[id]) id = FONDOS[0].id;
-  if (fondoActual) mapa.removeLayer(fondoActual);
-  fondoActual = capasFondo[id].addTo(mapa);
-  fondoActual.bringToBack();
-  fondoActual.idSpa = id;
-  if (!automatico) { fondoElegido = id; alternativasProbadas.clear(); ocultarAviso(); estado.fondo = id; guardar(); }
-  const visible = FONDOS.some((f) => f.id === id) ? id : fondoElegido;
-  document.querySelectorAll('.fondo').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.id === visible)));
-}
 function revisarCapas() {
-  const id = fondoActual?.idSpa; if (!id) return;
+  const id = fondoActual?.idDiag; if (!id) return;
   const d = diag[id];
-  if (d.ok > 0 || d.err < 4) return;
-  const def = defsFondo.find((f) => f.id === (fondoElegido || id));
-  const sig = (def?.alternativas || []).find((a) => !alternativasProbadas.has(a) && a !== id);
-  if (sig) {
-    alternativasProbadas.add(sig);
-    ponerFondo(sig, { automatico: true });
-    mostrarAviso('aviso', `«${def.nombre}» no responde por su vía principal. Se está probando: <b>${esc(ALTERNATIVAS.find((a) => a.id === sig).nombre)}</b>.`, d.url);
-    return;
-  }
-  mostrarAviso('error', `No llega ninguna imagen de «${esc(defsFondo.find((f) => f.id === id)?.nombre || id)}».`, d.url);
-}
-function mostrarAviso(tipo, texto, urlPrueba) {
+  if (!d || d.ok > 0 || d.err < 4) return;
+  const nombre = id.startsWith('img-') ? `la imagen ${IMAGENES[id.slice(4)].nombre}` : FONDOS.find((f) => f.id === id)?.nombre || id;
   const causas = enVistaPrevia ? '<li><b>Estás viendo el mapa dentro de una vista previa.</b> Descarga el archivo y ábrelo con Chrome o Edge.</li>' : '';
-  $('aviso').className = `aviso aviso-${tipo}`;
-  $('aviso').innerHTML = `<div class="av-tit">${texto}</div><ul>${causas}
+  $('aviso').className = 'aviso aviso-error';
+  $('aviso').innerHTML = `<div class="av-tit">No llega ninguna imagen de ${esc(nombre)}.</div><ul>${causas}
       <li>Si lo abres desde un visor (móvil, correo, app), descárgalo y ábrelo con <b>Chrome o Edge</b>.</li>
-      <li>La red puede estar bloqueando el servicio (redes corporativas o de Defensa).</li></ul>
-    <div class="av-acc">${urlPrueba ? `<a href="${esc(urlPrueba)}" target="_blank" rel="noopener">Abrir una tesela de prueba</a>` : ''}
-      <button type="button" data-fondo-alt="satelite">Usar satélite</button><button type="button" id="aviso-cerrar">Cerrar</button></div>`;
+      <li>La red puede estar bloqueando el servicio (redes corporativas o de Defensa).</li>
+      ${id.startsWith('img-') ? '<li>Prueba otra imagen del híbrido (Capas → Fondo).</li>' : ''}</ul>
+    <div class="av-acc">${d.url ? `<a href="${esc(d.url)}" target="_blank" rel="noopener">Abrir una tesela de prueba</a>` : ''}<button type="button" id="aviso-cerrar">Cerrar</button></div>`;
   $('aviso').hidden = false;
 }
-function ocultarAviso() { $('aviso').hidden = true; }
-$('aviso').addEventListener('click', (ev) => {
-  if (ev.target.id === 'aviso-cerrar') ocultarAviso();
-  const b = ev.target.closest('[data-fondo-alt]');
-  if (b) { ponerFondo(b.dataset.fondoAlt); ocultarAviso(); }
-});
+$('aviso').addEventListener('click', (ev) => { if (ev.target.id === 'aviso-cerrar') $('aviso').hidden = true; });
 
+// ---------------------------------------------------------------- fondos
+const capasImagen = Object.fromEntries(Object.entries(IMAGENES).map(([id, def]) => [id, vigilar(`img-${id}`, crearCapa(L, { ...def, zIndex: 1 }))]));
+const capaRotulos = crearCapa(L, { ...ROTULOS, zIndex: 3 });
+const capasFondo = {
+  mtn: vigilar('mtn', crearCapa(L, FONDOS.find((f) => f.id === 'mtn'))),
+  base: vigilar('base', crearCapa(L, FONDOS.find((f) => f.id === 'base'))),
+  relieve: vigilar('relieve', capaRelieve(L, 'fondo', { atribucion: ATRIBUCION_MDT })),
+  hibrido: L.layerGroup(),
+};
+capasFondo.mtn.ponerDetalle?.(Boolean(estado.mtnDetalle));
+function montarHibrido() {
+  const g = capasFondo.hibrido;
+  g.clearLayers();
+  g.addLayer(capasImagen[estado.imagen]);
+  if (estado.rotulos) g.addLayer(capaRotulos);
+  g.idDiag = `img-${estado.imagen}`;
+}
+montarHibrido();
+
+let fondoActual = null;
+function ponerFondo(id, { automatico = false } = {}) {
+  if (!capasFondo[id]) id = 'mtn';
+  if (fondoActual) mapa.removeLayer(fondoActual);
+  if (id === 'hibrido') montarHibrido();
+  fondoActual = capasFondo[id].addTo(mapa);
+  fondoActual.bringToBack?.();
+  fondoActual.idSpa = id;
+  fondoActual.idDiag = id === 'hibrido' ? `img-${estado.imagen}` : id;
+  if (!automatico) { estado.fondo = id; guardar(); $('aviso').hidden = true; }
+  document.querySelectorAll('.fondo').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.id === id)));
+  $('fondo-actual').textContent = FONDOS.find((f) => f.id === id).nombre + (id === 'hibrido' ? ` · ${IMAGENES[estado.imagen].nombre}` : '');
+  $('opc-hibrido').hidden = id !== 'hibrido';
+  actualizarFecha();
+}
 $('fondos').innerHTML = FONDOS.map((f) => `<button type="button" class="fondo" data-id="${f.id}" title="${esc(f.detalle)}" aria-pressed="false">
   <span class="muestra muestra-${f.id}"></span><span class="nom">${esc(f.nombre)}</span></button>`).join('');
 $('fondos').addEventListener('click', (ev) => { const b = ev.target.closest('.fondo'); if (b) ponerFondo(b.dataset.id); });
+
+// Imagen del híbrido y su fecha
+$('imagen-fuente').innerHTML = Object.entries(IMAGENES).map(([id, d]) => `<button type="button" data-v="${id}" title="${esc(d.detalle)}">${esc(d.nombre)}</button>`).join('');
+function ponerImagen(id) {
+  estado.imagen = id; guardar();
+  $('imagen-fuente').querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.v === id)));
+  if (fondoActual?.idSpa === 'hibrido') ponerFondo('hibrido', { automatico: true });
+  else actualizarFecha();
+}
+$('imagen-fuente').addEventListener('click', (ev) => { const b = ev.target.closest('button[data-v]'); if (b) { ponerImagen(b.dataset.v); if (fondoActual?.idSpa !== 'hibrido') ponerFondo('hibrido'); } });
+$('rotulos').checked = estado.rotulos;
+$('rotulos').addEventListener('change', (ev) => { estado.rotulos = ev.target.checked; guardar(); if (fondoActual?.idSpa === 'hibrido') ponerFondo('hibrido', { automatico: true }); });
+let tFecha = 0, nFecha = 0;
+function actualizarFecha() {
+  clearTimeout(tFecha);
+  const caja = $('imagen-fecha');
+  const def = IMAGENES[estado.imagen];
+  if (!def.fecha) { caja.textContent = `${def.nombre} no publica la fecha de sus imágenes.`; return; }
+  if (fondoActual?.idSpa !== 'hibrido') { caja.textContent = ''; return; }
+  caja.textContent = 'Fecha de la imagen: consultando…';
+  const n = ++nFecha;
+  tFecha = setTimeout(async () => {
+    const c = centro();
+    try {
+      const f = await fechaImagen(def.fecha, c.lat, c.lon);
+      if (n === nFecha) caja.innerHTML = f ? `Imagen en el centro del mapa: <b>${esc(f)}</b>` : 'Sin fecha para esta zona.';
+    } catch { if (n === nFecha) caja.textContent = 'No se pudo consultar la fecha.'; }
+  }, 500);
+}
+mapa.on('moveend', () => { if (fondoActual?.idSpa === 'hibrido') actualizarFecha(); });
+ponerImagen(estado.imagen);
 ponerFondo(estado.fondo);
 
-// Cambio automático a ortofoto al acercarse (opcional)
-const ZOOM_ORTOFOTO = 17;
+// Híbrido al acercarse (opcional)
+const ZOOM_HIBRIDO = 17;
 let zoomPrevio = null;
 function fondoPorZoom({ forzar = false } = {}) {
   const z = mapa.getZoom();
-  const cerca = z >= ZOOM_ORTOFOTO, antes = zoomPrevio !== null && zoomPrevio >= ZOOM_ORTOFOTO;
+  const cerca = z >= ZOOM_HIBRIDO, antes = zoomPrevio !== null && zoomPrevio >= ZOOM_HIBRIDO;
   zoomPrevio = z;
   if (!estado.fondoAuto || (!forzar && cerca === antes)) return;
-  const objetivo = cerca ? 'ortofoto' : estado.fondo;
-  if (fondoActual?.idSpa === objetivo) return;
-  ponerFondo(objetivo, { automatico: true }); fondoElegido = objetivo; alternativasProbadas.clear();
+  const objetivo = cerca ? 'hibrido' : estado.fondo;
+  if (fondoActual?.idSpa !== objetivo) ponerFondo(objetivo, { automatico: true });
 }
 mapa.on('zoomend', () => fondoPorZoom());
 $('fondo-auto').checked = Boolean(estado.fondoAuto);
@@ -8437,12 +8897,11 @@ $('fondo-auto').addEventListener('change', (ev) => {
   if (estado.fondoAuto) fondoPorZoom({ forzar: true }); else if (fondoActual?.idSpa !== estado.fondo) ponerFondo(estado.fondo);
 });
 fondoPorZoom({ forzar: true });
-// MTN25 desde más arriba (opcional)
 $('mtn-detalle').checked = Boolean(estado.mtnDetalle);
 $('mtn-detalle').addEventListener('change', (ev) => { estado.mtnDetalle = ev.target.checked; guardar(); capasFondo.mtn.ponerDetalle?.(estado.mtnDetalle); });
 
-// ---------------------------------------------------------------- superpuestas y cuadrícula
-const SELECTORES_OBSTACULO = '.herramientas, .panel-capas, .panel-plan, .panel-medida, .aviso, .aviso-breve, .leaflet-control-zoom, .leaflet-control-scale, .leaflet-control-attribution';
+// ---------------------------------------------------------------- visualización y zona piloto
+const SELECTORES_OBSTACULO = '.herramientas.visible, .herr-pista, .panel-capas, .panel-plan, .panel-medida, .aviso, .aviso-breve, .leaflet-control-zoom, .leaflet-control-scale, .leaflet-control-attribution';
 function obstaculos() {
   const base = $('mapa').getBoundingClientRect();
   return [...document.querySelectorAll(SELECTORES_OBSTACULO)].map((el) => el.getBoundingClientRect()).filter((r) => r.width && r.height)
@@ -8454,12 +8913,13 @@ const zonaPiloto = L.layerGroup([
   L.rectangle(piloto, { color: '#9A7642', weight: 2, dashArray: '7 5', fill: false, interactive: false }),
   L.marker([ZONA_PILOTO.norte, ZONA_PILOTO.oeste], { interactive: false, icon: L.divIcon({ className: 'zona-piloto-etq', html: esc(ZONA_PILOTO.nombre), iconSize: null, iconAnchor: [0, 28] }) }),
 ]);
-const listaSup = [
+const VISUAL = [
   { id: 'cuadricula', nombre: 'Cuadrícula MGRS', detalle: 'Calculada por SPA (100 km → 100 m según zoom)', capa: cuadricula },
+  { id: 'sombreado', nombre: 'Sombreado', detalle: 'Relieve del MDT del IGN sobre cualquier fondo (5 m al acercarse)', capa: vigilar('sombreado', capaRelieve(L, 'sombreado', { atribucion: ATRIBUCION_MDT, zIndex: 2 })) },
   ...SUPERPUESTAS.map((s) => ({ ...s, capa: vigilar(s.id, crearCapa(L, s)) })),
-  { id: 'piloto', nombre: 'Zona piloto', detalle: 'Guadarrama, unos 20 × 20 km', capa: zonaPiloto },
 ];
-$('superpuestas').innerHTML = listaSup.map((s) => `<label class="sup"><input type="checkbox" data-id="${s.id}">
+const todasSup = [...VISUAL, { id: 'piloto', capa: zonaPiloto }];
+$('superpuestas').innerHTML = VISUAL.map((s) => `<label class="sup"><input type="checkbox" data-id="${s.id}">
   <span class="txt"><b>${esc(s.nombre)}</b><small>${esc(s.detalle)}</small></span></label>${s.id === 'cuadricula'
   ? `<label class="intensidad" title="Intensidad de las líneas de la cuadrícula">Intensidad <input type="range" id="cuad-intensidad" min="10" max="100" step="5" value="${estado.intensidadCuadricula}"><output id="cuad-intensidad-v">${estado.intensidadCuadricula} %</output></label>` : ''}`).join('');
 $('cuad-intensidad').addEventListener('input', (ev) => {
@@ -8467,19 +8927,28 @@ $('cuad-intensidad').addEventListener('input', (ev) => {
   $('cuad-intensidad-v').textContent = `${estado.intensidadCuadricula} %`; cuadricula.redibujar();
 });
 function ponerSup(id, on) {
-  const s = listaSup.find((x) => x.id === id); if (!s) return;
+  const s = todasSup.find((x) => x.id === id); if (!s) return;
   if (on) s.capa.addTo(mapa); else mapa.removeLayer(s.capa);
   estado.superpuestas[id] = on; guardar();
-  const caja = document.querySelector(`.sup input[data-id="${id}"]`); if (caja) caja.checked = on;
+  document.querySelectorAll(`input[data-id="${id}"]`).forEach((c) => { c.checked = on; });
+  const n = VISUAL.filter((v) => estado.superpuestas[v.id]).length;
+  $('visual-cuenta').textContent = n ? `${n} activa${n > 1 ? 's' : ''}` : '';
 }
-$('superpuestas').addEventListener('change', (ev) => { const i = ev.target.closest('input[data-id]'); if (i) ponerSup(i.dataset.id, i.checked); });
-for (const s of listaSup) ponerSup(s.id, Boolean(estado.superpuestas[s.id]));
+$('capas-cuerpo').addEventListener('change', (ev) => { const i = ev.target.closest('input[data-id]'); if (i) ponerSup(i.dataset.id, i.checked); });
+for (const s of todasSup) ponerSup(s.id, Boolean(estado.superpuestas[s.id]));
 
-$('capas-toggle').addEventListener('click', () => {
-  const cerrado = $('panel-capas').classList.toggle('cerrado');
-  $('capas-toggle').setAttribute('aria-expanded', String(!cerrado)); recolocarEtiquetas();
-});
-if (window.matchMedia('(max-width: 760px)').matches) { $('panel-capas').classList.add('cerrado'); $('capas-toggle').setAttribute('aria-expanded', 'false'); }
+// Desplegables (recuerdan si estaban abiertos)
+for (const d of document.querySelectorAll('.seccion')) {
+  if (estado.secciones?.[d.dataset.sec] !== undefined) d.open = estado.secciones[d.dataset.sec];
+  d.addEventListener('toggle', () => { estado.secciones = { ...estado.secciones, [d.dataset.sec]: d.open }; guardar(); recolocarEtiquetas(); });
+}
+const abrirSeccion = (sec) => { const d = document.querySelector(`.seccion[data-sec="${sec}"]`); if (d) d.open = true; ponerPanelCapas(true); };
+function ponerPanelCapas(abierto) {
+  $('panel-capas').classList.toggle('cerrado', !abierto);
+  $('capas-toggle').setAttribute('aria-expanded', String(abierto)); recolocarEtiquetas();
+}
+$('capas-toggle').addEventListener('click', () => ponerPanelCapas($('panel-capas').classList.contains('cerrado')));
+if (window.matchMedia('(max-width: 760px)').matches) ponerPanelCapas(false);
 
 // ---------------------------------------------------------------- herramientas, dibujo e importación
 let herramienta = 'consultar';
@@ -8499,10 +8968,16 @@ importar = iniciarImportar({
   herramienta: () => herramienta,
   alCambiarPaneles: () => recolocarEtiquetas(),
 });
+// Cuenta de mapas en el título del desplegable
+new MutationObserver(() => { const n = document.querySelectorAll('#mapas-importados .mapa-imp').length; $('mapas-cuenta').textContent = n ? `${n} importado${n > 1 ? 's' : ''}` : ''; })
+  .observe($('mapas-importados'), { childList: true });
 
+const NOMBRE_HERR = { consultar: 'Mover', punto: 'Punto', linea: 'Línea', area: 'Área', circulo: 'Círculo', medir: 'Medir' };
 function elegirHerramienta(h) {
   herramienta = h;
   document.querySelectorAll('[data-herr]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.herr === h)));
+  $('herr-actual').textContent = NOMBRE_HERR[h] ?? h;
+  $('herr-pista').classList.toggle('activa', h !== 'consultar');
   $('panel-medida').hidden = h !== 'medir';
   mapa.getContainer().classList.toggle('cursor-cruz', h === 'medir' || HERRAMIENTAS_DIBUJO.includes(h));
   if (h === 'medir') importar.cerrarFicha();
@@ -8513,8 +8988,7 @@ function elegirHerramienta(h) {
 document.querySelectorAll('[data-herr]').forEach((b) => b.addEventListener('click', () => elegirHerramienta(b.dataset.herr)));
 $('ir-piloto').addEventListener('click', () => mapa.flyToBounds(piloto, { padding: [20, 20], duration: 0.8 }));
 function ponerPanelPlan(abierto) {
-  // En pantallas estrechas no caben los dos paneles a la vez
-  if (abierto && window.matchMedia('(max-width: 760px)').matches) { $('panel-capas').classList.add('cerrado'); $('capas-toggle').setAttribute('aria-expanded', 'false'); }
+  if (abierto && window.matchMedia('(max-width: 760px)').matches) ponerPanelCapas(false);
   $('panel-plan').hidden = !abierto;
   $('btn-plan').setAttribute('aria-pressed', String(abierto));
   document.body.classList.toggle('plan-abierto', abierto);
@@ -8525,30 +8999,47 @@ $('btn-plan').addEventListener('click', () => ponerPanelPlan($('panel-plan').hid
 $('plan-cerrar').addEventListener('click', () => ponerPanelPlan(false));
 try { if (localStorage.getItem('spa.panelPlan') === '1') ponerPanelPlan(true); } catch { /* nada */ }
 
-// ---------------------------------------------------------------- ajustes (icono arriba a la derecha)
-$('btn-ajustes').addEventListener('click', (ev) => {
-  ev.stopPropagation();
-  const abrir = $('ajustes').hidden;
-  $('ajustes').hidden = !abrir; $('btn-ajustes').setAttribute('aria-expanded', String(abrir));
-});
-document.addEventListener('click', (ev) => { if (!$('ajustes').hidden && !ev.target.closest('#ajustes, #btn-ajustes')) { $('ajustes').hidden = true; $('btn-ajustes').setAttribute('aria-expanded', 'false'); } });
-for (const grupo of document.querySelectorAll('[data-pref]')) {
-  const clave = grupo.dataset.pref;
-  const pintar = () => grupo.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.v === String(estado[clave]))));
-  grupo.addEventListener('click', (ev) => {
-    const b = ev.target.closest('button'); if (!b) return;
-    estado[clave] = b.dataset.v; guardar(); pintar();
-    if (ultimaPos) mostrarPos(ultimaPos, $('be-et').textContent);
-    pintarMedida(); dibujo.refrescar();
+// Barra de herramientas: aparece al acercar el ratón arriba (en táctil, siempre)
+const tactil = window.matchMedia('(hover: none)').matches;
+let tOcultar = 0;
+function mostrarHerramientas(si) {
+  clearTimeout(tOcultar);
+  if (si) { $('herramientas').classList.add('visible'); document.body.classList.add('herr-visibles'); recolocarEtiquetas(); return; }
+  tOcultar = setTimeout(() => { $('herramientas').classList.remove('visible'); document.body.classList.remove('herr-visibles'); recolocarEtiquetas(); }, 450);
+}
+if (tactil) mostrarHerramientas(true);
+else {
+  $('contenido').addEventListener('mousemove', (e) => {
+    const r = $('contenido').getBoundingClientRect(), b = $('herramientas').getBoundingClientRect();
+    const cerca = e.clientY - r.top < 70 && e.clientX - r.left < Math.max(b.right - r.left, 240) + 40;
+    const encima = $('herramientas').matches(':hover');
+    if (cerca || encima) mostrarHerramientas(true);
+    else if ($('herramientas').classList.contains('visible')) mostrarHerramientas(false);
   });
-  pintar();
+  $('contenido').addEventListener('mouseleave', () => mostrarHerramientas(false));
+  $('herr-pista').addEventListener('mouseenter', () => mostrarHerramientas(true));
+}
+$('herr-pista').addEventListener('click', () => mostrarHerramientas(!$('herramientas').classList.contains('visible')));
+
+// ---------------------------------------------------------------- ajustes (icono arriba a la derecha)
+function abrirAjustes(si = $('ajustes').hidden) { $('ajustes').hidden = !si; $('btn-ajustes').setAttribute('aria-expanded', String(si)); }
+$('btn-ajustes').addEventListener('click', (ev) => { ev.stopPropagation(); abrirAjustes(); });
+document.addEventListener('click', (ev) => { if (!$('ajustes').hidden && !ev.target.closest('#ajustes, #btn-ajustes, #buscar')) abrirAjustes(false); });
+function ponerPref(clave, v) {
+  estado[clave] = v; guardar();
+  document.querySelectorAll(`[data-pref="${clave}"] button`).forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.v === String(v))));
+  if (ultimaPos) mostrarPos(ultimaPos, $('be-et').textContent);
+  pintarMedida(); dibujo.refrescar();
+}
+for (const grupo of document.querySelectorAll('[data-pref]')) {
+  grupo.addEventListener('click', (ev) => { const b = ev.target.closest('button'); if (b) ponerPref(grupo.dataset.pref, b.dataset.v); });
+  grupo.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.v === String(estado[grupo.dataset.pref]))));
 }
 
 mapa.on('click', (e) => {
   const p = { lat: e.latlng.lat, lon: e.latlng.lng };
   if (herramienta === 'medir') { medida.push(p); pintarMedida(); return; }
   if (HERRAMIENTAS_DIBUJO.includes(herramienta)) { dibujo.clic(p); return; }
-  // Con «Mover», un clic en el mapa vacío solo quita la selección (no pone puntos)
   if (!dibujo.quitarSeleccion()) importar.cerrarFicha();
 });
 mapa.on('dblclick', () => { if (HERRAMIENTAS_DIBUJO.includes(herramienta)) dibujo.dobleClic(); });
@@ -8558,14 +9049,12 @@ mapa.on('contextmenu', (e) => {
 });
 
 // ---------------------------------------------------------------- barra inferior: coordenada y altitud
-const tactil = window.matchMedia('(hover: none)').matches;
 if (tactil) { document.body.classList.add('tactil'); const c = document.createElement('div'); c.className = 'cruz'; $('contenido').append(c); }
 let tAltura = 0, pedidaAltura = 0;
 function mostrarPos(p, etiqueta) {
   ultimaPos = p;
   $('be-et').textContent = etiqueta;
   try { $('be-coord').textContent = coord(p); } catch { $('be-coord').textContent = 'Fuera del ámbito UTM'; }
-  // Altitud: se pide al detenerse el cursor (y solo con zoom suficiente)
   clearTimeout(tAltura);
   $('be-alt').classList.add('pendiente');
   if (mapa.getZoom() < 9) { $('be-alt').textContent = ''; return; }
@@ -8585,7 +9074,7 @@ mapa.on('mousemove', (e) => {
   mostrarPos(p, 'Cursor');
   dibujo.moverCursor(p);
 });
-mapa.on('moveend', () => { if (tactil || !ultimaPos) { const c = mapa.getCenter(); mostrarPos({ lat: c.lat, lon: c.lng }, 'Centro'); } });
+mapa.on('moveend', () => { if (tactil || !ultimaPos) mostrarPos(centro(), 'Centro'); });
 mapa.on('mouseout', () => { if (ultimaPos) $('be-et').textContent = 'Última'; });
 
 // ---------------------------------------------------------------- regla de medida
@@ -8624,29 +9113,100 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && herramienta === 'medir') { if (medida.length) { medida.length = 0; pintarMedida(); } else elegirHerramienta('consultar'); }
 });
 
-// ---------------------------------------------------------------- ir a una posición
+// ---------------------------------------------------------------- buscador universal
 const capaBusqueda = L.layerGroup().addTo(mapa);
-$('buscar').addEventListener('submit', (ev) => {
-  ev.preventDefault();
-  const txt = $('buscar-txt').value.trim();
-  const err = $('buscar-error'); err.classList.remove('visible');
-  if (!txt) return;
-  try {
-    const p = leerPosicion(txt);
-    const zoom = p.lado >= 10000 ? 11 : p.lado >= 1000 ? 13 : 15;
-    mapa.flyTo([p.lat, p.lon], Math.max(zoom, Math.min(mapa.getZoom(), 17)), { duration: 0.8 });
-    // Señal temporal (desaparece sola): no es un punto del plan
-    capaBusqueda.clearLayers();
-    L.marker([p.lat, p.lon], { interactive: false, icon: L.divIcon({ className: 'etq-ancla', html: '<span class="senal-busqueda"></span>', iconSize: null }) }).addTo(capaBusqueda);
-    setTimeout(() => capaBusqueda.clearLayers(), 5000);
-  } catch (e) { err.textContent = e.message; err.classList.add('visible'); }
-});
-$('buscar-txt').addEventListener('input', () => $('buscar-error').classList.remove('visible'));
+function irA(p) {
+  const zoom = p.lado >= 10000 ? 11 : p.lado >= 1000 ? 13 : 15;
+  mapa.flyTo([p.lat, p.lon], Math.max(zoom, Math.min(mapa.getZoom(), 17)), { duration: 0.8 });
+  capaBusqueda.clearLayers();
+  L.marker([p.lat, p.lon], { interactive: false, icon: L.divIcon({ className: 'etq-ancla', html: '<span class="senal-busqueda"></span>', iconSize: null }) }).addTo(capaBusqueda);
+  setTimeout(() => capaBusqueda.clearLayers(), 6000);
+}
+const conmutar = (id) => ({ accion: () => { ponerSup(id, !estado.superpuestas[id]); abrirSeccion(id === 'piloto' ? 'mapas' : 'visual'); } });
+const caja = (id, abrir) => ({ accion: () => { const c = $(id); c.checked = !c.checked; c.dispatchEvent(new Event('change', { bubbles: true })); abrirSeccion(abrir); } });
+const ACCIONES = [
+  ...FONDOS.map((f) => ({ texto: `Fondo ${f.nombre.toLowerCase()}`, extra: `${f.detalle} mapa fondo`, detalle: f.detalle, accion: () => { ponerFondo(f.id); abrirSeccion('fondo'); } })),
+  ...Object.entries(IMAGENES).map(([id, d]) => ({ texto: `Imagen ${d.nombre}`, extra: `híbrido satélite ortofoto foto ${d.detalle}`, detalle: d.detalle, accion: () => { ponerImagen(id); ponerFondo('hibrido'); abrirSeccion('fondo'); } })),
+  { texto: 'Nombres y carreteras del híbrido', extra: 'rótulos etiquetas', detalle: 'Activar o quitar', ...caja('rotulos', 'fondo') },
+  { texto: 'Mantener detalle 1:25.000', extra: 'mtn25 topográfico zoom', detalle: 'Activar o quitar', ...caja('mtn-detalle', 'fondo') },
+  { texto: 'Híbrido al acercarte', extra: 'automático zoom satélite', detalle: 'Activar o quitar', ...caja('fondo-auto', 'fondo') },
+  { texto: 'Cuadrícula MGRS', extra: 'mostrar ocultar malla grid', detalle: 'Mostrar u ocultar', ...conmutar('cuadricula') },
+  { texto: 'Intensidad de la cuadrícula', extra: 'malla grid tenue opacidad', detalle: 'Ajustar', accion: () => { abrirSeccion('visual'); $('cuad-intensidad').focus(); } },
+  { texto: 'Sombreado', extra: 'relieve mdt sombra', detalle: 'Mostrar u ocultar', ...conmutar('sombreado') },
+  { texto: 'Curvas de nivel', extra: 'altura mdt', detalle: 'Mostrar u ocultar', ...conmutar('curvas') },
+  { texto: 'Zona piloto', extra: 'guadarrama', detalle: 'Mostrar u ocultar', ...conmutar('piloto') },
+  { texto: 'Ir a la zona piloto', extra: 'guadarrama centrar', detalle: 'Centrar el mapa', accion: () => mapa.flyToBounds(piloto, { padding: [20, 20], duration: 0.8 }) },
+  ...[['mgrs', 'MGRS'], ['utm', 'UTM'], ['gms', 'geográficas (G M S)'], ['gd', 'grados decimales']].map(([v, n]) => ({ texto: `Coordenadas en ${n}`, extra: 'formato ajustes coordenada', detalle: 'Ajustes', accion: () => ponerPref('coordenadas', v) })),
+  ...[['grados', 'grados'], ['milesimas', 'milésimas'], ['gms', 'G M S']].map(([v, n]) => ({ texto: `Rumbos en ${n}`, extra: 'ángulos ajustes regla azimut', detalle: 'Ajustes', accion: () => ponerPref('angulo', v) })),
+  ...['punto', 'linea', 'area', 'circulo'].map((h) => ({ texto: `Dibujar ${TIPOS[h].nombre.toLowerCase()}`, extra: 'herramienta nuevo crear', detalle: 'Herramienta', accion: () => elegirHerramienta(h) })),
+  { texto: 'Medir', extra: 'regla distancia rumbo herramienta', detalle: 'Herramienta', accion: () => elegirHerramienta('medir') },
+  { texto: 'Mover', extra: 'seleccionar herramienta', detalle: 'Herramienta', accion: () => elegirHerramienta('consultar') },
+  { texto: 'Deshacer', extra: 'ctrl z', detalle: 'Ctrl+Z', accion: () => $('deshacer').click() },
+  { texto: 'Rehacer', extra: 'ctrl y', detalle: 'Ctrl+Y', accion: () => $('rehacer').click() },
+  { texto: 'Plan', extra: 'dibujado archivos importados panel lista', detalle: 'Abrir el panel', accion: () => ponerPanelPlan(true) },
+  { texto: 'Ajustes', extra: 'opciones configuración', detalle: 'Abrir', accion: () => abrirAjustes(true) },
+  { texto: 'Importar archivo', extra: 'gpx kml kmz zip atak paquete datos', detalle: 'GPX, KML/KMZ, paquetes de ATAK', accion: () => $('btn-importar-datos').click() },
+  { texto: 'Importar mapa', extra: 'sqlite mbtiles tif geotiff jpg', detalle: 'Mapas propios', accion: () => $('btn-importar-mapa').click() },
+  { texto: 'Buscar en mis mapas', extra: 'carpeta catálogo', detalle: 'Mapas de tu carpeta', accion: () => importar.abrirBuscador() },
+].map((a) => ({ grupo: 'Ajustes y acciones', ...a }));
 
-{ const c = mapa.getCenter(); mostrarPos({ lat: c.lat, lon: c.lng }, 'Centro'); }
+function candidatos() {
+  const nomTipo = { punto: 'punto', linea: 'línea track ruta', area: 'área zona', circulo: 'círculo' };
+  const plan = dibujo.plan().elementos.map((el) => {
+    const n = el.propiedades.nombre || `${TIPOS[el.tipo].nombre} ${dibujo.plan().elementos.filter((e) => e.tipo === el.tipo).indexOf(el) + 1}`;
+    return { grupo: 'Plan', texto: n, extra: `${nomTipo[el.tipo]} dibujado ${el.propiedades.bando}`, detalle: TIPOS[el.tipo].nombre, accion: () => { ponerPanelPlan(true); dibujo.seleccionar(el.id, { centrar: true }); } };
+  });
+  return [...plan, ...importar.candidatosBusqueda(), ...ACCIONES];
+}
+let resultados = [], marcado = 0;
+function pintarResultados(q) {
+  const res = $('buscar-res');
+  if (!q.trim()) { res.hidden = true; resultados = []; return; }
+  const lista = [];
+  const p = leerCoordenadaFlexible(q, centro(), crsDesdeEpsg);
+  if (p) lista.push({ grupo: 'Coordenada', texto: coord(p), detalle: p.como === 'tal cual' ? (p.lado > 1 ? `centro del cuadrado de ${metros(p.lado)}` : '') : p.como, accion: () => irA(p), puntos: 101 });
+  // Los mejores 14, agrupados (cada grupo en el orden de su mejor resultado)
+  const mejores = buscar(q, candidatos()).slice(0, 14);
+  const ordenGrupo = [...new Set(mejores.map((r) => r.grupo))];
+  lista.push(...mejores.sort((a, b) => ordenGrupo.indexOf(a.grupo) - ordenGrupo.indexOf(b.grupo)));
+  resultados = lista; marcado = 0;
+  if (!lista.length) { res.innerHTML = '<div class="br-vacio">Nada encontrado. Prueba con otra palabra o una coordenada (MGRS, UTM, grados).</div>'; res.hidden = false; return; }
+  let grupoPrev = '';
+  res.innerHTML = lista.map((r, i) => {
+    const cab = r.grupo !== grupoPrev ? `<div class="br-grupo">${esc(r.grupo)}</div>` : '';
+    grupoPrev = r.grupo;
+    return `${cab}<button type="button" class="br-item" role="option" data-i="${i}" aria-selected="${i === 0}"><b>${esc(r.texto)}</b>${r.detalle ? `<small>${esc(r.detalle)}</small>` : ''}</button>`;
+  }).join('');
+  res.hidden = false;
+}
+function ejecutar(i) {
+  const r = resultados[i]; if (!r) return;
+  $('buscar-res').hidden = true;
+  $('buscar-txt').blur();
+  r.accion();
+}
+let tBuscar = 0;
+$('buscar-txt').addEventListener('input', () => { clearTimeout(tBuscar); tBuscar = setTimeout(() => pintarResultados($('buscar-txt').value), 70); });
+$('buscar-txt').addEventListener('focus', () => { if ($('buscar-txt').value.trim()) pintarResultados($('buscar-txt').value); });
+$('buscar-txt').addEventListener('keydown', (e) => {
+  if ($('buscar-res').hidden) return;
+  const items = [...document.querySelectorAll('#buscar-res .br-item')];
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+    e.preventDefault();
+    marcado = (marcado + (e.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length;
+    items.forEach((b, k) => b.setAttribute('aria-selected', String(k === marcado)));
+    items[marcado]?.scrollIntoView({ block: 'nearest' });
+  }
+  if (e.key === 'Escape') $('buscar-res').hidden = true;
+});
+$('buscar').addEventListener('submit', (ev) => { ev.preventDefault(); clearTimeout(tBuscar); pintarResultados($('buscar-txt').value); ejecutar(marcado); });
+$('buscar-res').addEventListener('mousedown', (ev) => { const b = ev.target.closest('.br-item'); if (b) { ev.preventDefault(); ejecutar(Number(b.dataset.i)); } });
+document.addEventListener('click', (ev) => { if (!ev.target.closest('#buscar')) $('buscar-res').hidden = true; });
+
+mostrarPos(centro(), 'Centro');
 elegirHerramienta('consultar');
 // Para pruebas automáticas
-window.__spa = { mapa, estado, medida, pintarMedida, diag, dibujo, importar, cuadricula, alturas, capasFondo };
+window.__spa = { mapa, estado, medida, pintarMedida, diag, dibujo, importar, cuadricula, alturas, capasFondo, capasImagen };
 
 return {  };
 })();

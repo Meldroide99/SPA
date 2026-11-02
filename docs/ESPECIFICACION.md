@@ -130,23 +130,30 @@ docs/                    esta especificación e informe de precisión
 ## 7. Mapa (fase 2)
 
 - **Librería:** Leaflet 1.9.4 (copiada en `src/vendor/leaflet`).
-- **Fondos** (`src/mapa/capas.js`), malla `GoogleMapsCompatible`:
-  | Fondo | Servicio | Capa |
-  |---|---|---|
-  | Topográfico | `ign.es/wmts/mapa-raster` (PNG) | `MTN` |
-  | Ortofoto | `ign.es/wmts/pnoa-ma` | `OI.OrthoimageCoverage` |
-  | Satélite / Híbrido | `mt{0-3}.google.com/vt` | `lyrs=s` / `lyrs=y` |
-  | Mapa base | `ign.es/wmts/ign-base` | `IGNBaseTodo` |
-  | Relieve | `servicios.idee.es/wmts/mdt` | `Relieve` |
-  Encima: sombreado, curvas de nivel (`wms-inspire/mdt`, `EL.ContourLine`),
-  vértices geodésicos (en pruebas), cuadrícula MGRS y zona piloto.
-- **Google:** acceso no oficial a sus teselas (lo usan ATAK y otros
-  programas). Sus condiciones lo prohíben y puede cortarse sin aviso;
-  decisión de Balú (quiere la mejor imagen). Respaldo: ortofoto PNOA.
+- **Fondos** (`src/mapa/capas.js`): Topográfico (IGN `mapa-raster`, PNG),
+  **Híbrido**, Mapa base (IGN `ign-base`) y **Relieve** (propio, ver abajo).
+  La ortofoto suelta y el satélite suelto se quitaron: ahora son el Híbrido.
+- **Híbrido = imagen + rótulos.** Imagen elegible: Google (`lyrs=s`), IGN
+  PNOA máxima actualidad, Esri World Imagery o Bing; rótulos de Google
+  (`lyrs=h`, en castellano), que se pueden quitar. **Fecha de la imagen**
+  para el centro del mapa cuando se publica: IGN PNOA (GetFeatureInfo de
+  `OI.MosaicElement`, con resolución) y Esri (identify). Google y Bing no la
+  publican. Comprobado en Uceda: PNOA julio 2024 (25 cm), Esri julio 2023;
+  Google y Bing muestran otras fechas (distinto laboreo de los campos).
+- **Google y Bing:** acceso no oficial a sus teselas (sus condiciones no lo
+  permiten y pueden cortarlo); decisión de Balú por calidad de imagen.
+- **Relieve propio** (`src/mapa/relieve.js`): sombreado calculado en el
+  navegador con el MDT del IGN (WCS de la IDEE, ASCII Grid con decimales):
+  MDT05 a resolución completa desde zoom 16, reducido a ~200 puntos por
+  tesela en 14–15, MDT25 en 11–13, MDT200 en 8–10, MDT1000 por debajo.
+  Método de Horn, sol del NO a 45°, exageración vertical creciente al alejar.
+  El «Relieve» del IGN en zoom 15 viene de una malla gruesa (~25 m, se ve
+  pixelado); el propio muestra hasta los bancales. Peticiones medidas desde
+  el navegador de Balú: 0,1–0,55 s y 84–460 KB por tesela.
 - **Mantener detalle 1:25.000** (opcional): el IGN cambia de mapa según el
   zoom (MTN25 en 15–16, más general en 14 y 13). Con la opción, en 14 y 13
   se pintan las teselas del 15 reducidas (4× y 16× teselas). Límite: zoom 13.
-- **Ortofoto al acercarte** (opcional): desde zoom 17.
+- **Híbrido al acercarte** (opcional): desde zoom 17.
 - **Pantalla y precisión:** el mapa se pinta en EPSG:3857, pero todos los
   números los calcula el motor sobre el elipsoide. La cuadrícula MGRS la
   dibuja SPA (desviación < 1 µm), tenue por defecto (35 %, ajustable).
@@ -156,6 +163,20 @@ docs/                    esta especificación e informe de precisión
   siempre al metro) y la **altitud** del terreno bajo el cursor.
 - **Ajustes** (icono arriba a la derecha): tipo de coordenada (MGRS, UTM,
   geográficas, grados decimales) y unidad de los rumbos de la regla.
+- **Panel de capas en desplegables:** Fondo (fondos, imagen del híbrido,
+  rótulos, detalle 1:25.000, híbrido al acercarte), Mapas (zona piloto y
+  mapas importados) y Visualización (cuadrícula MGRS e intensidad,
+  sombreado, curvas de nivel). Vértices geodésicos: quitados.
+- **Barra de herramientas** escondida: aparece al acercar el ratón arriba a
+  la izquierda (en pantallas táctiles, siempre). Una pastilla indica la
+  herramienta activa.
+- **Buscador universal** (arriba): coordenadas en cualquier formato (MGRS,
+  UTM, geográficas, grados con punto o coma; MGRS o UTM sin zona → la de la
+  vista; «ED50 30 …» con la rejilla del IGN), lo dibujado, archivos y sus
+  elementos, mapas importados, mapas de la carpeta y ajustes y acciones.
+  Aproximado: sin acentos, con erratas (Damerau-Levenshtein) y sinónimos
+  (track ~ línea, satélite ~ híbrido, grid ~ cuadrícula, mils ~ milésimas…).
+  Flechas e Intro para elegir. `src/ui/difuso.js`.
 - **Exportar el mapa a imagen** (fase 5): requiere CORS en los servicios.
 
 ## 8. Medir y dibujar (fase 3)
@@ -203,7 +224,11 @@ docs/                    esta especificación e informe de precisión
   superposiciones de imagen), CoT de ATAK (puntos con bando, líneas,
   rectángulos, círculos) y **paquetes .zip de ATAK** (manifiesto, CoT, y lo
   que lleven dentro: GPX, KML, KMZ, otros zip y mapas).
-- **Mapas** → «Capas · Mapas importados» (ver, opacidad, centrar, quitar),
+- **Mapas** → «Capas · Mapas» (ver, opacidad, centrar, quitar). **Clic en
+  su nombre:** encuadra el mapa (acercando o alejando), lo marca con un
+  marco magenta que parpadea y lo pone **por encima de todas las capas**.
+  Desde lejos, los mapas que aún no se pintan por el zoom muestran su
+  contorno discontinuo. Se colocan solos:
   colocados solos:
   - `.sqlite` de ATAK/osmdroid y **MBTiles** (plano o normalizado): lector
     SQLite propio **por trozos** (sirve para archivos de GB: solo lee las

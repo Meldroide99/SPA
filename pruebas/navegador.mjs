@@ -22,13 +22,15 @@ await new Promise((r) => setTimeout(r, 600));
 const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGP4/fs3AAXnAvM7qegZAAAAAElFTkSuQmCC', 'base64');
 // MDT simulado: plano inclinado z = 800 + 1000·(lat−40) + 500·(lon+5) (malla de 0,002°)
 const mdt = (url) => {
-  const lat0 = Number(/Lat\(([-\d.]+),/.exec(url)[1]), lon0 = Number(/Long\(([-\d.]+),/.exec(url)[1]);
-  const n = 4, d = 0.002, xll = Math.floor(lon0 / d) * d - d, yll = Math.floor(lat0 / d) * d - d;
+  const [, la0, la1] = /Lat\(([-\d.]+),([-\d.]+)\)/.exec(url).map(Number), [, lo0, lo1] = /Long\(([-\d.]+),([-\d.]+)\)/.exec(url).map(Number);
+  const d = Math.max(0.0005, (la1 - la0) / 60), xll = Math.floor(lo0 / d) * d - d, yll = Math.floor(la0 / d) * d - d;
+  const nx = Math.ceil((lo1 - xll) / d) + 2, ny = Math.ceil((la1 - yll) / d) + 2;
   const filas = [];
-  for (let j = n - 1; j >= 0; j--) filas.push(Array.from({ length: n }, (_, i) => (800 + 1000 * (yll + (j + 0.5) * d - 40) + 500 * (xll + (i + 0.5) * d + 5)).toFixed(3)).join(' '));
-  return `--wcs\r\n\r\nncols ${n}\nnrows ${n}\nxllcorner ${xll}\nyllcorner ${yll}\ndx ${d}\ndy ${d}\n${filas.join('\n')}\n--wcs--`;
+  for (let j = ny - 1; j >= 0; j--) filas.push(Array.from({ length: nx }, (_, i) => { const lat = yll + (j + 0.5) * d, lon = xll + (i + 0.5) * d; return (800 + 1000 * (lat - 40) + 500 * (lon + 5) + 30 * Math.sin(lat * 900) * Math.cos(lon * 700)).toFixed(3); }).join(' '));
+  return `--wcs\r\n\r\nncols ${nx}\nnrows ${ny}\nxllcorner ${xll}\nyllcorner ${yll}\ndx ${d}\ndy ${d}\n${filas.join('\n')}\n--wcs--`;
 };
-const zEsperada = (lat, lon) => 800 + 1000 * (lat - 40) + 500 * (lon + 5);
+// Altitud esperada (la ondulación del simulado es pequeña: se compara con tolerancia)
+const zEsperada = (lat, lon) => 800 + 1000 * (lat - 40) + 500 * (lon + 5) + 30 * Math.sin(lat * 900) * Math.cos(lon * 700);
 
 let fallos = 0;
 const ok = (cond, msg) => { console.log(`${cond ? '✔' : '✘'} ${msg}`); if (!cond) fallos++; };
@@ -37,7 +39,8 @@ const nav = await chromium.launch();
 const ctx = await nav.newContext({ viewport: { width: 1366, height: 820 } });
 const pedidas = [];
 await ctx.route(/ign\.es\/wmts|idee\.es\/wmts|wms|arcgisonline|google\.com/, (r) => { pedidas.push(r.request().url()); r.fulfill({ status: 200, contentType: 'image/png', body: PNG }); });
-await ctx.route(/wcs-inspire\/mdt/, (r) => r.fulfill({ status: 200, contentType: 'multipart/related', body: mdt(r.request().url()), headers: { 'access-control-allow-origin': '*' } }));
+await ctx.route(/wcs-inspire\/mdt/, (r) => { pedidas.push(r.request().url()); r.fulfill({ status: 200, contentType: 'multipart/related', body: mdt(r.request().url()), headers: { 'access-control-allow-origin': '*' } }); });
+await ctx.route(/pnoa-ma\?SERVICE=WMS&VERSION=1\.3\.0&REQUEST=GetFeatureInfo/, (r) => r.fulfill({ status: 200, contentType: 'text/html', body: '<html><body><h2>Informaci&oacute;n PNOA</h2> Fecha (a&ntilde;o-mes) 2024-07 Resoluci&oacute;n (metros) 0.25</body></html>' }));
 const pag = await ctx.newPage();
 const errores = [];
 pag.on('pageerror', (e) => errores.push(e.message));
@@ -55,6 +58,17 @@ const en = (fx, fy) => ({ x: caja.x + caja.width * fx, y: caja.y + caja.height *
 const clicEn = async (fx, fy, opc) => { const p = en(fx, fy); await pag.mouse.click(p.x, p.y, opc); await pag.waitForTimeout(60); };
 const plan = () => pag.evaluate(() => JSON.parse(JSON.stringify(window.__spa.dibujo.plan())));
 const motor = (codigo) => pag.evaluate(codigo);
+/** Las herramientas se esconden: se acerca el ratón arriba y luego se pulsa. */
+const herr = async (sel) => {
+  await pag.mouse.move(caja.x + 60, caja.y + 15); await pag.waitForTimeout(350);
+  await pag.click(sel); await pag.waitForTimeout(50);
+};
+
+// ---------------------------------------------------------------- barra de herramientas escondida
+await pag.mouse.move(en(0.5, 0.6).x, en(0.5, 0.6).y); await pag.waitForTimeout(600);
+ok(!(await pag.locator('#herramientas.visible').count()), 'Herramientas escondidas mientras el ratón está lejos');
+await pag.mouse.move(caja.x + 80, caja.y + 20); await pag.waitForTimeout(400);
+ok(await pag.locator('#herramientas.visible').count() === 1, 'Aparecen al acercar el ratón arriba');
 
 // ---------------------------------------------------------------- lo que se quitó
 ok(await pag.locator('#be-copiar, .be-prefs, [data-pref="precision"], .enlaces a').count() === 0, 'Sin «Copiar», sin 1 m/10 m/100 m y sin enlace a la calculadora');
@@ -75,19 +89,19 @@ const cur = await motor(() => { const c = document.getElementById('be-coord').te
 ok(/^\d+ m$/.test(alt), `Altitud bajo el cursor: ${alt} (${cur})`);
 
 // ---------------------------------------------------------------- punto y su ficha (altitud)
-await pag.click('[data-herr="punto"]');
+await herr('[data-herr="punto"]');
 await clicEn(0.42, 0.45);
 let p = await plan();
 ok(p.elementos.length === 1 && p.elementos[0].tipo === 'punto', 'Punto dibujado solo con la herramienta Punto');
 await pag.waitForTimeout(400);
 const P0 = p.elementos[0].geometria.coordinates;
 const altPunto = await pag.textContent('#el-altitud');
-ok(altPunto === `${Math.round(zEsperada(P0[1], P0[0]))} m`, `Altitud del punto redondeada al metro: ${altPunto} (esperada ${Math.round(zEsperada(P0[1], P0[0]))} m)`);
+ok(Math.abs(parseInt(altPunto, 10) - zEsperada(P0[1], P0[0])) <= 1, `Altitud del punto redondeada al metro: ${altPunto} (esperada ${Math.round(zEsperada(P0[1], P0[0]))} m)`);
 ok(await pag.locator('#panel-elemento #el-nombre').count() === 1 && await pag.locator('#panel-elemento [data-campo="el-estado"]').count() === 1, 'Ficha del punto: nombre, bando, presente/previsto, coordenada y altitud');
 if (CAPTURAS) { mkdirSync('docs/capturas', { recursive: true }); await pag.screenshot({ path: 'docs/capturas/v4-punto.png' }); }
 
 // ---------------------------------------------------------------- línea: imán, clic derecho, mover y eliminar punto
-await pag.click('[data-herr="linea"]');
+await herr('[data-herr="linea"]');
 const pPunto = await motor(() => { const c = window.__spa.dibujo.plan().elementos[0].geometria.coordinates; const q = window.__spa.mapa.latLngToContainerPoint([c[1], c[0]]); return { x: q.x, y: q.y }; });
 await pag.mouse.click(caja.x + pPunto.x + 6, caja.y + pPunto.y + 5); await pag.waitForTimeout(60); // cerca del punto: se une
 await clicEn(0.55, 0.40); await clicEn(0.6, 0.55); await clicEn(0.5, 0.7);
@@ -135,8 +149,8 @@ ok(p.elementos[1].propiedades.bando === 'enemigo' && p.elementos[1].propiedades.
 if (CAPTURAS) await pag.screenshot({ path: 'docs/capturas/v4-linea.png' });
 
 // ---------------------------------------------------------------- importar GPX y paquete ATAK
-await pag.click('[data-herr="consultar"]');
-await pag.click('#btn-plan');
+await herr('[data-herr="consultar"]');
+await herr('#btn-plan');
 ok(await pag.isVisible('#panel-plan'), 'Botón «Plan» abre el panel con lo dibujado e importado');
 await pag.setInputFiles('#entrada-datos', [GPX ?? 'pruebas/datos/paquete_atak.zip', 'pruebas/datos/paquete_atak.zip']);
 await pag.waitForFunction(() => window.__spa.importar.grupos.length >= 2, null, { timeout: 10000 });
@@ -175,7 +189,7 @@ const lienzos = await motor(() => [...document.querySelectorAll('.leaflet-mapasI
 ok(lienzos > 0, `GeoTIFF reproyectados y pintados (${lienzos} teselas con imagen)`);
 if (CAPTURAS) await pag.screenshot({ path: 'docs/capturas/v4-mapas.png' });
 
-// ---------------------------------------------------------------- capas: detalle MTN25 y Google
+// ---------------------------------------------------------------- capas: detalle MTN25, híbrido, relieve
 await pag.click('.fondo[data-id="mtn"]');
 await vista(40.79, -4.03, 14); await pag.waitForTimeout(400);
 pedidas.length = 0;
@@ -184,9 +198,58 @@ const matrices = new Set(pedidas.filter((u) => /mapa-raster/.test(u)).map((u) =>
 ok(matrices.has('15') && !matrices.has('14'), `Mantener detalle: a zoom 14 se piden teselas del 15 (${[...matrices].join(',')})`);
 ok(pedidas.some((u) => /FORMAT=image%2Fpng/.test(u)), 'Topográfico en PNG');
 await pag.uncheck('#mtn-detalle');
+ok(await pag.locator('.fondo[data-id="ortofoto"], .fondo[data-id="satelite"], input[data-id="vertices"]').count() === 0, 'Sin ortofoto suelta, sin satélite suelto y sin vértices geodésicos');
 pedidas.length = 0;
-await pag.click('.fondo[data-id="satelite"]'); await pag.waitForTimeout(500);
-ok(pedidas.some((u) => /mt\d\.google\.com\/vt\/lyrs=s/.test(u)), 'Fondo satélite de Google');
+await pag.click('.fondo[data-id="hibrido"]'); await pag.waitForTimeout(500);
+ok(pedidas.some((u) => /lyrs=s&/.test(u)) && pedidas.some((u) => /lyrs=h&/.test(u)), 'Híbrido: imagen de Google + rótulos');
+pedidas.length = 0;
+await pag.click('#imagen-fuente [data-v="pnoa"]'); await pag.waitForTimeout(1200);
+ok(pedidas.some((u) => /pnoa-ma\?SERVICE=WMTS/.test(u)), 'Híbrido con la imagen del IGN (PNOA)');
+ok(/julio 2024 · 25 cm/.test(await pag.textContent('#imagen-fecha')), `Fecha de la imagen: ${await pag.textContent('#imagen-fecha')}`);
+await pag.click('#imagen-fuente [data-v="google"]');
+pedidas.length = 0;
+await vista(40.79, -4.03, 13);
+await pag.click('.fondo[data-id="relieve"]'); await pag.waitForTimeout(1500);
+const relieve = await motor(() => [...document.querySelectorAll('.leaflet-tile-pane canvas')].filter((c) => {
+  const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; for (let k = 3; k < d.length; k += 64) if (d[k]) return true; return false; }).length);
+ok(relieve > 0, `Relieve calculado con el MDT y pintado (${relieve} teselas)`);
+ok(pedidas.some((u) => /CoverageId=Elevacion4258_25&.*FORMAT=application\/asc&SCALESIZE/.test(u)), 'A zoom 13 el relieve pide el MDT (malla del zoom) en ASCII Grid');
+await pag.click('.fondo[data-id="mtn"]');
+
+// ---------------------------------------------------------------- mapa importado: encontrarlo y ponerlo encima
+await pag.click('.seccion[data-sec="mapas"] > summary');
+await vista(40.0, -1.0, 8); await pag.waitForTimeout(300);
+await pag.click('#mapas-importados .mi-nom >> text=/sqlite/'); await pag.waitForTimeout(1300);
+const selMapa = await motor(() => { const m = window.__spa.importar.mapas.find((x) => /sqlite/.test(x.nombre)); return { pane: m.capa.options.pane, marco: document.querySelectorAll('.leaflet-marcoMapa-pane .marco-mapa').length, zoom: window.__spa.mapa.getZoom(), dentro: window.__spa.mapa.getBounds().contains([m.limites.sur, m.limites.oeste]) }; });
+ok(selMapa.pane === 'mapaSeleccionado' && selMapa.marco === 1 && selMapa.dentro, `Clic en el mapa de la lista: lo encuadra (zoom ${selMapa.zoom}), marco llamativo y encima de todo`);
+if (CAPTURAS) await pag.screenshot({ path: 'docs/capturas/v5-mapa-seleccionado.png' });
+
+// ---------------------------------------------------------------- buscador universal
+const buscarYElegir = async (texto, esperado) => {
+  await pag.fill('#buscar-txt', texto); await pag.waitForTimeout(200);
+  const primero = await pag.locator('#buscar-res .br-item').first().textContent();
+  ok(esperado.test(primero), `Buscar «${texto}» → ${primero?.trim()}`);
+  await pag.keyboard.press('Enter'); await pag.waitForTimeout(300);
+};
+await buscarYElegir('cudricula', /Cuadrícula MGRS/);
+ok((await motor(() => window.__spa.estado.superpuestas.cuadricula)) === false, 'La acción del buscador quita la cuadrícula');
+await buscarYElegir('grid', /Cuadrícula MGRS/);
+await buscarYElegir('mils', /milésimas/);
+ok((await motor(() => window.__spa.estado.angulo)) === 'milesimas', 'Rumbos en milésimas desde el buscador');
+await buscarYElegir('satelite', /Imagen|Fondo híbrido/);
+await vista(40.79, -4.03, 14);
+await buscarYElegir('VL 1310 1596', /^30T VL 1310\d 1596\d/);
+await pag.waitForTimeout(900);
+const c2 = await motor(() => window.__spa.mapa.getCenter());
+ok(Math.abs(c2.lat - 40.79) < 0.02 && Math.abs(c2.lng + 4.03) < 0.02, 'MGRS sin zona: usa la zona de la vista y va allí');
+if (GPX) await buscarYElegir('bariguetis', /Barriguetis/);
+await buscarYElegir('ENE 1', /ENE 1/);
+await buscarYElegir('pl asul', /PL AZUL/);
+await pag.fill('#buscar-txt', 'qwxzv'); await pag.waitForTimeout(200);
+ok(/Nada encontrado/.test(await pag.textContent('#buscar-res')), 'Sin resultados: lo dice');
+await pag.fill('#buscar-txt', 'linea'); await pag.waitForTimeout(200);
+if (CAPTURAS) await pag.screenshot({ path: 'docs/capturas/v5-buscador.png' });
+await pag.keyboard.press('Escape');
 
 // ---------------------------------------------------------------- persistencia
 await pag.reload(); await pag.waitForFunction(() => window.__spa?.importar);

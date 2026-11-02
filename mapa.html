@@ -13,9 +13,9 @@
   <header class="barra-sup">
     <div class="marca"><span class="sello-spa">SPA</span><span class="marca-txt"><strong>Mapa piloto</strong><small>Planeamiento · S3</small></span></div>
     <form class="buscar" id="buscar" autocomplete="off">
-      <input id="buscar-txt" spellcheck="false" placeholder="Ir a… MGRS, UTM o geográficas" aria-label="Ir a una posición">
+      <input id="buscar-txt" spellcheck="false" placeholder="Buscar: coordenadas, archivos, puntos, mapas, ajustes…" aria-label="Buscar" aria-autocomplete="list" aria-controls="buscar-res">
       <button type="submit">Ir</button>
-      <div class="buscar-error" id="buscar-error" role="alert"></div>
+      <div class="buscar-res" id="buscar-res" hidden role="listbox"></div>
     </form>
     <div class="sup-der">
       <button type="button" class="btn-ajustes" id="btn-ajustes" aria-expanded="false" aria-controls="ajustes" title="Ajustes">
@@ -39,7 +39,9 @@
   <div id="contenido">
     <div id="mapa" aria-label="Mapa"></div>
 
-    <div class="herramientas" role="toolbar" aria-label="Herramientas">
+    <div class="herr-zona" id="herr-zona"></div>
+    <button type="button" class="herr-pista" id="herr-pista" title="Herramientas (acerca el ratón arriba)"><span id="herr-actual">Mover</span><svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button>
+    <div class="herramientas" id="herramientas" role="toolbar" aria-label="Herramientas">
       <div class="h-grupo">
         <button type="button" data-herr="consultar" aria-pressed="true" title="Mover el mapa y seleccionar elementos">
           <svg viewBox="0 0 24 24"><path d="M5 3l13 8-6 1.5L9 19z"/></svg><span>Mover</span></button>
@@ -88,18 +90,35 @@
       <button type="button" class="panel-tit" id="capas-toggle" aria-expanded="true">
         <svg viewBox="0 0 24 24"><path d="M12 3 2 8l10 5 10-5z"/><path d="m2 13 10 5 10-5"/></svg>Capas</button>
       <div class="panel-cuerpo" id="capas-cuerpo">
-        <div class="grupo-tit">Fondo</div>
-        <div class="fondos" id="fondos"></div>
-        <label class="sup sup-auto"><input type="checkbox" id="mtn-detalle">
-          <span class="txt"><b>Mantener detalle 1:25.000</b><small>Topográfico: sigue mostrando el MTN25 al alejarte (hasta zoom 13)</small></span></label>
-        <label class="sup sup-auto"><input type="checkbox" id="fondo-auto">
-          <span class="txt"><b>Ortofoto al acercarte</b><small>Desde zoom 17 pasa a ortofoto y al alejarte vuelve a tu mapa</small></span></label>
-        <div class="grupo-tit">Mapas importados</div>
-        <div id="mapas-importados"></div>
-        <div class="pm-acciones"><button type="button" id="btn-importar-mapa">Importar mapa…</button><button type="button" id="btn-buscar-mapas">Buscar en mis mapas…</button></div>
-        <input type="file" id="entrada-mapa" multiple hidden accept=".sqlite,.mbtiles,.db,.tif,.tiff,.jpg,.jpeg,.png,.jgw,.pgw,.tfw,.wld,.prj,.ecw,.jp2">
-        <div class="grupo-tit">Encima</div>
-        <div class="superpuestas" id="superpuestas"></div>
+        <details class="seccion" data-sec="fondo" open>
+          <summary><span>Fondo</span><span class="sec-val" id="fondo-actual"></span></summary>
+          <div class="sec-cuerpo">
+            <div class="fondos" id="fondos"></div>
+            <div class="opc-hibrido" id="opc-hibrido">
+              <div class="oh-tit">Imagen del híbrido</div>
+              <div class="seg seg-imagen" id="imagen-fuente"></div>
+              <div class="oh-fecha" id="imagen-fecha"></div>
+              <label class="sup sup-auto"><input type="checkbox" id="rotulos"><span class="txt"><b>Nombres y carreteras</b><small>Rótulos encima de la imagen</small></span></label>
+            </div>
+            <label class="sup sup-auto"><input type="checkbox" id="mtn-detalle">
+              <span class="txt"><b>Mantener detalle 1:25.000</b><small>Topográfico: sigue mostrando el MTN25 al alejarte (hasta zoom 13)</small></span></label>
+            <label class="sup sup-auto"><input type="checkbox" id="fondo-auto">
+              <span class="txt"><b>Híbrido al acercarte</b><small>Desde zoom 17 pasa al híbrido y al alejarte vuelve a tu mapa</small></span></label>
+          </div>
+        </details>
+        <details class="seccion" data-sec="mapas">
+          <summary><span>Mapas</span><span class="sec-val" id="mapas-cuenta"></span></summary>
+          <div class="sec-cuerpo">
+            <label class="sup"><input type="checkbox" data-id="piloto" id="sup-piloto"><span class="txt"><b>Zona piloto</b><small>Guadarrama, unos 20 × 20 km</small></span></label>
+            <div id="mapas-importados"></div>
+            <div class="pm-acciones"><button type="button" id="btn-importar-mapa">Importar mapa…</button><button type="button" id="btn-buscar-mapas">Buscar en mis mapas…</button></div>
+            <input type="file" id="entrada-mapa" multiple hidden accept=".sqlite,.mbtiles,.db,.tif,.tiff,.jpg,.jpeg,.png,.jgw,.pgw,.tfw,.wld,.prj,.ecw,.jp2">
+          </div>
+        </details>
+        <details class="seccion" data-sec="visual">
+          <summary><span>Visualización</span><span class="sec-val" id="visual-cuenta"></span></summary>
+          <div class="sec-cuerpo"><div class="superpuestas" id="superpuestas"></div></div>
+        </details>
       </div>
     </aside>
 

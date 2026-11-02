@@ -1,15 +1,18 @@
-// Página del mapa: capas (IGN, Google, importadas), cuadrícula MGRS,
-// coordenada y altitud bajo el cursor, ajustes, regla, dibujo (dibujo.js) e
-// importación (importar.js). Usa Leaflet (global L).
-import {
-  formatearPosicion, leerPosicion, medir, puntosGeodesica, formatearRumbo,
-} from '../geo/index.js';
-import { FONDOS, SUPERPUESTAS, ALTERNATIVAS, ZONA_PILOTO, crearCapa } from '../mapa/capas.js';
+// Página del mapa: fondos (IGN, híbrido con imagen elegible, relieve propio),
+// mapas importados, visualización (cuadrícula, sombreado, curvas), buscador
+// universal, ajustes, regla, dibujo (dibujo.js) e importación (importar.js).
+// Usa Leaflet (global L).
+import { formatearPosicion, medir, puntosGeodesica, formatearRumbo } from '../geo/index.js';
+import { FONDOS, IMAGENES, ROTULOS, SUPERPUESTAS, ZONA_PILOTO, ATRIBUCION_MDT, crearCapa, fechaImagen } from '../mapa/capas.js';
+import { capaRelieve } from '../mapa/relieve.js';
 import { capaCuadricula } from '../mapa/cuadricula.js';
 import { iniciarDibujo, HERRAMIENTAS_DIBUJO } from './dibujo.js';
 import { iniciarImportar } from './importar.js';
 import { crearServicioAlturas } from '../datos/alturas.js';
 import { prepararRejillas } from '../geo/rejillas.js';
+import { crsDesdeEpsg } from '../geo/crs.js';
+import { buscar, leerCoordenadaFlexible } from './difuso.js';
+import { TIPOS } from '../plan/plan.js';
 
 const L = window.L;
 const $ = (id) => document.getElementById(id);
@@ -18,10 +21,14 @@ const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&l
 // ---------------------------------------------------------------- estado y ajustes
 const CLAVE = 'spa.mapa.estado';
 const estado = {
-  angulo: 'grados', coordenadas: 'mgrs', fondo: 'mtn', fondoAuto: false, mtnDetalle: false, intensidadCuadricula: 35,
-  superpuestas: { cuadricula: true, piloto: true }, vista: null,
+  angulo: 'grados', coordenadas: 'mgrs', fondo: 'mtn', imagen: 'google', rotulos: true,
+  fondoAuto: false, mtnDetalle: false, intensidadCuadricula: 35,
+  superpuestas: { cuadricula: true, piloto: true }, secciones: { fondo: true }, vista: null,
 };
 try { Object.assign(estado, JSON.parse(localStorage.getItem(CLAVE) || '{}')); } catch { /* sin almacenamiento */ }
+if (!FONDOS.some((f) => f.id === estado.fondo)) estado.fondo = ['ortofoto', 'satelite'].includes(estado.fondo) ? 'hibrido' : 'mtn';
+if (!IMAGENES[estado.imagen]) estado.imagen = 'google';
+delete estado.superpuestas.vertices;
 const guardar = () => { try { localStorage.setItem(CLAVE, JSON.stringify(estado)); } catch { /* nada */ } };
 
 const metros = (m) => (m >= 1000 ? `${(m / 1000).toLocaleString('es-ES', { minimumFractionDigits: 3, maximumFractionDigits: 3 })} km` : `${m.toLocaleString('es-ES', { maximumFractionDigits: 1 })} m`);
@@ -29,7 +36,7 @@ const coord = (p) => formatearPosicion(p, { formato: estado.coordenadas, precisi
 const rumbo = (g) => formatearRumbo(g, estado.angulo, estado.angulo === 'grados' ? 1 : 0);
 
 const alturas = crearServicioAlturas();
-prepararRejillas().catch(() => {}); // ED50 y geoide (para mapas antiguos y alturas de ATAK)
+prepararRejillas().catch(() => {}); // ED50 y geoide (mapas antiguos, alturas de ATAK, búsqueda en ED50)
 
 // ---------------------------------------------------------------- mapa
 const piloto = L.latLngBounds([ZONA_PILOTO.sur, ZONA_PILOTO.oeste], [ZONA_PILOTO.norte, ZONA_PILOTO.este]);
@@ -39,6 +46,7 @@ L.control.scale({ metric: true, imperial: false, maxWidth: 160, position: 'botto
 if (estado.vista) mapa.setView(estado.vista.centro, estado.vista.zoom); else mapa.fitBounds(piloto, { padding: [20, 20] });
 new ResizeObserver(() => mapa.invalidateSize({ pan: false })).observe($('mapa'));
 mapa.on('moveend', () => { const c = mapa.getCenter(); estado.vista = { centro: [c.lat, c.lng], zoom: mapa.getZoom() }; guardar(); });
+const centro = () => { const c = mapa.getCenter(); return { lat: c.lat, lon: c.lng }; };
 
 // ---------------------------------------------------------------- diagnóstico de capas
 const diag = {};
@@ -49,69 +57,102 @@ function vigilar(id, capa) {
   capa.on('tileerror', (e) => { diag[id].err++; diag[id].url = e.tile?.src || diag[id].url; setTimeout(revisarCapas, 0); });
   return capa;
 }
-
-const defsFondo = [...FONDOS, ...ALTERNATIVAS];
-const capasFondo = Object.fromEntries(defsFondo.map((f) => [f.id, vigilar(f.id, crearCapa(L, f))]));
-capasFondo.mtn.ponerDetalle?.(Boolean(estado.mtnDetalle));
-let fondoActual = null, fondoElegido = null;
-const alternativasProbadas = new Set();
-function ponerFondo(id, { automatico = false } = {}) {
-  if (!capasFondo[id]) id = FONDOS[0].id;
-  if (fondoActual) mapa.removeLayer(fondoActual);
-  fondoActual = capasFondo[id].addTo(mapa);
-  fondoActual.bringToBack();
-  fondoActual.idSpa = id;
-  if (!automatico) { fondoElegido = id; alternativasProbadas.clear(); ocultarAviso(); estado.fondo = id; guardar(); }
-  const visible = FONDOS.some((f) => f.id === id) ? id : fondoElegido;
-  document.querySelectorAll('.fondo').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.id === visible)));
-}
 function revisarCapas() {
-  const id = fondoActual?.idSpa; if (!id) return;
+  const id = fondoActual?.idDiag; if (!id) return;
   const d = diag[id];
-  if (d.ok > 0 || d.err < 4) return;
-  const def = defsFondo.find((f) => f.id === (fondoElegido || id));
-  const sig = (def?.alternativas || []).find((a) => !alternativasProbadas.has(a) && a !== id);
-  if (sig) {
-    alternativasProbadas.add(sig);
-    ponerFondo(sig, { automatico: true });
-    mostrarAviso('aviso', `«${def.nombre}» no responde por su vía principal. Se está probando: <b>${esc(ALTERNATIVAS.find((a) => a.id === sig).nombre)}</b>.`, d.url);
-    return;
-  }
-  mostrarAviso('error', `No llega ninguna imagen de «${esc(defsFondo.find((f) => f.id === id)?.nombre || id)}».`, d.url);
-}
-function mostrarAviso(tipo, texto, urlPrueba) {
+  if (!d || d.ok > 0 || d.err < 4) return;
+  const nombre = id.startsWith('img-') ? `la imagen ${IMAGENES[id.slice(4)].nombre}` : FONDOS.find((f) => f.id === id)?.nombre || id;
   const causas = enVistaPrevia ? '<li><b>Estás viendo el mapa dentro de una vista previa.</b> Descarga el archivo y ábrelo con Chrome o Edge.</li>' : '';
-  $('aviso').className = `aviso aviso-${tipo}`;
-  $('aviso').innerHTML = `<div class="av-tit">${texto}</div><ul>${causas}
+  $('aviso').className = 'aviso aviso-error';
+  $('aviso').innerHTML = `<div class="av-tit">No llega ninguna imagen de ${esc(nombre)}.</div><ul>${causas}
       <li>Si lo abres desde un visor (móvil, correo, app), descárgalo y ábrelo con <b>Chrome o Edge</b>.</li>
-      <li>La red puede estar bloqueando el servicio (redes corporativas o de Defensa).</li></ul>
-    <div class="av-acc">${urlPrueba ? `<a href="${esc(urlPrueba)}" target="_blank" rel="noopener">Abrir una tesela de prueba</a>` : ''}
-      <button type="button" data-fondo-alt="satelite">Usar satélite</button><button type="button" id="aviso-cerrar">Cerrar</button></div>`;
+      <li>La red puede estar bloqueando el servicio (redes corporativas o de Defensa).</li>
+      ${id.startsWith('img-') ? '<li>Prueba otra imagen del híbrido (Capas → Fondo).</li>' : ''}</ul>
+    <div class="av-acc">${d.url ? `<a href="${esc(d.url)}" target="_blank" rel="noopener">Abrir una tesela de prueba</a>` : ''}<button type="button" id="aviso-cerrar">Cerrar</button></div>`;
   $('aviso').hidden = false;
 }
-function ocultarAviso() { $('aviso').hidden = true; }
-$('aviso').addEventListener('click', (ev) => {
-  if (ev.target.id === 'aviso-cerrar') ocultarAviso();
-  const b = ev.target.closest('[data-fondo-alt]');
-  if (b) { ponerFondo(b.dataset.fondoAlt); ocultarAviso(); }
-});
+$('aviso').addEventListener('click', (ev) => { if (ev.target.id === 'aviso-cerrar') $('aviso').hidden = true; });
 
+// ---------------------------------------------------------------- fondos
+const capasImagen = Object.fromEntries(Object.entries(IMAGENES).map(([id, def]) => [id, vigilar(`img-${id}`, crearCapa(L, { ...def, zIndex: 1 }))]));
+const capaRotulos = crearCapa(L, { ...ROTULOS, zIndex: 3 });
+const capasFondo = {
+  mtn: vigilar('mtn', crearCapa(L, FONDOS.find((f) => f.id === 'mtn'))),
+  base: vigilar('base', crearCapa(L, FONDOS.find((f) => f.id === 'base'))),
+  relieve: vigilar('relieve', capaRelieve(L, 'fondo', { atribucion: ATRIBUCION_MDT })),
+  hibrido: L.layerGroup(),
+};
+capasFondo.mtn.ponerDetalle?.(Boolean(estado.mtnDetalle));
+function montarHibrido() {
+  const g = capasFondo.hibrido;
+  g.clearLayers();
+  g.addLayer(capasImagen[estado.imagen]);
+  if (estado.rotulos) g.addLayer(capaRotulos);
+  g.idDiag = `img-${estado.imagen}`;
+}
+montarHibrido();
+
+let fondoActual = null;
+function ponerFondo(id, { automatico = false } = {}) {
+  if (!capasFondo[id]) id = 'mtn';
+  if (fondoActual) mapa.removeLayer(fondoActual);
+  if (id === 'hibrido') montarHibrido();
+  fondoActual = capasFondo[id].addTo(mapa);
+  fondoActual.bringToBack?.();
+  fondoActual.idSpa = id;
+  fondoActual.idDiag = id === 'hibrido' ? `img-${estado.imagen}` : id;
+  if (!automatico) { estado.fondo = id; guardar(); $('aviso').hidden = true; }
+  document.querySelectorAll('.fondo').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.id === id)));
+  $('fondo-actual').textContent = FONDOS.find((f) => f.id === id).nombre + (id === 'hibrido' ? ` · ${IMAGENES[estado.imagen].nombre}` : '');
+  $('opc-hibrido').hidden = id !== 'hibrido';
+  actualizarFecha();
+}
 $('fondos').innerHTML = FONDOS.map((f) => `<button type="button" class="fondo" data-id="${f.id}" title="${esc(f.detalle)}" aria-pressed="false">
   <span class="muestra muestra-${f.id}"></span><span class="nom">${esc(f.nombre)}</span></button>`).join('');
 $('fondos').addEventListener('click', (ev) => { const b = ev.target.closest('.fondo'); if (b) ponerFondo(b.dataset.id); });
+
+// Imagen del híbrido y su fecha
+$('imagen-fuente').innerHTML = Object.entries(IMAGENES).map(([id, d]) => `<button type="button" data-v="${id}" title="${esc(d.detalle)}">${esc(d.nombre)}</button>`).join('');
+function ponerImagen(id) {
+  estado.imagen = id; guardar();
+  $('imagen-fuente').querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.v === id)));
+  if (fondoActual?.idSpa === 'hibrido') ponerFondo('hibrido', { automatico: true });
+  else actualizarFecha();
+}
+$('imagen-fuente').addEventListener('click', (ev) => { const b = ev.target.closest('button[data-v]'); if (b) { ponerImagen(b.dataset.v); if (fondoActual?.idSpa !== 'hibrido') ponerFondo('hibrido'); } });
+$('rotulos').checked = estado.rotulos;
+$('rotulos').addEventListener('change', (ev) => { estado.rotulos = ev.target.checked; guardar(); if (fondoActual?.idSpa === 'hibrido') ponerFondo('hibrido', { automatico: true }); });
+let tFecha = 0, nFecha = 0;
+function actualizarFecha() {
+  clearTimeout(tFecha);
+  const caja = $('imagen-fecha');
+  const def = IMAGENES[estado.imagen];
+  if (!def.fecha) { caja.textContent = `${def.nombre} no publica la fecha de sus imágenes.`; return; }
+  if (fondoActual?.idSpa !== 'hibrido') { caja.textContent = ''; return; }
+  caja.textContent = 'Fecha de la imagen: consultando…';
+  const n = ++nFecha;
+  tFecha = setTimeout(async () => {
+    const c = centro();
+    try {
+      const f = await fechaImagen(def.fecha, c.lat, c.lon);
+      if (n === nFecha) caja.innerHTML = f ? `Imagen en el centro del mapa: <b>${esc(f)}</b>` : 'Sin fecha para esta zona.';
+    } catch { if (n === nFecha) caja.textContent = 'No se pudo consultar la fecha.'; }
+  }, 500);
+}
+mapa.on('moveend', () => { if (fondoActual?.idSpa === 'hibrido') actualizarFecha(); });
+ponerImagen(estado.imagen);
 ponerFondo(estado.fondo);
 
-// Cambio automático a ortofoto al acercarse (opcional)
-const ZOOM_ORTOFOTO = 17;
+// Híbrido al acercarse (opcional)
+const ZOOM_HIBRIDO = 17;
 let zoomPrevio = null;
 function fondoPorZoom({ forzar = false } = {}) {
   const z = mapa.getZoom();
-  const cerca = z >= ZOOM_ORTOFOTO, antes = zoomPrevio !== null && zoomPrevio >= ZOOM_ORTOFOTO;
+  const cerca = z >= ZOOM_HIBRIDO, antes = zoomPrevio !== null && zoomPrevio >= ZOOM_HIBRIDO;
   zoomPrevio = z;
   if (!estado.fondoAuto || (!forzar && cerca === antes)) return;
-  const objetivo = cerca ? 'ortofoto' : estado.fondo;
-  if (fondoActual?.idSpa === objetivo) return;
-  ponerFondo(objetivo, { automatico: true }); fondoElegido = objetivo; alternativasProbadas.clear();
+  const objetivo = cerca ? 'hibrido' : estado.fondo;
+  if (fondoActual?.idSpa !== objetivo) ponerFondo(objetivo, { automatico: true });
 }
 mapa.on('zoomend', () => fondoPorZoom());
 $('fondo-auto').checked = Boolean(estado.fondoAuto);
@@ -120,12 +161,11 @@ $('fondo-auto').addEventListener('change', (ev) => {
   if (estado.fondoAuto) fondoPorZoom({ forzar: true }); else if (fondoActual?.idSpa !== estado.fondo) ponerFondo(estado.fondo);
 });
 fondoPorZoom({ forzar: true });
-// MTN25 desde más arriba (opcional)
 $('mtn-detalle').checked = Boolean(estado.mtnDetalle);
 $('mtn-detalle').addEventListener('change', (ev) => { estado.mtnDetalle = ev.target.checked; guardar(); capasFondo.mtn.ponerDetalle?.(estado.mtnDetalle); });
 
-// ---------------------------------------------------------------- superpuestas y cuadrícula
-const SELECTORES_OBSTACULO = '.herramientas, .panel-capas, .panel-plan, .panel-medida, .aviso, .aviso-breve, .leaflet-control-zoom, .leaflet-control-scale, .leaflet-control-attribution';
+// ---------------------------------------------------------------- visualización y zona piloto
+const SELECTORES_OBSTACULO = '.herramientas.visible, .herr-pista, .panel-capas, .panel-plan, .panel-medida, .aviso, .aviso-breve, .leaflet-control-zoom, .leaflet-control-scale, .leaflet-control-attribution';
 function obstaculos() {
   const base = $('mapa').getBoundingClientRect();
   return [...document.querySelectorAll(SELECTORES_OBSTACULO)].map((el) => el.getBoundingClientRect()).filter((r) => r.width && r.height)
@@ -137,12 +177,13 @@ const zonaPiloto = L.layerGroup([
   L.rectangle(piloto, { color: '#9A7642', weight: 2, dashArray: '7 5', fill: false, interactive: false }),
   L.marker([ZONA_PILOTO.norte, ZONA_PILOTO.oeste], { interactive: false, icon: L.divIcon({ className: 'zona-piloto-etq', html: esc(ZONA_PILOTO.nombre), iconSize: null, iconAnchor: [0, 28] }) }),
 ]);
-const listaSup = [
+const VISUAL = [
   { id: 'cuadricula', nombre: 'Cuadrícula MGRS', detalle: 'Calculada por SPA (100 km → 100 m según zoom)', capa: cuadricula },
+  { id: 'sombreado', nombre: 'Sombreado', detalle: 'Relieve del MDT del IGN sobre cualquier fondo (5 m al acercarse)', capa: vigilar('sombreado', capaRelieve(L, 'sombreado', { atribucion: ATRIBUCION_MDT, zIndex: 2 })) },
   ...SUPERPUESTAS.map((s) => ({ ...s, capa: vigilar(s.id, crearCapa(L, s)) })),
-  { id: 'piloto', nombre: 'Zona piloto', detalle: 'Guadarrama, unos 20 × 20 km', capa: zonaPiloto },
 ];
-$('superpuestas').innerHTML = listaSup.map((s) => `<label class="sup"><input type="checkbox" data-id="${s.id}">
+const todasSup = [...VISUAL, { id: 'piloto', capa: zonaPiloto }];
+$('superpuestas').innerHTML = VISUAL.map((s) => `<label class="sup"><input type="checkbox" data-id="${s.id}">
   <span class="txt"><b>${esc(s.nombre)}</b><small>${esc(s.detalle)}</small></span></label>${s.id === 'cuadricula'
   ? `<label class="intensidad" title="Intensidad de las líneas de la cuadrícula">Intensidad <input type="range" id="cuad-intensidad" min="10" max="100" step="5" value="${estado.intensidadCuadricula}"><output id="cuad-intensidad-v">${estado.intensidadCuadricula} %</output></label>` : ''}`).join('');
 $('cuad-intensidad').addEventListener('input', (ev) => {
@@ -150,19 +191,28 @@ $('cuad-intensidad').addEventListener('input', (ev) => {
   $('cuad-intensidad-v').textContent = `${estado.intensidadCuadricula} %`; cuadricula.redibujar();
 });
 function ponerSup(id, on) {
-  const s = listaSup.find((x) => x.id === id); if (!s) return;
+  const s = todasSup.find((x) => x.id === id); if (!s) return;
   if (on) s.capa.addTo(mapa); else mapa.removeLayer(s.capa);
   estado.superpuestas[id] = on; guardar();
-  const caja = document.querySelector(`.sup input[data-id="${id}"]`); if (caja) caja.checked = on;
+  document.querySelectorAll(`input[data-id="${id}"]`).forEach((c) => { c.checked = on; });
+  const n = VISUAL.filter((v) => estado.superpuestas[v.id]).length;
+  $('visual-cuenta').textContent = n ? `${n} activa${n > 1 ? 's' : ''}` : '';
 }
-$('superpuestas').addEventListener('change', (ev) => { const i = ev.target.closest('input[data-id]'); if (i) ponerSup(i.dataset.id, i.checked); });
-for (const s of listaSup) ponerSup(s.id, Boolean(estado.superpuestas[s.id]));
+$('capas-cuerpo').addEventListener('change', (ev) => { const i = ev.target.closest('input[data-id]'); if (i) ponerSup(i.dataset.id, i.checked); });
+for (const s of todasSup) ponerSup(s.id, Boolean(estado.superpuestas[s.id]));
 
-$('capas-toggle').addEventListener('click', () => {
-  const cerrado = $('panel-capas').classList.toggle('cerrado');
-  $('capas-toggle').setAttribute('aria-expanded', String(!cerrado)); recolocarEtiquetas();
-});
-if (window.matchMedia('(max-width: 760px)').matches) { $('panel-capas').classList.add('cerrado'); $('capas-toggle').setAttribute('aria-expanded', 'false'); }
+// Desplegables (recuerdan si estaban abiertos)
+for (const d of document.querySelectorAll('.seccion')) {
+  if (estado.secciones?.[d.dataset.sec] !== undefined) d.open = estado.secciones[d.dataset.sec];
+  d.addEventListener('toggle', () => { estado.secciones = { ...estado.secciones, [d.dataset.sec]: d.open }; guardar(); recolocarEtiquetas(); });
+}
+const abrirSeccion = (sec) => { const d = document.querySelector(`.seccion[data-sec="${sec}"]`); if (d) d.open = true; ponerPanelCapas(true); };
+function ponerPanelCapas(abierto) {
+  $('panel-capas').classList.toggle('cerrado', !abierto);
+  $('capas-toggle').setAttribute('aria-expanded', String(abierto)); recolocarEtiquetas();
+}
+$('capas-toggle').addEventListener('click', () => ponerPanelCapas($('panel-capas').classList.contains('cerrado')));
+if (window.matchMedia('(max-width: 760px)').matches) ponerPanelCapas(false);
 
 // ---------------------------------------------------------------- herramientas, dibujo e importación
 let herramienta = 'consultar';
@@ -182,10 +232,16 @@ importar = iniciarImportar({
   herramienta: () => herramienta,
   alCambiarPaneles: () => recolocarEtiquetas(),
 });
+// Cuenta de mapas en el título del desplegable
+new MutationObserver(() => { const n = document.querySelectorAll('#mapas-importados .mapa-imp').length; $('mapas-cuenta').textContent = n ? `${n} importado${n > 1 ? 's' : ''}` : ''; })
+  .observe($('mapas-importados'), { childList: true });
 
+const NOMBRE_HERR = { consultar: 'Mover', punto: 'Punto', linea: 'Línea', area: 'Área', circulo: 'Círculo', medir: 'Medir' };
 function elegirHerramienta(h) {
   herramienta = h;
   document.querySelectorAll('[data-herr]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.herr === h)));
+  $('herr-actual').textContent = NOMBRE_HERR[h] ?? h;
+  $('herr-pista').classList.toggle('activa', h !== 'consultar');
   $('panel-medida').hidden = h !== 'medir';
   mapa.getContainer().classList.toggle('cursor-cruz', h === 'medir' || HERRAMIENTAS_DIBUJO.includes(h));
   if (h === 'medir') importar.cerrarFicha();
@@ -196,8 +252,7 @@ function elegirHerramienta(h) {
 document.querySelectorAll('[data-herr]').forEach((b) => b.addEventListener('click', () => elegirHerramienta(b.dataset.herr)));
 $('ir-piloto').addEventListener('click', () => mapa.flyToBounds(piloto, { padding: [20, 20], duration: 0.8 }));
 function ponerPanelPlan(abierto) {
-  // En pantallas estrechas no caben los dos paneles a la vez
-  if (abierto && window.matchMedia('(max-width: 760px)').matches) { $('panel-capas').classList.add('cerrado'); $('capas-toggle').setAttribute('aria-expanded', 'false'); }
+  if (abierto && window.matchMedia('(max-width: 760px)').matches) ponerPanelCapas(false);
   $('panel-plan').hidden = !abierto;
   $('btn-plan').setAttribute('aria-pressed', String(abierto));
   document.body.classList.toggle('plan-abierto', abierto);
@@ -208,30 +263,47 @@ $('btn-plan').addEventListener('click', () => ponerPanelPlan($('panel-plan').hid
 $('plan-cerrar').addEventListener('click', () => ponerPanelPlan(false));
 try { if (localStorage.getItem('spa.panelPlan') === '1') ponerPanelPlan(true); } catch { /* nada */ }
 
-// ---------------------------------------------------------------- ajustes (icono arriba a la derecha)
-$('btn-ajustes').addEventListener('click', (ev) => {
-  ev.stopPropagation();
-  const abrir = $('ajustes').hidden;
-  $('ajustes').hidden = !abrir; $('btn-ajustes').setAttribute('aria-expanded', String(abrir));
-});
-document.addEventListener('click', (ev) => { if (!$('ajustes').hidden && !ev.target.closest('#ajustes, #btn-ajustes')) { $('ajustes').hidden = true; $('btn-ajustes').setAttribute('aria-expanded', 'false'); } });
-for (const grupo of document.querySelectorAll('[data-pref]')) {
-  const clave = grupo.dataset.pref;
-  const pintar = () => grupo.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.v === String(estado[clave]))));
-  grupo.addEventListener('click', (ev) => {
-    const b = ev.target.closest('button'); if (!b) return;
-    estado[clave] = b.dataset.v; guardar(); pintar();
-    if (ultimaPos) mostrarPos(ultimaPos, $('be-et').textContent);
-    pintarMedida(); dibujo.refrescar();
+// Barra de herramientas: aparece al acercar el ratón arriba (en táctil, siempre)
+const tactil = window.matchMedia('(hover: none)').matches;
+let tOcultar = 0;
+function mostrarHerramientas(si) {
+  clearTimeout(tOcultar);
+  if (si) { $('herramientas').classList.add('visible'); document.body.classList.add('herr-visibles'); recolocarEtiquetas(); return; }
+  tOcultar = setTimeout(() => { $('herramientas').classList.remove('visible'); document.body.classList.remove('herr-visibles'); recolocarEtiquetas(); }, 450);
+}
+if (tactil) mostrarHerramientas(true);
+else {
+  $('contenido').addEventListener('mousemove', (e) => {
+    const r = $('contenido').getBoundingClientRect(), b = $('herramientas').getBoundingClientRect();
+    const cerca = e.clientY - r.top < 70 && e.clientX - r.left < Math.max(b.right - r.left, 240) + 40;
+    const encima = $('herramientas').matches(':hover');
+    if (cerca || encima) mostrarHerramientas(true);
+    else if ($('herramientas').classList.contains('visible')) mostrarHerramientas(false);
   });
-  pintar();
+  $('contenido').addEventListener('mouseleave', () => mostrarHerramientas(false));
+  $('herr-pista').addEventListener('mouseenter', () => mostrarHerramientas(true));
+}
+$('herr-pista').addEventListener('click', () => mostrarHerramientas(!$('herramientas').classList.contains('visible')));
+
+// ---------------------------------------------------------------- ajustes (icono arriba a la derecha)
+function abrirAjustes(si = $('ajustes').hidden) { $('ajustes').hidden = !si; $('btn-ajustes').setAttribute('aria-expanded', String(si)); }
+$('btn-ajustes').addEventListener('click', (ev) => { ev.stopPropagation(); abrirAjustes(); });
+document.addEventListener('click', (ev) => { if (!$('ajustes').hidden && !ev.target.closest('#ajustes, #btn-ajustes, #buscar')) abrirAjustes(false); });
+function ponerPref(clave, v) {
+  estado[clave] = v; guardar();
+  document.querySelectorAll(`[data-pref="${clave}"] button`).forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.v === String(v))));
+  if (ultimaPos) mostrarPos(ultimaPos, $('be-et').textContent);
+  pintarMedida(); dibujo.refrescar();
+}
+for (const grupo of document.querySelectorAll('[data-pref]')) {
+  grupo.addEventListener('click', (ev) => { const b = ev.target.closest('button'); if (b) ponerPref(grupo.dataset.pref, b.dataset.v); });
+  grupo.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.v === String(estado[grupo.dataset.pref]))));
 }
 
 mapa.on('click', (e) => {
   const p = { lat: e.latlng.lat, lon: e.latlng.lng };
   if (herramienta === 'medir') { medida.push(p); pintarMedida(); return; }
   if (HERRAMIENTAS_DIBUJO.includes(herramienta)) { dibujo.clic(p); return; }
-  // Con «Mover», un clic en el mapa vacío solo quita la selección (no pone puntos)
   if (!dibujo.quitarSeleccion()) importar.cerrarFicha();
 });
 mapa.on('dblclick', () => { if (HERRAMIENTAS_DIBUJO.includes(herramienta)) dibujo.dobleClic(); });
@@ -241,14 +313,12 @@ mapa.on('contextmenu', (e) => {
 });
 
 // ---------------------------------------------------------------- barra inferior: coordenada y altitud
-const tactil = window.matchMedia('(hover: none)').matches;
 if (tactil) { document.body.classList.add('tactil'); const c = document.createElement('div'); c.className = 'cruz'; $('contenido').append(c); }
 let tAltura = 0, pedidaAltura = 0;
 function mostrarPos(p, etiqueta) {
   ultimaPos = p;
   $('be-et').textContent = etiqueta;
   try { $('be-coord').textContent = coord(p); } catch { $('be-coord').textContent = 'Fuera del ámbito UTM'; }
-  // Altitud: se pide al detenerse el cursor (y solo con zoom suficiente)
   clearTimeout(tAltura);
   $('be-alt').classList.add('pendiente');
   if (mapa.getZoom() < 9) { $('be-alt').textContent = ''; return; }
@@ -268,7 +338,7 @@ mapa.on('mousemove', (e) => {
   mostrarPos(p, 'Cursor');
   dibujo.moverCursor(p);
 });
-mapa.on('moveend', () => { if (tactil || !ultimaPos) { const c = mapa.getCenter(); mostrarPos({ lat: c.lat, lon: c.lng }, 'Centro'); } });
+mapa.on('moveend', () => { if (tactil || !ultimaPos) mostrarPos(centro(), 'Centro'); });
 mapa.on('mouseout', () => { if (ultimaPos) $('be-et').textContent = 'Última'; });
 
 // ---------------------------------------------------------------- regla de medida
@@ -307,26 +377,97 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && herramienta === 'medir') { if (medida.length) { medida.length = 0; pintarMedida(); } else elegirHerramienta('consultar'); }
 });
 
-// ---------------------------------------------------------------- ir a una posición
+// ---------------------------------------------------------------- buscador universal
 const capaBusqueda = L.layerGroup().addTo(mapa);
-$('buscar').addEventListener('submit', (ev) => {
-  ev.preventDefault();
-  const txt = $('buscar-txt').value.trim();
-  const err = $('buscar-error'); err.classList.remove('visible');
-  if (!txt) return;
-  try {
-    const p = leerPosicion(txt);
-    const zoom = p.lado >= 10000 ? 11 : p.lado >= 1000 ? 13 : 15;
-    mapa.flyTo([p.lat, p.lon], Math.max(zoom, Math.min(mapa.getZoom(), 17)), { duration: 0.8 });
-    // Señal temporal (desaparece sola): no es un punto del plan
-    capaBusqueda.clearLayers();
-    L.marker([p.lat, p.lon], { interactive: false, icon: L.divIcon({ className: 'etq-ancla', html: '<span class="senal-busqueda"></span>', iconSize: null }) }).addTo(capaBusqueda);
-    setTimeout(() => capaBusqueda.clearLayers(), 5000);
-  } catch (e) { err.textContent = e.message; err.classList.add('visible'); }
-});
-$('buscar-txt').addEventListener('input', () => $('buscar-error').classList.remove('visible'));
+function irA(p) {
+  const zoom = p.lado >= 10000 ? 11 : p.lado >= 1000 ? 13 : 15;
+  mapa.flyTo([p.lat, p.lon], Math.max(zoom, Math.min(mapa.getZoom(), 17)), { duration: 0.8 });
+  capaBusqueda.clearLayers();
+  L.marker([p.lat, p.lon], { interactive: false, icon: L.divIcon({ className: 'etq-ancla', html: '<span class="senal-busqueda"></span>', iconSize: null }) }).addTo(capaBusqueda);
+  setTimeout(() => capaBusqueda.clearLayers(), 6000);
+}
+const conmutar = (id) => ({ accion: () => { ponerSup(id, !estado.superpuestas[id]); abrirSeccion(id === 'piloto' ? 'mapas' : 'visual'); } });
+const caja = (id, abrir) => ({ accion: () => { const c = $(id); c.checked = !c.checked; c.dispatchEvent(new Event('change', { bubbles: true })); abrirSeccion(abrir); } });
+const ACCIONES = [
+  ...FONDOS.map((f) => ({ texto: `Fondo ${f.nombre.toLowerCase()}`, extra: `${f.detalle} mapa fondo`, detalle: f.detalle, accion: () => { ponerFondo(f.id); abrirSeccion('fondo'); } })),
+  ...Object.entries(IMAGENES).map(([id, d]) => ({ texto: `Imagen ${d.nombre}`, extra: `híbrido satélite ortofoto foto ${d.detalle}`, detalle: d.detalle, accion: () => { ponerImagen(id); ponerFondo('hibrido'); abrirSeccion('fondo'); } })),
+  { texto: 'Nombres y carreteras del híbrido', extra: 'rótulos etiquetas', detalle: 'Activar o quitar', ...caja('rotulos', 'fondo') },
+  { texto: 'Mantener detalle 1:25.000', extra: 'mtn25 topográfico zoom', detalle: 'Activar o quitar', ...caja('mtn-detalle', 'fondo') },
+  { texto: 'Híbrido al acercarte', extra: 'automático zoom satélite', detalle: 'Activar o quitar', ...caja('fondo-auto', 'fondo') },
+  { texto: 'Cuadrícula MGRS', extra: 'mostrar ocultar malla grid', detalle: 'Mostrar u ocultar', ...conmutar('cuadricula') },
+  { texto: 'Intensidad de la cuadrícula', extra: 'malla grid tenue opacidad', detalle: 'Ajustar', accion: () => { abrirSeccion('visual'); $('cuad-intensidad').focus(); } },
+  { texto: 'Sombreado', extra: 'relieve mdt sombra', detalle: 'Mostrar u ocultar', ...conmutar('sombreado') },
+  { texto: 'Curvas de nivel', extra: 'altura mdt', detalle: 'Mostrar u ocultar', ...conmutar('curvas') },
+  { texto: 'Zona piloto', extra: 'guadarrama', detalle: 'Mostrar u ocultar', ...conmutar('piloto') },
+  { texto: 'Ir a la zona piloto', extra: 'guadarrama centrar', detalle: 'Centrar el mapa', accion: () => mapa.flyToBounds(piloto, { padding: [20, 20], duration: 0.8 }) },
+  ...[['mgrs', 'MGRS'], ['utm', 'UTM'], ['gms', 'geográficas (G M S)'], ['gd', 'grados decimales']].map(([v, n]) => ({ texto: `Coordenadas en ${n}`, extra: 'formato ajustes coordenada', detalle: 'Ajustes', accion: () => ponerPref('coordenadas', v) })),
+  ...[['grados', 'grados'], ['milesimas', 'milésimas'], ['gms', 'G M S']].map(([v, n]) => ({ texto: `Rumbos en ${n}`, extra: 'ángulos ajustes regla azimut', detalle: 'Ajustes', accion: () => ponerPref('angulo', v) })),
+  ...['punto', 'linea', 'area', 'circulo'].map((h) => ({ texto: `Dibujar ${TIPOS[h].nombre.toLowerCase()}`, extra: 'herramienta nuevo crear', detalle: 'Herramienta', accion: () => elegirHerramienta(h) })),
+  { texto: 'Medir', extra: 'regla distancia rumbo herramienta', detalle: 'Herramienta', accion: () => elegirHerramienta('medir') },
+  { texto: 'Mover', extra: 'seleccionar herramienta', detalle: 'Herramienta', accion: () => elegirHerramienta('consultar') },
+  { texto: 'Deshacer', extra: 'ctrl z', detalle: 'Ctrl+Z', accion: () => $('deshacer').click() },
+  { texto: 'Rehacer', extra: 'ctrl y', detalle: 'Ctrl+Y', accion: () => $('rehacer').click() },
+  { texto: 'Plan', extra: 'dibujado archivos importados panel lista', detalle: 'Abrir el panel', accion: () => ponerPanelPlan(true) },
+  { texto: 'Ajustes', extra: 'opciones configuración', detalle: 'Abrir', accion: () => abrirAjustes(true) },
+  { texto: 'Importar archivo', extra: 'gpx kml kmz zip atak paquete datos', detalle: 'GPX, KML/KMZ, paquetes de ATAK', accion: () => $('btn-importar-datos').click() },
+  { texto: 'Importar mapa', extra: 'sqlite mbtiles tif geotiff jpg', detalle: 'Mapas propios', accion: () => $('btn-importar-mapa').click() },
+  { texto: 'Buscar en mis mapas', extra: 'carpeta catálogo', detalle: 'Mapas de tu carpeta', accion: () => importar.abrirBuscador() },
+].map((a) => ({ grupo: 'Ajustes y acciones', ...a }));
 
-{ const c = mapa.getCenter(); mostrarPos({ lat: c.lat, lon: c.lng }, 'Centro'); }
+function candidatos() {
+  const nomTipo = { punto: 'punto', linea: 'línea track ruta', area: 'área zona', circulo: 'círculo' };
+  const plan = dibujo.plan().elementos.map((el) => {
+    const n = el.propiedades.nombre || `${TIPOS[el.tipo].nombre} ${dibujo.plan().elementos.filter((e) => e.tipo === el.tipo).indexOf(el) + 1}`;
+    return { grupo: 'Plan', texto: n, extra: `${nomTipo[el.tipo]} dibujado ${el.propiedades.bando}`, detalle: TIPOS[el.tipo].nombre, accion: () => { ponerPanelPlan(true); dibujo.seleccionar(el.id, { centrar: true }); } };
+  });
+  return [...plan, ...importar.candidatosBusqueda(), ...ACCIONES];
+}
+let resultados = [], marcado = 0;
+function pintarResultados(q) {
+  const res = $('buscar-res');
+  if (!q.trim()) { res.hidden = true; resultados = []; return; }
+  const lista = [];
+  const p = leerCoordenadaFlexible(q, centro(), crsDesdeEpsg);
+  if (p) lista.push({ grupo: 'Coordenada', texto: coord(p), detalle: p.como === 'tal cual' ? (p.lado > 1 ? `centro del cuadrado de ${metros(p.lado)}` : '') : p.como, accion: () => irA(p), puntos: 101 });
+  // Los mejores 14, agrupados (cada grupo en el orden de su mejor resultado)
+  const mejores = buscar(q, candidatos()).slice(0, 14);
+  const ordenGrupo = [...new Set(mejores.map((r) => r.grupo))];
+  lista.push(...mejores.sort((a, b) => ordenGrupo.indexOf(a.grupo) - ordenGrupo.indexOf(b.grupo)));
+  resultados = lista; marcado = 0;
+  if (!lista.length) { res.innerHTML = '<div class="br-vacio">Nada encontrado. Prueba con otra palabra o una coordenada (MGRS, UTM, grados).</div>'; res.hidden = false; return; }
+  let grupoPrev = '';
+  res.innerHTML = lista.map((r, i) => {
+    const cab = r.grupo !== grupoPrev ? `<div class="br-grupo">${esc(r.grupo)}</div>` : '';
+    grupoPrev = r.grupo;
+    return `${cab}<button type="button" class="br-item" role="option" data-i="${i}" aria-selected="${i === 0}"><b>${esc(r.texto)}</b>${r.detalle ? `<small>${esc(r.detalle)}</small>` : ''}</button>`;
+  }).join('');
+  res.hidden = false;
+}
+function ejecutar(i) {
+  const r = resultados[i]; if (!r) return;
+  $('buscar-res').hidden = true;
+  $('buscar-txt').blur();
+  r.accion();
+}
+let tBuscar = 0;
+$('buscar-txt').addEventListener('input', () => { clearTimeout(tBuscar); tBuscar = setTimeout(() => pintarResultados($('buscar-txt').value), 70); });
+$('buscar-txt').addEventListener('focus', () => { if ($('buscar-txt').value.trim()) pintarResultados($('buscar-txt').value); });
+$('buscar-txt').addEventListener('keydown', (e) => {
+  if ($('buscar-res').hidden) return;
+  const items = [...document.querySelectorAll('#buscar-res .br-item')];
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+    e.preventDefault();
+    marcado = (marcado + (e.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length;
+    items.forEach((b, k) => b.setAttribute('aria-selected', String(k === marcado)));
+    items[marcado]?.scrollIntoView({ block: 'nearest' });
+  }
+  if (e.key === 'Escape') $('buscar-res').hidden = true;
+});
+$('buscar').addEventListener('submit', (ev) => { ev.preventDefault(); clearTimeout(tBuscar); pintarResultados($('buscar-txt').value); ejecutar(marcado); });
+$('buscar-res').addEventListener('mousedown', (ev) => { const b = ev.target.closest('.br-item'); if (b) { ev.preventDefault(); ejecutar(Number(b.dataset.i)); } });
+document.addEventListener('click', (ev) => { if (!ev.target.closest('#buscar')) $('buscar-res').hidden = true; });
+
+mostrarPos(centro(), 'Centro');
 elegirHerramienta('consultar');
 // Para pruebas automáticas
-window.__spa = { mapa, estado, medida, pintarMedida, diag, dibujo, importar, cuadricula, alturas, capasFondo };
+window.__spa = { mapa, estado, medida, pintarMedida, diag, dibujo, importar, cuadricula, alturas, capasFondo, capasImagen };

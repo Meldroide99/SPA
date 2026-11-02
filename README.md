@@ -15,6 +15,8 @@ rellenan solos con lo dibujado. Se desarrolla aquí y se migrará a S3.
 - Importar: GPX, KML/KMZ, paquetes de ATAK; mapas .sqlite (ATAK), MBTiles,
   GeoTIFF e imagen georreferenciada, colocados solos; buscador de mapas.
 - ED50 ↔ ETRS89 con la rejilla oficial del IGN y geoide EGM08-REDNAP.
+- Híbrido con imagen elegible (Google, IGN PNOA, Esri, Bing) y su fecha;
+  relieve propio con el MDT05; buscador universal aproximado.
 
 Especificación en [docs/ESPECIFICACION.md](docs/ESPECIFICACION.md).
 

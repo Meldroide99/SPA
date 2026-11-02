@@ -225,3 +225,23 @@ test('Perfil: desnivel con umbral contra el ruido', () => {
   const r = resumenPerfil([0, 10, 10.4, 10.2, 20, 15, 15.3, 30].map((z, i) => ({ d: i, z })));
   assert.equal(r.subida, 35); assert.equal(r.bajada, 5); assert.equal(r.min, 0); assert.equal(r.max, 30);
 });
+
+// ---------------------------------------------------------------- relieve
+test('Relieve: la ladera que mira al NO se ilumina, la que mira al SE queda en sombra', async () => {
+  const { sombrearMalla, planRelieve, urlRelieve } = await import('../src/mapa/relieve.js');
+  const malla = (f) => {
+    const W = 5, H = 5, dx = 0.0001, dy = 0.0001; const valores = new Float32Array(W * H);
+    for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) valores[j * W + i] = f(i, j);
+    return { ncols: W, nrows: H, dx, dy, oeste: -3.42, norte: 40.84, nodata: null, valores };
+  };
+  // Sube hacia el SE (i al este, j al sur): la cara mira al NO → luz alta
+  const noroeste = sombrearMalla(malla((i, j) => 100 + 5 * i + 5 * j))[12];
+  const sureste = sombrearMalla(malla((i, j) => 100 - 5 * i - 5 * j))[12];
+  const llano = sombrearMalla(malla(() => 100))[12];
+  assert.ok(Math.abs(llano - Math.SQRT1_2) < 1e-6, `llano ${llano}`);
+  assert.ok(noroeste > llano && sureste < llano, `NO ${noroeste} · SE ${sureste}`);
+  assert.equal(planRelieve(16).cobertura, 'Elevacion4258_5'); assert.equal(planRelieve(16).n, null);
+  assert.equal(planRelieve(12).cobertura, 'Elevacion4258_25');
+  assert.match(urlRelieve(16, 32135, 24603), /CoverageId=Elevacion4258_5&SUBSET=Lat\(.*FORMAT=application\/asc$/);
+  assert.match(urlRelieve(12, 2008, 1537), /SCALESIZE=Long\(173\),Lat\(173\)/);
+});
