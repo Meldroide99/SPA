@@ -96,6 +96,9 @@ montarHibrido();
 
 let fondoActual = null;
 let alCambiarFondo = () => {}; // la cuadrícula se pinta en blanco sobre el híbrido
+// eslint-disable-next-line prefer-const
+let importar = null;
+const VERSION = '0.6.1';
 function ponerFondo(id, { automatico = false } = {}) {
   if (!capasFondo[id]) id = 'mtn';
   if (fondoActual) mapa.removeLayer(fondoActual);
@@ -175,7 +178,7 @@ function obstaculos() {
     .map((r) => ({ x0: r.left - base.left - 4, y0: r.top - base.top - 4, x1: r.right - base.left + 4, y1: r.bottom - base.top + 4 }));
 }
 const cuadricula = capaCuadricula(L, mapa, { intensidad: () => estado.intensidadCuadricula / 100, obstaculos, claro: () => fondoActual?.idSpa === 'hibrido' });
-alCambiarFondo = () => cuadricula.redibujar();
+alCambiarFondo = () => { cuadricula.redibujar(); importar?.pintarMapas(); };
 const recolocarEtiquetas = () => requestAnimationFrame(() => { if (mapa.hasLayer(cuadricula)) cuadricula.redibujar(); });
 const zonaPiloto = L.layerGroup([
   L.rectangle(piloto, { color: '#9A7642', weight: 2, dashArray: '7 5', fill: false, interactive: false }),
@@ -223,8 +226,6 @@ if (window.matchMedia('(max-width: 760px)').matches) ponerPanelCapas(false);
 let herramienta = 'consultar';
 let ultimaPos = null;
 const fmt = { metros, coord };
-// eslint-disable-next-line prefer-const
-let importar = null;
 const dibujo = iniciarDibujo({
   L, mapa, alturas, fmt,
   herramienta: () => herramienta,
@@ -234,6 +235,7 @@ const dibujo = iniciarDibujo({
 });
 importar = iniciarImportar({
   L, mapa, alturas, fmt, dibujo,
+  fondo: () => fondoActual?.idSpa ?? '',
   herramienta: () => herramienta,
   alCambiarPaneles: () => recolocarEtiquetas(),
 });
@@ -317,6 +319,7 @@ for (const d of document.querySelectorAll('.aj-sec')) {
   d.addEventListener('toggle', () => { estado.ajustesAbiertos = { ...estado.ajustesAbiertos, [d.dataset.aj]: d.open }; guardar(); });
 }
 $('btn-ajustes').addEventListener('click', (ev) => { ev.stopPropagation(); abrirAjustes(); });
+$('aj-version').textContent = `SPA v${VERSION}`;
 document.addEventListener('click', (ev) => { if (!$('ajustes').hidden && !ev.target.closest('#ajustes, #btn-ajustes, #buscar')) abrirAjustes(false); });
 function ponerPref(clave, v) {
   estado[clave] = v; guardar();

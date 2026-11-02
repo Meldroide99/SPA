@@ -179,6 +179,24 @@ await pag.waitForTimeout(1500);
 const teselasMapa = await motor(() => [...document.querySelectorAll('.leaflet-mapasImportados-pane canvas')].filter((c) => {
   const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; for (let k = 3; k < d.length; k += 4096) if (d[k]) return true; return false; }).length);
 ok(teselasMapa > 0, `Se pintan sus teselas (${teselasMapa})`);
+// En pantalla: el mapa importado tapa el fondo a todos los zooms (el fondo simulado es gris liso)
+{
+  const tapado = [];
+  for (const z of [13, 15, 17, 19, 21]) {
+    await motor((z) => { const s = window.__spa; const m = s.importar.mapas.find((x) => /sqlite/.test(x.nombre)); s.mapa.setView([(m.limites.sur + m.limites.norte) / 2, (m.limites.oeste + m.limites.este) / 2], z, { animate: false }); }, z);
+    await pag.waitForTimeout(1500);
+    const png = (await pag.screenshot()).toString('base64');
+    tapado.push(await pag.evaluate(async (b64) => {
+      const im = new Image(); im.src = `data:image/png;base64,${b64}`; await im.decode();
+      const c = document.createElement('canvas'); c.width = im.width; c.height = im.height; const x = c.getContext('2d'); x.drawImage(im, 0, 0);
+      const r = document.getElementById('mapa').getBoundingClientRect(); let fondo = 0, n = 0;
+      for (let i = r.left + r.width * 0.35; i < r.left + r.width * 0.65; i += 12) for (let j = r.top + r.height * 0.35; j < r.top + r.height * 0.65; j += 12) {
+        const d = x.getImageData(i, j, 1, 1).data; n++; if (Math.abs(d[0] - 200) < 3 && Math.abs(d[1] - 200) < 3 && Math.abs(d[2] - 190) < 3) fondo++; }
+      return fondo / n;
+    }, png));
+  }
+  ok(tapado.every((f) => f < 0.05), `El mapa importado se ve encima del fondo en pantalla a zoom 13–21 (fondo visible: ${tapado.map((f) => `${Math.round(f * 100)} %`).join(', ')})`);
+}
 await pag.setInputFiles('#entrada-mapa', ['pruebas/datos/utm25830_lzw.tif', 'pruebas/datos/ed50_23030_packbits.tif']);
 await pag.waitForFunction(() => window.__spa.importar.mapas.length >= 4 && window.__spa.importar.mapas.every((m) => m.info || m.error), null, { timeout: 15000 });
 const t1 = await mapaDe(/25830/), t2 = await mapaDe(/23030/);

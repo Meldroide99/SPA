@@ -61,7 +61,7 @@ async function componerTesela(t, hay, z, x, y, lienzo) {
   return false;
 }
 
-export function iniciarImportar({ L, mapa, fmt, alturas, dibujo, herramienta, alCambiarPaneles = () => {} }) {
+export function iniciarImportar({ L, mapa, fmt, alturas, dibujo, herramienta, alCambiarPaneles = () => {}, fondo = () => '' }) {
   const $ = (id) => document.getElementById(id);
   const DUENO = 'importados';
   if (!mapa.getPane('importados')) mapa.createPane('importados').style.zIndex = 455;
@@ -253,7 +253,10 @@ export function iniciarImportar({ L, mapa, fmt, alturas, dibujo, herramienta, al
     if (m.tipo === 'teselas') {
       const t = await abrirMapaTeselas(lectorBlob(archivo), m.nombre);
       limites = t.limites;
-      info = `${t.tipo} · zoom ${t.minZoom}–${t.maxZoom}`;
+      info = `${t.tipo} · zoom ${t.minZoom}–${t.maxZoom}${t.proveedor ? ` · ${t.proveedor}` : ''}`;
+      // De qué servicio salió (ATAK guarda el proveedor): si es el mismo que un fondo de SPA, se ve igual que él
+      m.fuente = /google/i.test(t.proveedor || '') ? 'hibrido' : /\bIGN\b|r[aá]ster/i.test(t.proveedor || '') ? 'mtn' : null;
+      m.zoomMax = t.maxZoom;
       // Cada tesela de pantalla se compone con lo que tenga la caché: la del
       // mismo zoom; si falta, sus hijas de un zoom más fino (hasta 3 niveles,
       // reducidas), o un trozo de su madre (ampliado). Así una caché de ATAK
@@ -351,6 +354,8 @@ export function iniciarImportar({ L, mapa, fmt, alturas, dibujo, herramienta, al
       <div class="mi-cab"><input type="checkbox" data-acc="ver" title="Ver u ocultar" ${m.visible ? 'checked' : ''} ${m.error ? 'disabled' : ''}>
         <button type="button" class="mi-nom" data-acc="sel" aria-pressed="${seleccionMapa === m}" title="Encontrarlo en el mapa y ponerlo encima de todo" ${m.limites ? '' : 'disabled'}><b>${esc(m.nombre)}</b><small>${m.error ? `<span class="error-txt">${esc(m.error)}</span>` : esc(m.info || 'Cargando…')}</small></button></div>
       ${m.error && m.handle ? '<button type="button" class="mi-btn" data-acc="permiso">Dar acceso de nuevo</button>' : ''}
+      ${!m.error && m.visible && m.fuente && m.fuente === fondo() ? `<p class="mi-nota">Es la misma imagen que el fondo ${m.fuente === 'hibrido' ? 'Híbrido' : 'Topográfico'}: encima se ve igual. Para distinguirlo, cambia el fondo o baja su opacidad.</p>` : ''}
+      ${!m.error && m.zoomMax ? `<p class="mi-nota mi-zoom">Detalle propio hasta el zoom ${m.zoomMax}; más cerca se amplía.</p>` : ''}
       <div class="mi-fila"><span>Opacidad</span><input type="range" min="10" max="100" step="5" value="${Math.round((m.opacidad ?? 1) * 100)}" data-acc="opacidad" ${m.error ? 'disabled' : ''}>
         <button type="button" class="gi-mini" data-acc="centrar" title="Centrar en el mapa" ${m.limites ? '' : 'disabled'}>⌖</button>
         <button type="button" class="gi-mini peligro" data-acc="quitar" title="Quitar">×</button></div></div>`).join('');
@@ -591,5 +596,5 @@ export function iniciarImportar({ L, mapa, fmt, alturas, dibujo, herramienta, al
     await procesar(entradas);
   }
 
-  return { procesar, puntosVisibles, grupos, mapas, abrirBuscador, cerrarFicha, candidatosBusqueda, seleccionarMapa };
+  return { pintarMapas, procesar, puntosVisibles, grupos, mapas, abrirBuscador, cerrarFicha, candidatosBusqueda, seleccionarMapa };
 }

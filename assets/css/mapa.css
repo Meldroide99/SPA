@@ -371,6 +371,9 @@ body.plan-abierto .panel-elemento, body.plan-abierto #panel-medida { left: 324px
 .mi-nom { display: grid; text-align: left; border: 1px solid transparent; background: none; border-radius: 6px; padding: 3px 6px; cursor: pointer; min-width: 0; flex: 1; }
 .mi-nom b { font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mi-nom small { font-size: 11px; color: var(--gris); }
+.mi-nota { margin: 2px 4px 4px 30px; font-size: 11px; line-height: 1.35; color: var(--aviso); }
+.mi-nota.mi-zoom { color: var(--gris); }
+.aj-version { font-size: 11px; color: var(--gris); margin: 6px 0 0; text-align: right; }
 .mi-nom:hover { background: var(--hundido); }
 .mapa-imp.sel .mi-nom { border-color: #ff2bd6; background: #fff0fc; }
 .marco-mapa { animation: marco 1s ease-in-out 4; }
