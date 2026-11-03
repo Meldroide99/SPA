@@ -1360,7 +1360,6 @@ body.barra-fija .herr-pista { opacity: 0; pointer-events: none; }
 .herramientas button:hover:not(:disabled) { background: var(--hundido); color: var(--tinta); }
 .herramientas button[aria-pressed="true"] { background: var(--noche); color: #fff; }
 #btn-app6 { width: 60px; }
-#btn-objetos, #btn-operaciones { width: 66px; }
 
 /* Menú APP-6 (aparece al pasar el ratón por el botón) */
 .menu-app6 { position: absolute; z-index: 1120; display: grid; gap: 2px; padding: 6px; border-radius: 14px; width: 252px; zoom: var(--escala-ui); transform-origin: top left; animation: aparecer .16s var(--curva); }
@@ -1407,11 +1406,6 @@ body.v-cursor-nesw, body.v-cursor-nesw * { cursor: nesw-resize !important; }
 .ventana.v-recogida { height: auto; max-height: none !important; overflow: hidden !important; opacity: .85; container-type: normal; width: max-content; min-width: 0; max-width: 260px !important; }
 .ventana.v-recogida .v-sub { flex: 0 1 auto; }
 .ventana.v-recogida > :not(:first-child) { display: none !important; }
-/* Capas recogida: solo su icono */
-.panel-capas.v-recogida { padding: 6px; border-radius: 999px; }
-.panel-capas.v-recogida .v-cab { padding: 2px; min-height: 0; }
-.panel-capas.v-recogida .v-cab > :not(svg) { display: none; }
-.panel-capas.v-recogida .v-cab > svg { width: 20px; height: 20px; }
 .ventana.v-recogida > :first-child { margin: 0 !important; border: 0 !important; padding-bottom: 0 !important; }
 /* Al poner objetos: casi transparentes y se puede pinchar el mapa a través */
 body.v-apartadas .ventana:not(.v-despierta), body.v-apartadas .pildora-op { opacity: .16; pointer-events: none; filter: saturate(.6); transition-duration: .8s; }
@@ -1419,7 +1413,7 @@ body.v-apartadas .ventana.v-despierta { opacity: 1; }
 body.arrastrando .ventana { opacity: .12 !important; pointer-events: none !important; transition: opacity .12s !important; }
 
 /* Tamaños por defecto (más compactos) */
-.panel-capas { top: var(--sup); right: 12px; width: 250px; max-height: calc(100% - var(--sup) - 64px); padding: 6px 4px 6px; }
+.panel-capas { top: var(--sup-izq); right: auto; left: 64px; width: 262px; max-height: calc(100% - var(--sup-izq) - 64px); padding: 8px 4px 6px; }
 .panel-capas .v-cab { padding: 2px 8px 4px; font: inherit; width: auto; }
 .panel-capas .v-cab > svg { width: 17px; height: 17px; fill: none; stroke: var(--oro); stroke-width: 1.6; flex: none; }
 .panel-capas .panel-cuerpo { padding: 0 6px 6px; }
@@ -1642,34 +1636,114 @@ body.tema-oscuro .barra-sup .buscar input { color: #fff; }
 .obj-ico.pila svg { max-width: 22px; max-height: 16px; }
 .op-pila-dentro { padding-left: 16px; display: grid; gap: 1px; }
 
-/* Brújula (arriba a la izquierda): norte geográfico y, en azul, el de cuadrícula */
+/* Brújula (arriba a la izquierda): solo el norte */
 .brujula { position: absolute; z-index: 1006; left: 12px; top: var(--sup); width: 40px; height: 40px; border-radius: 50%; zoom: var(--escala-ui); display: grid; place-items: center; transition: width .4s var(--curva), border-radius .4s var(--curva); overflow: hidden; }
 .brujula svg { width: 34px; height: 34px; flex: none; }
 .br-marcas path { stroke: var(--gris-2); stroke-width: 1.4; stroke-linecap: round; }
 .br-norte { fill: #C0392B; }
 .br-sur { fill: var(--gris-2); opacity: .55; }
 .br-eje { fill: var(--superficie); stroke: var(--gris); stroke-width: .8; }
-.br-cuad path { fill: none; stroke: #2E7BD6; stroke-width: 1.3; stroke-linecap: round; stroke-linejoin: round; }
-.br-cuad { transform-origin: 20px 20px; transition: transform .6s var(--curva); }
 .br-n { position: absolute; top: -1px; left: 50%; transform: translateX(-50%); font: 700 7.5px var(--sans); color: #C0392B; pointer-events: none; display: none; }
-.br-datos { display: none; }
-/* Al pasar el ratón se abre y da los nortes */
-.brujula:hover { width: 188px; border-radius: 22px; grid-template-columns: 40px 1fr; justify-items: start; }
-.brujula:hover .br-datos { display: grid; gap: 1px; font-size: 10.5px; line-height: 1.25; color: var(--tinta-2); white-space: nowrap; padding-right: 10px; }
-.br-datos b { font: 600 11px var(--mono); color: var(--tinta); }
-.br-datos .c { color: #2E7BD6; }
 .herr-pista { left: 60px; }
 .herramientas { left: 60px; }
 @media (max-width: 760px) { .herramientas { max-width: calc(100% - 72px); } }
 .brujula { z-index: 1012; }
-.brujula:hover { --vidrio-op: .9; }
+
+
+/* ============================================================ v0.9.3 · interfaz viva */
+:root { --muelle: cubic-bezier(.34,1.56,.64,1); --muelle-suave: cubic-bezier(.3,1.35,.6,1); }
+
+/* Sello SPA: oro champán sobre gris */
+.barra-sup .sello-spa, .sello-spa { width: 34px; height: 34px; border-radius: 0; background: none; border: 0; padding: 0; display: block; flex: none;
+  filter: drop-shadow(0 2px 5px rgba(0,0,0,.28)); transition: transform .5s var(--muelle); }
+.marca:hover .sello-spa { transform: rotate(-4deg) scale(1.06); }
+.barra-sup .marca-txt strong { font: 400 16.5px/1 var(--serif); letter-spacing: .01em; }
+.barra-sup .marca-txt strong i { color: #B8945E; font-style: italic; }
+.barra-sup .marca-txt small { font-size: 8.5px; letter-spacing: .22em; color: #9A7642; margin-top: 4px; }
+body.tema-oscuro .barra-sup .marca-txt small { color: #CDAE78; }
+
+/* Barra de herramientas: solo iconos; el nombre sale al pasar el ratón */
+.h-grupo { padding: 3px; gap: 2px; }
+.herramientas button { width: 38px; height: 36px; padding: 0; display: grid; place-items: center; border: 0 !important; border-radius: 9px; transition: background .2s, color .2s; }
+.herramientas svg { width: 20px; height: 20px; }
+.herramientas button > span { display: none; }
+#btn-app6 { width: 42px; }
+.herramientas svg, .dock svg { transform-origin: 50% 50%; transition: transform .22s cubic-bezier(.2,.9,.3,1.25); will-change: transform; }
+.herramientas button:active:not(:disabled) svg, .dock button:active svg { transform: scale(.82) !important; transition-duration: .1s; }
+.herramientas .h-grupo { overflow: visible; }
+.herramientas.reordenando .h-grupo { outline: 1px dashed rgba(127,127,127,.35); outline-offset: -1px; }
+.levantado { position: relative; z-index: 3; border-radius: 12px; background: rgba(var(--vidrio-rgb), .95) !important; box-shadow: 0 10px 24px -8px rgba(0,0,0,.45), 0 0 0 1px var(--vidrio-borde); scale: 1.12; transition: scale .25s var(--muelle), box-shadow .25s; cursor: grabbing; }
+.reordenando button:not(.levantado) { animation: temblor .32s ease-in-out infinite alternate; }
+.reordenando button:nth-child(2n):not(.levantado) { animation-delay: -.16s; }
+@keyframes temblor { from { rotate: -1.6deg; } to { rotate: 1.6deg; } }
+
+/* Barra lateral (dock): de aquí salen Capas, Operaciones y Objetos */
+.dock { position: absolute; z-index: 1008; left: 12px; top: 50%; translate: 0 -50%; display: flex; flex-direction: column; gap: 4px; padding: 6px; border-radius: 22px; zoom: var(--escala-ui);
+  animation: dock-entra .7s var(--muelle-suave) both .15s; }
+@keyframes dock-entra { from { opacity: 0; transform: translateX(-24px) scale(.9); } to { opacity: 1; transform: none; } }
+.dock button { position: relative; width: 40px; height: 40px; border: 0; border-radius: 13px; background: none; color: var(--tinta-2); display: grid; place-items: center; cursor: pointer; padding: 0;
+  transition: background .25s, color .25s; }
+.dock button > span { display: none; }
+.dock svg { width: 21px; height: 21px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.dock button:hover { background: var(--hundido); color: var(--tinta); }
+.dock button[aria-pressed="true"] { color: var(--tinta); }
+/* El puntito del abierto (como en el Dock) */
+.dock button::after { content: ''; position: absolute; left: -3px; top: 50%; width: 4px; height: 4px; margin-top: -2px; border-radius: 50%; background: var(--oro, #B8945E); opacity: 0; scale: 0; transition: opacity .3s, scale .4s var(--muelle); }
+.dock button[aria-pressed="true"]::after { opacity: 1; scale: 1; }
+.dock button.bote svg { animation: bote .55s var(--muelle); }
+@keyframes bote { 0% { translate: 0 0; } 35% { translate: 3px 0; } 65% { translate: -1px 0; } 100% { translate: 0 0; } }
+
+/* Los paneles del dock salen de su botón, con un pequeño muelle */
+.ventana[data-dock-panel] { transform-origin: left var(--origen-y, 50%);
+  transition: opacity .38s ease, scale .5s var(--muelle-suave), translate .5s var(--muelle-suave), filter .4s ease, display .5s allow-discrete; }
+.ventana[data-dock-panel][hidden] { opacity: 0; scale: .9; translate: -22px 0; filter: blur(4px); transition-duration: .45s, .45s, .45s, .45s, .45s; transition-timing-function: ease, var(--curva), var(--curva), ease, linear; }
+@starting-style { .ventana[data-dock-panel]:not([hidden]) { opacity: 0; scale: .9; translate: -22px 0; filter: blur(4px); } }
+.ventana.v-activa[data-dock-panel] { transition: none; }
+
+/* Etiqueta flotante (nombre del botón) */
+.etiqueta-flotante { position: fixed; z-index: 1300; pointer-events: none; padding: 4px 10px; border-radius: 999px; font: 600 11.5px/1.2 var(--sans); white-space: nowrap; zoom: var(--escala-ui);
+  opacity: 0; transition: opacity .18s ease, scale .3s var(--muelle), translate .3s var(--muelle); scale: .85; }
+.etiqueta-flotante[data-lado="abajo"] { translate: -50% -4px; transform-origin: top center; }
+.etiqueta-flotante[data-lado="derecha"] { translate: -6px -50%; transform-origin: left center; }
+.etiqueta-flotante.visible { opacity: 1; scale: 1; }
+.etiqueta-flotante.visible[data-lado="abajo"] { translate: -50% 0; }
+.etiqueta-flotante.visible[data-lado="derecha"] { translate: 0 -50%; }
+
+/* Pequeños botes por todo el programa */
+.v-x, .v-pin, .pm-acciones button, .seg button, .sim-pestanas button, .barra-sup .btn-ajustes, .barra-sup .buscar button, .pildora-op, .fondos button, .chip, .op-cat summary, .aviso-breve button { transition: transform .3s var(--muelle), background .2s, color .2s, opacity .2s; }
+.v-x:active, .v-pin:active, .pm-acciones button:active, .seg button:active, .sim-pestanas button:active, .barra-sup .btn-ajustes:active, .barra-sup .buscar button:active, .pildora-op:active, .fondos button:active, .chip:active, .aviso-breve button:active { transform: scale(.9); transition-duration: .08s; }
+.v-x:hover { transform: rotate(90deg); }
+.fondos button:hover { transform: translateY(-2px) scale(1.03); }
+details > summary { transition: background .2s; }
+details[open] > :not(summary) { animation: desplegar .38s var(--curva); }
+@keyframes desplegar { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: none; } }
+.aviso-breve { animation: aviso-bote .55s var(--muelle); }
+@keyframes aviso-bote { from { opacity: 0; transform: translate(-50%, 14px) scale(.92); } to { opacity: 1; transform: translate(-50%, 0) scale(1); } }
+.brujula { transition: transform .5s var(--muelle); }
+.brujula:hover { transform: scale(1.08); }
+.buscar-res:not([hidden]) { animation: aparecer .3s var(--muelle-suave); transform-origin: top center; }
+.buscar-res .grupo-lugares small { color: var(--gris); }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
+@media (max-width: 760px) { .dock { top: auto; bottom: 64px; translate: none; } }
 
 </style>
 </head>
 <body class="app-mapa">
 <div id="app">
   <header class="barra-sup vidrio" id="barra-sup">
-    <div class="marca"><span class="sello-spa">SPA</span><span class="marca-txt"><strong>Mapa</strong><small>Planeamiento · S3</small></span></div>
+    <div class="marca">
+      <svg class="sello-spa" viewBox="0 0 64 64" role="img" aria-label="SPA">
+        <defs>
+          <linearGradient id="sello-gris" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#55595F"/><stop offset="1" stop-color="#2D3035"/></linearGradient>
+          <linearGradient id="sello-oro" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#E6CC97"/><stop offset=".45" stop-color="#B8945E"/><stop offset="1" stop-color="#9A7642"/></linearGradient>
+        </defs>
+        <rect x="1" y="1" width="62" height="62" rx="15" fill="url(#sello-gris)"/>
+        <rect x="4.5" y="4.5" width="55" height="55" rx="12" fill="none" stroke="url(#sello-oro)" stroke-width=".8" opacity=".75"/>
+        <text x="32" y="40.5" text-anchor="middle" font-family="EB Garamond, Garamond, serif" font-size="23" font-weight="400" letter-spacing="1" fill="url(#sello-oro)">S<tspan font-style="italic">P</tspan>A</text>
+        <path d="M22 48h20" stroke="url(#sello-oro)" stroke-width=".8" opacity=".7"/><circle cx="32" cy="48" r="1.2" fill="#B8945E"/>
+      </svg>
+      <span class="marca-txt"><strong>Planeamiento <i>táctico</i></strong><small>S3 · Lauria</small></span>
+    </div>
     <form class="buscar" id="buscar" autocomplete="off">
       <input id="buscar-txt" spellcheck="false" placeholder="Buscar" aria-label="Buscar" aria-autocomplete="list" aria-controls="buscar-res">
       <button type="submit">Ir</button>
@@ -1681,7 +1755,7 @@ body.tema-oscuro .barra-sup .buscar input { color: #fff; }
         <span>Ajustes</span></button>
       <div class="ajustes" id="ajustes" hidden>
         <div class="aj-cab">Ajustes</div>
-        <details class="aj-sec" data-aj="apariencia" open>
+        <details class="aj-sec" data-aj="apariencia">
           <summary>Pantalla y ventanas</summary>
           <div class="aj-cuerpo">
             <div class="aj-tit">Tema</div>
@@ -1753,53 +1827,54 @@ body.tema-oscuro .barra-sup .buscar input { color: #fff; }
     <div class="brujula vidrio" id="brujula" role="img" aria-label="Norte">
       <svg viewBox="0 0 40 40" aria-hidden="true">
         <g class="br-marcas"><path d="M20 3.5v3M20 33.5v3M3.5 20h3M33.5 20h3"/></g>
-        <g class="br-cuad" id="br-cuad"><path d="M20 20V7.5"/><path d="M17.8 9.6 20 7.2l2.2 2.4"/></g>
         <path class="br-norte" d="M20 8 23.2 20H16.8z"/>
         <path class="br-sur" d="M20 32 16.8 20h6.4z"/>
         <circle cx="20" cy="20" r="1.6" class="br-eje"/>
       </svg>
       <span class="br-n">N</span>
-      <div class="br-datos" id="br-datos"></div>
     </div>
-    <button type="button" class="herr-pista" id="herr-pista" title="Herramientas (acerca el ratón arriba)"><span id="herr-actual">Mover</span><svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button>
+    <button type="button" class="herr-pista" id="herr-pista"><span id="herr-actual">Mover</span><svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button>
     <div class="herramientas" id="herramientas" role="toolbar" aria-label="Herramientas">
       <div class="h-grupo">
-        <button type="button" data-herr="consultar" aria-pressed="true" title="Mover el mapa y seleccionar elementos">
+        <button type="button" data-herr="consultar" aria-pressed="true" aria-label="Mover">
           <svg viewBox="0 0 24 24"><path d="M5 3l13 8-6 1.5L9 19z"/></svg><span>Mover</span></button>
       </div>
       <div class="h-grupo" aria-label="Dibujar">
-        <button type="button" data-herr="punto" aria-pressed="false" title="Dibujar un punto">
+        <button type="button" data-herr="punto" aria-pressed="false" aria-label="Punto">
           <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/></svg><span>Punto</span></button>
-        <button type="button" data-herr="linea" aria-pressed="false" title="Dibujar una línea o un track (doble clic o Intro para terminar; clic derecho quita el último punto)">
+        <button type="button" data-herr="linea" aria-pressed="false" aria-label="Línea">
           <svg viewBox="0 0 24 24"><path d="M3 18 9 9l6 5 6-9"/><circle cx="3" cy="18" r="1.4"/><circle cx="9" cy="9" r="1.4"/><circle cx="15" cy="14" r="1.4"/><circle cx="21" cy="5" r="1.4"/></svg><span>Línea</span></button>
-        <button type="button" data-herr="area" aria-pressed="false" title="Dibujar un área (toca el primer punto para cerrar)">
+        <button type="button" data-herr="area" aria-pressed="false" aria-label="Área">
           <svg viewBox="0 0 24 24"><path d="M4 7 12 3l8 6-3 11H7z"/></svg><span>Área</span></button>
-        <button type="button" data-herr="circulo" aria-pressed="false" title="Dibujar un círculo: centro y radio">
+        <button type="button" data-herr="circulo" aria-pressed="false" aria-label="Círculo">
           <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 12h8"/><circle cx="12" cy="12" r="1.2"/></svg><span>Círculo</span></button>
       </div>
       <div class="h-grupo" aria-label="Símbolos APP-6">
-        <button type="button" id="btn-app6" aria-haspopup="menu" aria-expanded="false" aria-pressed="false" title="Símbolos APP-6: unidades, líneas de coordinación y cometidos">
+        <button type="button" id="btn-app6" aria-haspopup="menu" aria-expanded="false" aria-pressed="false" aria-label="APP-6">
           <svg viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="12" rx="1"/><path d="M3 7l18 12M3 19 21 7M10 4h4"/></svg><span>APP-6</span></button>
       </div>
       <div class="h-grupo">
-        <button type="button" data-herr="medir" aria-pressed="false" title="Regla: medir distancias y rumbos sin guardar">
+        <button type="button" data-herr="medir" aria-pressed="false" aria-label="Medir">
           <svg viewBox="0 0 24 24"><path d="M3 17 17 3l4 4L7 21z"/><path d="M7 13l2 2M10 10l2 2M13 7l2 2"/></svg><span>Medir</span></button>
-        <button type="button" data-herr="lazo" aria-pressed="false" title="Lazo: pinta un círculo y selecciona todo lo que hay dentro para exportarlo o enviarlo">
+        <button type="button" data-herr="lazo" aria-pressed="false" aria-label="Lazo">
           <svg viewBox="0 0 24 24"><circle cx="12" cy="11" r="7.5" stroke-dasharray="3.2 2.2"/><path d="M12 18.5c0 2 -1.5 3 -3.5 3"/><circle cx="12" cy="11" r="1.3"/></svg><span>Lazo</span></button>
       </div>
       <div class="h-grupo">
-        <button type="button" id="deshacer" disabled title="Deshacer (Ctrl+Z)">
+        <button type="button" id="deshacer" disabled aria-label="Deshacer">
           <svg viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg><span>Deshacer</span></button>
-        <button type="button" id="rehacer" disabled title="Rehacer (Ctrl+Y)">
+        <button type="button" id="rehacer" disabled aria-label="Rehacer">
           <svg viewBox="0 0 24 24"><path d="m15 14 5-5-5-5"/><path d="M20 9H10a6 6 0 0 0 0 12h3"/></svg><span>Rehacer</span></button>
       </div>
-      <div class="h-grupo">
-        <button type="button" id="btn-objetos" aria-pressed="false" title="Objetos: todo lo pintado e importado, con filtros, selección y borrado">
-          <svg viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11"/><rect x="3.5" y="4.5" width="3" height="3" rx=".6"/><rect x="3.5" y="10.5" width="3" height="3" rx=".6"/><rect x="3.5" y="16.5" width="3" height="3" rx=".6"/></svg><span>Objetos</span></button>
-        <button type="button" id="btn-operaciones" aria-pressed="false" title="Operaciones: paquetes con fases y saltos para agrupar lo que pintas">
-          <svg viewBox="0 0 24 24"><path d="M3 7.5 12 3l9 4.5-9 4.5z"/><path d="m3 12 9 4.5 9-4.5"/><path d="m3 16.5 9 4.5 9-4.5"/></svg><span>Operaciones</span></button>
-      </div>
     </div>
+    <!-- Barra lateral: de aquí salen Capas, Operaciones y Objetos -->
+    <nav class="dock vidrio" id="dock" aria-label="Paneles">
+      <button type="button" id="btn-capas" data-dock="capas" aria-pressed="false" aria-label="Capas">
+        <svg viewBox="0 0 24 24"><path d="M12 3 2 8l10 5 10-5z"/><path d="m2 13 10 5 10-5"/></svg><span>Capas</span></button>
+      <button type="button" id="btn-operaciones" data-dock="operaciones" aria-pressed="false" aria-label="Operaciones">
+        <svg viewBox="0 0 24 24"><path d="M3 7.5 12 3l9 4.5-9 4.5z"/><path d="m3 12 9 4.5 9-4.5"/><path d="m3 16.5 9 4.5 9-4.5"/></svg><span>Operaciones</span></button>
+      <button type="button" id="btn-objetos" data-dock="objetos" aria-pressed="false" aria-label="Objetos">
+        <svg viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11"/><rect x="3.5" y="4.5" width="3" height="3" rx=".6"/><rect x="3.5" y="10.5" width="3" height="3" rx=".6"/><rect x="3.5" y="16.5" width="3" height="3" rx=".6"/></svg><span>Objetos</span></button>
+    </nav>
     <div class="menu-app6 vidrio" id="menu-app6" role="menu" hidden>
       <button type="button" role="menuitem" data-simbolos="unidades"><svg viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="12" rx="1"/><path d="M3 7l18 12M3 19 21 7M10 4h4"/></svg><span><b>Unidades</b><small>Unidades, material, instalaciones…</small></span></button>
       <button type="button" role="menuitem" data-simbolos="medidas"><svg viewBox="0 0 24 24"><path d="M3 16h18M3 16v-3M21 16v-3"/><path d="M6 8h9l3 3-3 3"/></svg><span><b>Líneas de coordinación</b><small>Líneas, ejes, zonas y puntos</small></span></button>
@@ -1807,7 +1882,7 @@ body.tema-oscuro .barra-sup .buscar input { color: #fff; }
     </div>
 
     <!-- Objetos: todo lo pintado e importado -->
-    <aside class="ventana panel-objetos" id="panel-objetos" data-ventana="objetos" hidden aria-label="Objetos">
+    <aside class="ventana panel-objetos" id="panel-objetos" data-ventana="objetos" data-dock-panel hidden aria-label="Objetos">
       <div class="v-cab"><strong>Objetos</strong><span class="v-sub" id="obj-cuenta"></span><button type="button" class="v-x" id="objetos-cerrar" title="Cerrar" aria-label="Cerrar">×</button></div>
       <div class="v-cuerpo" id="objetos-cuerpo">
         <div id="objetos-lista"></div>
@@ -1819,7 +1894,7 @@ body.tema-oscuro .barra-sup .buscar input { color: #fff; }
     </aside>
 
     <!-- Operaciones: paquetes de datos con fases y saltos -->
-    <aside class="ventana panel-operaciones" id="panel-operaciones" data-ventana="operaciones" hidden aria-label="Operaciones">
+    <aside class="ventana panel-operaciones" id="panel-operaciones" data-ventana="operaciones" data-dock-panel hidden aria-label="Operaciones">
       <div class="v-cab"><strong>Operaciones</strong><span class="v-sub" id="op-cuenta"></span><button type="button" class="v-x" id="operaciones-cerrar" title="Cerrar" aria-label="Cerrar">×</button></div>
       <div class="v-cuerpo" id="operaciones-cuerpo"></div>
     </aside>
@@ -1830,10 +1905,10 @@ body.tema-oscuro .barra-sup .buscar input { color: #fff; }
       <div class="v-cuerpo" id="lazo-cuerpo"></div>
     </aside>
 
-    <aside class="ventana panel-capas" id="panel-capas" data-ventana="capas">
-      <div class="v-cab panel-tit" id="capas-toggle"><svg viewBox="0 0 24 24"><path d="M12 3 2 8l10 5 10-5z"/><path d="m2 13 10 5 10-5"/></svg><strong>Capas</strong><span class="v-sub" id="capas-resumen"></span></div>
+    <aside class="ventana panel-capas" id="panel-capas" data-ventana="capas" data-dock-panel hidden>
+      <div class="v-cab panel-tit" id="capas-toggle"><strong>Capas</strong><span class="v-sub" id="capas-resumen"></span><button type="button" class="v-x" id="capas-cerrar" title="Cerrar" aria-label="Cerrar">×</button></div>
       <div class="panel-cuerpo" id="capas-cuerpo">
-        <details class="seccion" data-sec="fondo" open>
+        <details class="seccion" data-sec="fondo">
           <summary><span>Fondo</span><span class="sec-val" id="fondo-actual"></span></summary>
           <div class="sec-cuerpo">
             <div class="fondos" id="fondos"></div>
@@ -13578,11 +13653,10 @@ function iniciarSimbolos({ L, mapa, elegirHerramienta, herramienta = () => 'cons
     const conj = String(s.conjunto ?? '10');
     const grande = svgUnidad(s, { tam: 26 });
     const ids = ['amigo', 'hostil', 'neutral', 'desconocido'];
-    const masIds = ['supuesto', 'sospechoso', 'pendiente'];
     const vista = `<button type="button" class="sim-vista" data-vista data-arrastrar>${grande.svg}<div><b>${esc(nombreUnidad(s))}</b></div></button>`;
     const CORTO = [['10', 'Unidades'], ['15', 'Material'], ['20', 'Instalaciones'], ['27', 'A pie'], ['40', 'Actividades'], ['11', 'Civiles']];
     const conjuntos = `<div class="sim-conjuntos">${CORTO.map(([k, n]) => `<button type="button" data-conjunto="${k}" aria-pressed="${conj === k}" title="${esc(CONJUNTOS[k].nombre)}">${n}</button>`).join('')}</div>`;
-    const bandos = `<div class="sim-paso"><span class="el-et">1 · Bando</span><div class="sim-rejilla sim-bandos">${[...ids, ...(est.masOpciones ? masIds : [])].map((id) => `<button type="button" class="sim-tile" data-identidad="${id}" aria-pressed="${s.identidad === id}">${miniUnidad({ ...s, identidad: id, escalon: '' }, 20)}<span>${IDENTIDADES[id].nombre}</span></button>`).join('')}</div></div>`;
+    const bandos = `<div class="sim-paso"><span class="el-et">1 · Bando</span><div class="sim-rejilla sim-bandos">${ids.map((id) => `<button type="button" class="sim-tile" data-identidad="${id}" aria-pressed="${s.identidad === id}">${miniUnidad({ ...s, identidad: id, escalon: '' }, 20)}<span>${IDENTIDADES[id].nombre}</span></button>`).join('')}</div></div>`;
     let tipo;
     if (conj === '10' && !est.todo) {
       const arma = ARMAS.find((a) => a.id === est.arma) ?? ARMAS[0];
@@ -13630,7 +13704,7 @@ function iniciarSimbolos({ L, mapa, elegirHerramienta, herramienta = () => 'cons
     return grupos.map((gk) => {
       const lista = MEDIDAS.filter((m) => m.grupo === gk && !m.oculto);
       if (!lista.length) return '';
-      const abierto = est.abiertos[`m/${gk}`] ?? (gk === 'lineas' || gk === 'zonas' || gk === 'cometidos');
+      const abierto = est.abiertos[`m/${gk}`] ?? grupos.length === 1; // un solo grupo (Cometidos): abierto
       return `<details class="sim-grupo-det" data-grupo="m/${gk}"${abierto ? ' open' : ''}><summary>${GRUPOS[gk]} <small>${lista.length}</small></summary>${abierto ? `<div class="sim-lista-cm">${lista.map((m) => `<button type="button" class="sim-cm" data-medida="${m.id}" data-arrastrar title="${esc(m.nombre)}"><span class="sim-cm-ico">${miniMedida(m)}</span><span>${esc(m.nombre)}${m.sigla && gk !== 'cometidos' ? ` <small>${esc(m.sigla)}</small>` : ''}</span></button>`).join('')}</div>` : ''}</details>`;
     }).join('');
   }
@@ -13765,7 +13839,7 @@ function iniciarSimbolos({ L, mapa, elegirHerramienta, herramienta = () => 'cons
       return {
         titulo: nombreUnidad(s), tipo: CONJUNTOS[conj]?.nombre ?? 'Unidad',
         html: `<div class="sim-vista sim-vista-ficha">${svgUnidad({ ...s, estado: el.propiedades.estado }, { tam: 26 }).svg}<div><b>${esc(nombreUnidad(s))}</b></div></div>
-          <div class="el-fila"><span class="el-et">Bando</span><div class="seg sim-seg" data-f="identidad">${['amigo', 'hostil', 'neutral', 'desconocido', 'supuesto', 'sospechoso', 'pendiente'].map((id) => `<button type="button" data-v="${id}" aria-pressed="${s.identidad === id}" title="${IDENTIDADES[id].nombre}">${miniUnidad({ ...s, identidad: id }, 16)}</button>`).join('')}</div></div>
+          <div class="el-fila"><span class="el-et">Bando</span><div class="seg sim-seg" data-f="identidad">${['amigo', 'hostil', 'neutral', 'desconocido'].map((id) => `<button type="button" data-v="${id}" aria-pressed="${s.identidad === id}" title="${IDENTIDADES[id].nombre}">${miniUnidad({ ...s, identidad: id }, 16)}</button>`).join('')}</div></div>
           ${conj === '10' ? selectorVisual('tipo', 'Tipo (ET)', tiposET, e ? `${e.arma.id}/${e.tipo.id}` : '') : ''}
           ${selectorVisual('icono', conj === '10' ? 'Icono APP-6 (todos)' : 'Tipo', todos, `${conj}:${s.icono}`)}
           ${escalonesDe(conj).length > 1 ? selectorVisual('escalon', 'Escalón', escalonesDe(conj).map((k) => ({ v: k, nombre: nombreEscalon(k, armaId), ico: `<b class="marca-esc">${ESCALONES[k].marca ?? '—'}</b>` })), s.escalon ?? '') : ''}
@@ -13980,8 +14054,10 @@ function iniciarVentanas({ reposo, apartar, colocando, escala = () => 1, alCambi
 
   // ---------------------------------------------------------- colocación automática de las no movidas
   // Izquierda: una al lado de otra. Derecha: Capas arriba y la ficha y la regla debajo.
-  const IZQ = ['simbolos', 'operaciones', 'objetos', 'lazo', 'creador'];
-  const DER = ['capas', 'ficha', 'regla'];
+  // Izquierda: los paneles de la barra lateral (en su orden) y después el resto. Derecha: la ficha y la regla.
+  const dock = document.getElementById('dock');
+  const ordenIzq = () => [...(dock ? [...dock.querySelectorAll('[data-dock]')].map((b) => b.dataset.dock) : []), 'simbolos', 'lazo', 'creador'];
+  const DER = ['ficha', 'regla'];
   let tApilar = 0;
   function apilar() {
     const c = cont.getBoundingClientRect(); const k = escala();
@@ -13989,8 +14065,11 @@ function iniciarVentanas({ reposo, apartar, colocando, escala = () => 1, alCambi
     const sup = parseFloat(getComputedStyle(cont).getPropertyValue('--sup')) || 64;
     const supIzq = parseFloat(getComputedStyle(cont).getPropertyValue('--sup-izq')) || sup + 54;
     const libres = (lista) => lista.map((id) => document.querySelector(`.ventana[data-ventana="${id}"]`)).filter((v) => v && !v.hidden && !v.classList.contains('v-movida'));
-    let x = 12;
-    for (const v of libres(IZQ)) {
+    let x = dock ? dock.getBoundingClientRect().right - c.left + 10 : 12;
+    for (const v of libres(ordenIzq())) {
+      // Los de la barra lateral salen de su botón: el giro de la animación nace a su altura
+      const b = dock?.querySelector(`[data-dock="${v.dataset.ventana}"]`);
+      if (b) { const rb = b.getBoundingClientRect(); v.style.setProperty('--origen-y', `${(rb.top + rb.height / 2 - c.top - supIzq) / k}px`); }
       v.style.left = `${x / k}px`; v.style.top = `${supIzq / k}px`; v.style.right = 'auto';
       if (!v.classList.contains('v-alto') && !recogida(v)) v.style.maxHeight = `${Math.max(160, c.height - supIzq - 64) / k}px`;
       x += v.getBoundingClientRect().width + 10;
@@ -14018,9 +14097,6 @@ function iniciarVentanas({ reposo, apartar, colocando, escala = () => 1, alCambi
         datos(v).ultimo = performance.now();
         if (antes) {
           recoger(v, false, { sinAnimar: true }); recienAbierta(v);
-          // La ficha o la regla de la derecha apartan a Capas (se queda en su icono) si no está fijada
-          const capas = document.querySelector('.ventana[data-ventana="capas"]');
-          if (DER.includes(v.dataset.ventana) && v !== capas && capas && !capas.hidden && !fijada(capas) && !recogida(capas) && !capas.classList.contains('v-movida')) recoger(capas, true);
         }
       }
       antes = v.hidden;
@@ -14190,7 +14266,10 @@ function iniciarVentanas({ reposo, apartar, colocando, escala = () => 1, alCambi
     const t = performance.now();
     for (const v of visibles()) {
       if (v.dataset.ventana === 'creador' || fijada(v) || recogida(v) || enUso(v)) continue;
-      if (t - datos(v).ultimo > s * 1000) recoger(v, true);
+      if (t - datos(v).ultimo > s * 1000) {
+        if (v.hasAttribute('data-dock-panel')) v.hidden = true; // vuelve a su barra lateral, despacio
+        else recoger(v, true);
+      }
     }
   }, 500);
 
@@ -15240,6 +15319,9 @@ function iniciarLazo({ L, mapa, dibujo, simbolos, importar, fmt, herramienta, el
   });
 
   return {
+    /** Elegir la forma del lazo ('circulo' | 'mano') o el formato de exportación. */
+    ponerForma(f) { pref.forma = f; guardarPref(); trazo = null; if (!resultado) pintarCirculo(null); if (herramienta() !== 'lazo') elegirHerramienta('lazo'); else pintarPanel(); },
+    ponerFormato(f) { if (FORMATOS_EXPORTAR[f]) { pref.formato = f; guardarPref(); if (!panel.hidden) pintarPanel(); } },
     /** Al elegir o dejar la herramienta. */
     herramientaCambiada(h) {
       if (h === 'lazo') {
@@ -15447,6 +15529,332 @@ function iniciarRegla({ L, mapa, alturas, dibujo, fmt, herramienta, elegirHerram
 return { iniciarRegla };
 })();
 
+// ── src/ui/vivo.js
+__mods["src/ui/vivo.js"] = (function () {
+'use strict';
+// Interfaz «viva» (como el Dock del Mac y el iPhone):
+//   - Lupa: al pasar el ratón por una barra, los iconos crecen con suavidad;
+//     el de debajo más y los vecinos un poco.
+//   - Etiqueta: el nombre de cada botón solo aparece al pasar el ratón, en una
+//     píldora de vidrio que entra con un pequeño bote.
+//   - Reordenar: mantener pulsado un botón y arrastrarlo a lo largo de su
+//     barra. Los demás se apartan; al soltar, se queda (y se recuerda).
+
+const RADIO = 92;      // px de alcance de la lupa
+const ESPERA_REORDENAR = 380;
+
+/**
+ * Lupa sobre los botones de una barra.
+ * @param {HTMLElement} barra
+ * @param {{eje:'x'|'y', max?:number, selector?:string}} o
+ */
+function lupa(barra, { eje = 'x', max = 1.42, selector = 'button' } = {}) {
+  let raf = 0, ultimo = null;
+  const pintar = () => {
+    raf = 0;
+    const botones = [...barra.querySelectorAll(selector)];
+    for (const b of botones) {
+      const ico = b.querySelector('svg'); if (!ico) continue;
+      if (!ultimo || barra.classList.contains('reordenando')) { ico.style.transform = ''; continue; }
+      const r = b.getBoundingClientRect();
+      const c = eje === 'x' ? r.left + r.width / 2 : r.top + r.height / 2;
+      const d = (eje === 'x' ? ultimo.x : ultimo.y) - c;
+      const f = Math.exp(-(d * d) / (2 * (RADIO / 2.2) ** 2));
+      ico.style.transform = `scale(${(1 + (max - 1) * f).toFixed(3)})`;
+    }
+  };
+  const pedir = () => { if (!raf) raf = requestAnimationFrame(pintar); };
+  barra.addEventListener('pointermove', (e) => { if (e.pointerType !== 'mouse') return; ultimo = { x: e.clientX, y: e.clientY }; pedir(); });
+  barra.addEventListener('pointerleave', () => { ultimo = null; pedir(); });
+}
+
+// ---------------------------------------------------------- etiqueta flotante (una para toda la página)
+let etiqueta = null, tEtq = 0;
+function crearEtiqueta() {
+  etiqueta = document.createElement('div');
+  etiqueta.className = 'etiqueta-flotante vidrio';
+  etiqueta.setAttribute('role', 'tooltip');
+  document.body.append(etiqueta);
+}
+/**
+ * Nombre del botón al pasar el ratón: debajo (barra de arriba) o a la derecha (barra lateral).
+ * El texto sale de su <span> o de aria-label.
+ */
+function etiquetas(barra, { lado = 'abajo', selector = 'button' } = {}) {
+  barra.addEventListener('pointerover', (e) => {
+    const b = e.target.closest(selector); if (!b || !barra.contains(b) || e.pointerType !== 'mouse') return;
+    if (barra.classList.contains('reordenando')) return;
+    const texto = b.querySelector('span')?.textContent?.trim() || b.getAttribute('aria-label') || '';
+    if (!texto) return;
+    if (!etiqueta) crearEtiqueta();
+    clearTimeout(tEtq);
+    etiqueta.textContent = texto;
+    etiqueta.dataset.lado = lado;
+    const r = b.getBoundingClientRect();
+    const k = Number(getComputedStyle(document.documentElement).getPropertyValue('--escala-ui')) || 1;
+    if (lado === 'abajo') { etiqueta.style.left = `${(r.left + r.width / 2) / k}px`; etiqueta.style.top = `${(r.bottom + 8) / k}px`; }
+    else { etiqueta.style.left = `${(r.right + 10) / k}px`; etiqueta.style.top = `${(r.top + r.height / 2) / k}px`; }
+    etiqueta.classList.remove('visible'); void etiqueta.offsetWidth; etiqueta.classList.add('visible');
+  });
+  barra.addEventListener('pointerout', (e) => {
+    const b = e.target.closest(selector); if (!b || b.contains(e.relatedTarget)) return;
+    tEtq = setTimeout(() => etiqueta?.classList.remove('visible'), 80);
+  });
+  barra.addEventListener('pointerdown', () => etiqueta?.classList.remove('visible'));
+}
+
+/**
+ * Reordenar manteniendo pulsado. `clave`: dónde se guarda el orden.
+ * Los botones se identifican por data-herr, data-dock o id.
+ * Con grupos (la barra de herramientas), un botón puede pasar de un grupo a otro.
+ */
+function reordenable(barra, { clave, eje = 'x', grupos = null, alCambiar = () => {} }) {
+  const idDe = (b) => b.dataset.herr || b.dataset.dock || b.id;
+  const contenedores = () => (grupos ? [...barra.querySelectorAll(grupos)] : [barra]);
+  // Orden guardado
+  try {
+    const g = JSON.parse(localStorage.getItem(clave) || 'null');
+    if (Array.isArray(g)) {
+      const todos = new Map([...barra.querySelectorAll('button')].map((b) => [idDe(b), b]));
+      const cs = contenedores();
+      g.forEach((lista, i) => { const c = cs[i]; if (!c || !Array.isArray(lista)) return; for (const id of lista) { const b = todos.get(id); if (b) c.append(b); } });
+      for (const c of cs) if (!c.querySelector('button')) c.hidden = true;
+    }
+  } catch { /* nada */ }
+  const guardar = () => { try { localStorage.setItem(clave, JSON.stringify(contenedores().map((c) => [...c.querySelectorAll('button')].map(idDe)))); } catch { /* nada */ } };
+
+  let pulsado = null; // { b, p0, L0, t, activo }
+  // Posición «de maqueta» (sin translate ni animaciones): offsetLeft/Top respecto a la barra
+  const pos = (el) => (eje === 'x' ? el.offsetLeft : el.offsetTop);
+  const tam = (el) => (eje === 'x' ? el.offsetWidth : el.offsetHeight);
+  barra.addEventListener('pointerdown', (e) => {
+    const b = e.target.closest('button'); if (!b || e.button !== 0 || !barra.contains(b)) return;
+    pulsado = { b, x0: e.clientX, y0: e.clientY, p0: eje === 'x' ? e.clientX : e.clientY, L0: pos(b), activo: false };
+    pulsado.t = setTimeout(() => empezar(e.pointerId), ESPERA_REORDENAR);
+  });
+  function empezar(id) {
+    if (!pulsado) return;
+    pulsado.activo = true;
+    barra.classList.add('reordenando');
+    pulsado.b.classList.add('levantado');
+    try { pulsado.b.setPointerCapture(id); } catch { /* nada */ }
+    navigator.vibrate?.(8);
+  }
+  window.addEventListener('pointermove', (e) => {
+    if (!pulsado) return;
+    if (!pulsado.activo) { if (Math.hypot(e.clientX - pulsado.x0, e.clientY - pulsado.y0) > 6) { clearTimeout(pulsado.t); pulsado = null; } return; }
+    const { b } = pulsado;
+    const k = Number(getComputedStyle(document.documentElement).getPropertyValue('--escala-ui')) || 1;
+    const deseado = pulsado.L0 + ((eje === 'x' ? e.clientX : e.clientY) - pulsado.p0) / k; // dónde debería estar (px de maqueta)
+    const centro = deseado + tam(b) / 2;
+    const lista = [...barra.querySelectorAll('button')].filter((x) => !x.closest('[hidden]') || x === b);
+    const otros = lista.filter((x) => x !== b);
+    const destino = otros.find((o) => pos(o) + tam(o) / 2 > centro) ?? null;
+    const iB = lista.indexOf(b), iD = destino ? lista.indexOf(destino) : lista.length;
+    if (iD !== iB + 1 && !(destino === null && iB === lista.length - 1)) {
+      const antes = new Map(otros.map((x) => [x, pos(x)]));
+      if (destino) destino.before(b); else otros.at(-1)?.after(b);
+      for (const [x, p0] of antes) { const dd = p0 - pos(x); if (dd) x.animate([{ translate: eje === 'x' ? `${dd}px 0` : `0 ${dd}px` }, { translate: '0 0' }], { duration: 280, easing: 'cubic-bezier(.34,1.45,.64,1)' }); }
+    }
+    const t = deseado - pos(b);
+    b.style.translate = eje === 'x' ? `${t}px 0` : `0 ${t}px`;
+  });
+  const soltar = () => {
+    if (!pulsado) return;
+    clearTimeout(pulsado.t);
+    const { b, activo } = pulsado; pulsado = null;
+    if (!activo) return;
+    const t = b.style.translate || '0 0';
+    b.style.translate = '';
+    b.animate([{ translate: t }, { translate: '0 0' }], { duration: 380, easing: 'cubic-bezier(.34,1.56,.64,1)' });
+    b.classList.remove('levantado');
+    barra.classList.remove('reordenando');
+    for (const c of contenedores()) c.hidden = !c.querySelector('button');
+    guardar(); alCambiar();
+    // Que el soltar no cuente como clic
+    const parar = (ev) => { ev.stopPropagation(); ev.preventDefault(); };
+    window.addEventListener('click', parar, { capture: true, once: true });
+    setTimeout(() => window.removeEventListener('click', parar, { capture: true }), 50);
+  };
+  window.addEventListener('pointerup', soltar);
+  window.addEventListener('pointercancel', soltar);
+}
+
+return { lupa, etiquetas, reordenable };
+})();
+
+// ── src/mapa/zoom-suave.js
+__mods["src/mapa/zoom-suave.js"] = (function () {
+'use strict';
+// Zoom con la rueda, fluido y con inercia (como Mapas de Apple):
+//   - cada golpe de rueda del ratón acerca o aleja un nivel; en el panel
+//     táctil, poco a poco: cuanto más fuerte, más
+//   - el mapa se desliza hacia el zoom pedido y va frenando poco a poco
+//   - el punto bajo el ratón se queda quieto
+//   - al terminar se asienta en un zoom entero, siguiendo el sentido del gesto
+//     (los mapas del IGN se ven nítidos en zooms enteros)
+// Durante el movimiento se usa el movimiento interno de Leaflet (_move), que
+// no dispara «zoomend» en cada fotograma: lo que es pesado (cuadrícula,
+// símbolos) se recalcula una sola vez al final.
+
+/**
+ * @param {*} L
+ * @param {*} mapa mapa de Leaflet (con scrollWheelZoom: false)
+ * @param {{sensibilidad?:number, suavidad?:number}} [o]
+ */
+function zoomSuave(L, mapa, { sensibilidad = 0.0032, suavidad = 0.2 } = {}) {
+  const cont = mapa.getContainer();
+  let objetivo = null, raf = 0, anclaPx = null, anclaLL = null, tQuieto = 0, moviendo = false, zInicio = 0, tPrev = 0;
+
+  function asentar(z) {
+    const d = z - zInicio;
+    const r = Math.abs(d) < 0.04 ? Math.round(z) : d > 0 ? Math.ceil(z - 0.04) : Math.floor(z + 0.04);
+    return Math.max(mapa.getMinZoom(), Math.min(mapa.getMaxZoom(), r));
+  }
+  function paso() {
+    raf = 0;
+    const z = mapa.getZoom();
+    // Igual de suave aunque el ordenador vaya a menos fotogramas
+    const ahora = performance.now(), dt = Math.min(100, ahora - (tPrev || ahora - 16.7)); tPrev = ahora;
+    let nz = z + (objetivo - z) * (1 - (1 - suavidad) ** (dt / 16.7));
+    const fin = Math.abs(objetivo - nz) < 0.003;
+    if (fin) nz = objetivo;
+    // Mantener quieto el punto bajo el ratón
+    const tam = mapa.getSize();
+    const desplaz = anclaPx.subtract(tam.divideBy(2));
+    const centro = mapa.unproject(mapa.project(anclaLL, nz).subtract(desplaz), nz);
+    if (!moviendo) { moviendo = true; mapa._moveStart(true, false); }
+    mapa._move(centro, nz);
+    if (fin && objetivo === Math.round(objetivo)) { moviendo = false; objetivo = null; tPrev = 0; mapa._moveEnd(true); return; }
+    if (fin) return; // espera a que pare la rueda para asentarse en un zoom entero
+    raf = requestAnimationFrame(paso);
+  }
+
+  cont.addEventListener('wheel', (e) => {
+    if (e.ctrlKey && !e.deltaMode) { /* pellizco del panel táctil: también vale */ }
+    e.preventDefault();
+    const delta = e.deltaMode === 1 ? e.deltaY * 33 : e.deltaMode === 2 ? e.deltaY * 400 : e.deltaY;
+    if (objetivo === null) zInicio = mapa.getZoom();
+    const actual = objetivo ?? mapa.getZoom();
+    // Rueda de ratón (golpes de ~100): un nivel por golpe, deslizado. Panel táctil (poco a poco): continuo.
+    const golpe = !e.ctrlKey && Math.abs(delta) >= 50;
+    const nuevo = golpe ? Math.round(actual) - Math.sign(delta) : actual - delta * sensibilidad * (e.ctrlKey ? 3 : 1);
+    objetivo = Math.max(mapa.getMinZoom(), Math.min(mapa.getMaxZoom(), nuevo));
+    anclaPx = mapa.mouseEventToContainerPoint(e);
+    anclaLL = mapa.containerPointToLatLng(anclaPx);
+    clearTimeout(tQuieto);
+    // Cuando la rueda para, se asienta en el entero siguiente en el sentido del gesto
+    tQuieto = setTimeout(() => { if (objetivo !== null) { objetivo = asentar(objetivo); if (!raf) raf = requestAnimationFrame(paso); } }, 160);
+    if (!raf) raf = requestAnimationFrame(paso);
+  }, { passive: false });
+
+  // Si otro movimiento (arrastrar, botones, buscar) empieza, se cancela el de la rueda
+  mapa.on('movestart', () => { if (!moviendo && raf) { cancelAnimationFrame(raf); raf = 0; objetivo = null; } });
+}
+
+return { zoomSuave };
+})();
+
+// ── src/datos/lugares.js
+__mods["src/datos/lugares.js"] = (function () {
+'use strict';
+// Lugares (ciudades, pueblos, parajes, calles…) para el buscador.
+// El mapa híbrido es una imagen: sus nombres son píxeles y no se pueden leer.
+// Por eso se pregunta al nomenclátor oficial del IGN (CartoCiudad), y si no
+// responde, a OpenStreetMap (Nominatim). Hace falta conexión.
+//   CartoCiudad: https://www.cartociudad.es/geocoder/api/geocoder/  (JSONP)
+//   Nominatim:   https://nominatim.openstreetmap.org/search          (JSON)
+
+const CARTOCIUDAD = 'https://www.cartociudad.es/geocoder/api/geocoder';
+const NOMINATIM = 'https://nominatim.openstreetmap.org/search';
+
+/** Tipos de CartoCiudad → nombre y tamaño aproximado (m) para el zoom. */
+const TIPOS = {
+  provincia: ['Provincia', 100000], 'comunidad autonoma': ['Comunidad autónoma', 300000],
+  municipio: ['Municipio', 10000], poblacion: ['Población', 3000], toponimo: ['Paraje', 1000],
+  ngbe: ['Paraje', 1000], expendeduria: ['Lugar', 300], punto_recarga_electrica: ['Lugar', 300],
+  callejero: ['Calle', 600], carretera: ['Carretera', 3000], portal: ['Dirección', 150],
+  codpost: ['Código postal', 3000], refcatastral: ['Parcela', 200],
+};
+const tipoDe = (t) => TIPOS[String(t || '').toLowerCase()] ?? ['Lugar', 1000];
+const capital = (s) => String(s || '').toLowerCase().replace(/(^|[\s(/-])(\p{L})/gu, (m, a, b) => a + b.toUpperCase());
+
+let n = 0;
+/** JSONP: mete un <script> y espera a que llame a la función. */
+function pedirJsonp(url, { espera = 6000 } = {}) {
+  return new Promise((resolver, rechazar) => {
+    const fn = `__spaLugares${Date.now().toString(36)}${n++}`;
+    const s = document.createElement('script');
+    const fin = () => { clearTimeout(t); delete window[fn]; s.remove(); };
+    const t = setTimeout(() => { fin(); rechazar(new Error('Sin respuesta')); }, espera);
+    window[fn] = (datos) => { fin(); resolver(datos); };
+    s.onerror = () => { fin(); rechazar(new Error('Sin conexión')); };
+    s.src = `${url}${url.includes('?') ? '&' : '?'}callback=${fn}`;
+    document.head.append(s);
+  });
+}
+
+/** Un resultado de CartoCiudad → lugar del buscador. */
+function lugarCartoCiudad(r) {
+  const [tipo, lado] = tipoDe(r.type);
+  const nombre = capital(r.address || r.muni || r.province || '');
+  const donde = [r.muni && capital(r.muni) !== nombre ? capital(r.muni) : '', r.province && capital(r.province) !== nombre ? capital(r.province) : ''].filter(Boolean).join(', ');
+  const lat = Number(r.lat), lon = Number(r.lng);
+  return { nombre, detalle: donde ? `${tipo} · ${donde}` : tipo, lat: lat || null, lon: lon || null, lado, id: r.id, tipo: r.type, fuente: 'IGN' };
+}
+
+/** Un resultado de Nominatim → lugar del buscador. */
+function lugarNominatim(r) {
+  const partes = String(r.display_name || '').split(',').map((x) => x.trim());
+  const b = (r.boundingbox || []).map(Number);
+  const lado = b.length === 4 ? Math.max(200, Math.min(300000, Math.max(b[1] - b[0], b[3] - b[2]) * 111000)) : 1000;
+  const tipo = { city: 'Ciudad', town: 'Población', village: 'Pueblo', hamlet: 'Aldea', locality: 'Paraje', peak: 'Cumbre', administrative: 'Municipio' }[r.type] ?? 'Lugar';
+  return { nombre: partes[0] || '', detalle: [tipo, partes.slice(1, 3).join(', ')].filter(Boolean).join(' · '), lat: Number(r.lat), lon: Number(r.lon), lado, fuente: 'OSM' };
+}
+
+/**
+ * Buscador de lugares con memoria (no repite la misma consulta).
+ * @param {{jsonp?:typeof pedirJsonp, pedir?:typeof fetch, limite?:number}} [o]
+ */
+function crearBuscadorLugares({ jsonp = pedirJsonp, pedir = (...a) => globalThis.fetch(...a), limite = 6 } = {}) {
+  const memoria = new Map();
+  async function deCartoCiudad(q) {
+    const datos = await jsonp(`${CARTOCIUDAD}/candidatesJsonp?q=${encodeURIComponent(q)}&limit=${limite + 4}`);
+    return (Array.isArray(datos) ? datos : []).map(lugarCartoCiudad).filter((l) => l.nombre);
+  }
+  async function deNominatim(q) {
+    const r = await pedir(`${NOMINATIM}?format=json&limit=${limite}&accept-language=es&q=${encodeURIComponent(q)}`);
+    if (!r.ok) throw new Error(String(r.status));
+    return (await r.json()).map(lugarNominatim).filter((l) => l.nombre);
+  }
+  return {
+    /** Lo que ya se sabe de esta consulta (o undefined si aún no se ha preguntado). */
+    enMemoria: (q) => memoria.get(q.trim().toLowerCase()),
+    /** @returns {Promise<Array<{nombre:string, detalle:string, lat:number|null, lon:number|null, lado:number}>>} */
+    async buscar(q) {
+      const k = q.trim().toLowerCase();
+      if (memoria.has(k)) return memoria.get(k);
+      let lista = [];
+      try { lista = await deCartoCiudad(q.trim()); } catch { /* sigue con OSM */ }
+      if (!lista.length) { try { lista = await deNominatim(q.trim()); } catch { lista = []; } }
+      // Sin repetidos (mismo nombre y detalle)
+      const vistos = new Set();
+      lista = lista.filter((l) => { const c = `${l.nombre}|${l.detalle}`; if (vistos.has(c)) return false; vistos.add(c); return true; }).slice(0, limite);
+      memoria.set(k, lista);
+      return lista;
+    },
+    /** Coordenadas de un resultado de CartoCiudad que vino sin ellas. */
+    async situar(l) {
+      if (l.lat != null && l.lon != null) return l;
+      const r = await jsonp(`${CARTOCIUDAD}/findJsonp?q=${encodeURIComponent(l.nombre)}&type=${encodeURIComponent(l.tipo || '')}&id=${encodeURIComponent(l.id || '')}`);
+      return { ...l, lat: Number(r?.lat), lon: Number(r?.lng) };
+    },
+  };
+}
+
+return { pedirJsonp, lugarCartoCiudad, lugarNominatim, crearBuscadorLugares };
+})();
+
 // ── src/ui/mapa.js
 __mods["src/ui/mapa.js"] = (function () {
 'use strict';
@@ -15454,7 +15862,7 @@ __mods["src/ui/mapa.js"] = (function () {
 // mapas importados, visualización (cuadrícula, sombreado, curvas), buscador
 // universal, ajustes, regla, dibujo (dibujo.js) e importación (importar.js).
 // Usa Leaflet (global L).
-const { formatearPosicion, medir, destino, formatearRumbo } = __req("src/geo/index.js");
+const { formatearPosicion, formatearRumbo } = __req("src/geo/index.js");
 const { FONDOS, IMAGENES, ROTULOS, SUPERPUESTAS, ZONA_PILOTO, ATRIBUCION_MDT, crearCapa, fechaImagen } = __req("src/mapa/capas.js");
 const { capaRelieve } = __req("src/mapa/relieve.js");
 const { capaCuadricula } = __req("src/mapa/cuadricula.js");
@@ -15474,6 +15882,10 @@ const { iniciarObjetos } = __req("src/ui/objetos.js");
 const { iniciarPanelOperaciones } = __req("src/ui/panel-operaciones.js");
 const { iniciarLazo } = __req("src/ui/lazo.js");
 const { iniciarRegla } = __req("src/ui/regla.js");
+const { lupa, etiquetas, reordenable } = __req("src/ui/vivo.js");
+const { zoomSuave } = __req("src/mapa/zoom-suave.js");
+const { crearBuscadorLugares } = __req("src/datos/lugares.js");
+const { FORMATOS_EXPORTAR } = __req("src/datos/exportar.js");
 
 const L = window.L;
 const $ = (id) => document.getElementById(id);
@@ -15484,12 +15896,14 @@ const CLAVE = 'spa.mapa.estado';
 const estado = {
   angulo: 'grados', coordenadas: 'mgrs', fondo: 'mtn', imagen: 'google', rotulos: true,
   fondoAuto: false, mtnDetalle: false, intensidadCuadricula: 35, simTam: { px: 34 },
-  superpuestas: { cuadricula: true }, secciones: { fondo: true }, ajustesAbiertos: { coordenadas: true }, vista: null,
+  superpuestas: { cuadricula: true }, secciones: {}, ajustesAbiertos: {}, vista: null,
 };
 try { Object.assign(estado, JSON.parse(localStorage.getItem(CLAVE) || '{}')); } catch { /* sin almacenamiento */ }
 if (!FONDOS.some((f) => f.id === estado.fondo)) estado.fondo = ['ortofoto', 'satelite'].includes(estado.fondo) ? 'hibrido' : 'mtn';
 if (!IMAGENES[estado.imagen] || !(estado.version >= 6)) estado.imagen = 'google'; // v0.6: Google por defecto
-estado.version = 6;
+// v0.9.3: los desplegables empiezan cerrados (Capas y Ajustes)
+if (!(estado.version >= 7)) { estado.secciones = {}; estado.ajustesAbiertos = {}; }
+estado.version = 7;
 delete estado.superpuestas.vertices;
 delete estado.superpuestas.piloto; // v0.9: sin zona piloto
 const guardar = () => { try { localStorage.setItem(CLAVE, JSON.stringify(estado)); } catch { /* nada */ } };
@@ -15504,7 +15918,13 @@ prepararRejillas().catch(() => {}); // ED50 y geoide (mapas antiguos, alturas de
 // ---------------------------------------------------------------- mapa
 // Vista de la primera vez (sin nada guardado): la zona de Guadarrama
 const vistaInicial = L.latLngBounds([ZONA_PILOTO.sur, ZONA_PILOTO.oeste], [ZONA_PILOTO.norte, ZONA_PILOTO.este]);
-const mapa = L.map('mapa', { zoomControl: true, attributionControl: true, minZoom: 5, maxZoom: 21, doubleClickZoom: false, zoomSnap: 1 });
+// Movimiento fluido: el arrastre sigue con inercia y frena poco a poco; la rueda acerca con suavidad (zoom-suave.js)
+const mapa = L.map('mapa', {
+  zoomControl: true, attributionControl: true, minZoom: 5, maxZoom: 21, doubleClickZoom: false, zoomSnap: 1,
+  scrollWheelZoom: false, inertia: true, inertiaDeceleration: 1500, inertiaMaxSpeed: 4000, easeLinearity: 0.18,
+  zoomAnimationThreshold: 6,
+});
+zoomSuave(L, mapa);
 mapa.attributionControl.setPrefix('<a href="https://leafletjs.com" target="_blank" rel="noopener">Leaflet</a>');
 L.control.scale({ metric: true, imperial: false, maxWidth: 160, position: 'bottomright' }).addTo(mapa);
 if (estado.vista) mapa.setView(estado.vista.centro, estado.vista.zoom); else mapa.fitBounds(vistaInicial, { padding: [20, 20] });
@@ -15561,7 +15981,7 @@ let fondoActual = null;
 let alCambiarFondo = () => {}; // la cuadrícula se pinta en blanco sobre el híbrido
 // eslint-disable-next-line prefer-const
 let importar = null;
-const VERSION = '0.9.2';
+const VERSION = '0.9.3';
 function ponerFondo(id, { automatico = false } = {}) {
   if (!capasFondo[id]) id = 'mtn';
   if (fondoActual) mapa.removeLayer(fondoActual);
@@ -15680,12 +16100,12 @@ for (const d of document.querySelectorAll('.seccion')) {
 }
 const abrirSeccion = (sec) => { const d = document.querySelector(`.seccion[data-sec="${sec}"]`); if (d) d.open = true; ponerPanelCapas(true); };
 // Capas: se recoge sola sin uso (ventanas.js); clic en el título la abre o la recoge
+// Capas sale de la barra lateral (como Operaciones y Objetos)
 function ponerPanelCapas(abierto) {
-  if (ventanas) ventanas.recoger($('panel-capas'), !abierto); else $('panel-capas').classList.toggle('v-recogida', !abierto);
+  $('panel-capas').hidden = !abierto;
+  if (abierto) ventanas?.usada($('panel-capas'));
   recolocarEtiquetas();
 }
-$('capas-toggle').addEventListener('click', (e) => { if (!e.target.closest('.v-pin')) ponerPanelCapas(ventanas ? ventanas.recogida($('panel-capas')) : $('panel-capas').classList.contains('v-recogida')); });
-if (window.matchMedia('(max-width: 760px)').matches) ponerPanelCapas(false);
 
 // ---------------------------------------------------------------- herramientas, dibujo e importación
 let herramienta = 'consultar';
@@ -15813,12 +16233,14 @@ const operaciones = iniciarPanelOperaciones({
   verEnObjetos: (id) => { ponerPanel('objetos', true); objetos.filtrarPaquete(id); },
   alCambiarPaneles: () => recolocarEtiquetas(),
 });
-const PANELES = { objetos: { api: objetos, boton: 'btn-objetos' }, operaciones: { api: operaciones, boton: 'btn-operaciones' } };
+const capas = { abrir: (si) => ponerPanelCapas(si), get abierto() { return !$('panel-capas').hidden; } };
+const PANELES = { capas: { api: capas, boton: 'btn-capas' }, operaciones: { api: operaciones, boton: 'btn-operaciones' }, objetos: { api: objetos, boton: 'btn-objetos' } };
 function ponerPanel(id, abierto) {
   const p = PANELES[id];
-  if (abierto && window.matchMedia('(max-width: 760px)').matches) { ponerPanelCapas(false); for (const k of Object.keys(PANELES)) if (k !== id) PANELES[k].api.abrir(false); }
+  if (abierto && window.matchMedia('(max-width: 760px)').matches) { for (const k of Object.keys(PANELES)) if (k !== id) PANELES[k].api.abrir(false); }
   p.api.abrir(abierto);
   $(p.boton).setAttribute('aria-pressed', String(abierto));
+  if (abierto) { const b = $(p.boton); b.classList.remove('bote'); void b.offsetWidth; b.classList.add('bote'); b.addEventListener('animationend', () => b.classList.remove('bote'), { once: true }); }
   if (abierto) ventanas?.usada(document.querySelector(`.ventana[data-ventana="${id}"]`));
   try { localStorage.setItem(`spa.panel.${id}`, abierto ? '1' : '0'); } catch { /* nada */ }
   recolocarEtiquetas();
@@ -15826,8 +16248,19 @@ function ponerPanel(id, abierto) {
 for (const id of Object.keys(PANELES)) {
   $(PANELES[id].boton).addEventListener('click', () => ponerPanel(id, !PANELES[id].api.abierto));
   $(`${id}-cerrar`).addEventListener('click', () => ponerPanel(id, false));
-  try { if (localStorage.getItem(`spa.panel.${id}`) === '1' || (id === 'objetos' && localStorage.getItem('spa.panelPlan') === '1')) ponerPanel(id, true); } catch { /* nada */ }
+  try { if (localStorage.getItem(`spa.panel.${id}`) === '1') ponerPanel(id, true); } catch { /* nada */ }
+  // El botón de la barra lateral sigue a su panel (se puede cerrar solo, al recogerse)
+  const panel = document.querySelector(`.ventana[data-ventana="${id}"]`);
+  new MutationObserver(() => $(PANELES[id].boton).setAttribute('aria-pressed', String(!panel.hidden))).observe(panel, { attributes: true, attributeFilter: ['hidden'] });
 }
+// Barras vivas: los iconos crecen al pasar el ratón, el nombre sale al pasar y se reordenan manteniendo pulsado
+lupa($('herramientas'), { eje: 'x' });
+etiquetas($('herramientas'), { lado: 'abajo' });
+reordenable($('herramientas'), { clave: 'spa.orden.herramientas', eje: 'x', grupos: '.h-grupo' });
+lupa($('dock'), { eje: 'y', max: 1.35 });
+etiquetas($('dock'), { lado: 'derecha' });
+reordenable($('dock'), { clave: 'spa.orden.dock', eje: 'y', alCambiar: () => recolocarEtiquetas() });
+
 // Píldora de la operación activa (abajo, junto a las coordenadas)
 function pintarPildoraOp() {
   const id = dibujo.activo, b = $('pildora-op');
@@ -15931,21 +16364,6 @@ mapa.on('contextmenu', (e) => {
   else if (simbolos.armado) { L.DomEvent.preventDefault(e.originalEvent); simbolos.desarmar(); } // botón derecho = Esc: dejar de poner la unidad
 });
 
-// ---------------------------------------------------------------- brújula: norte geográfico y de cuadrícula
-// La convergencia de cuadrícula (ángulo entre el norte geográfico y el de la
-// cuadrícula UTM) sale del motor geodésico en el centro del mapa.
-function pintarBrujula() {
-  const c = centro();
-  let g = null;
-  try { const r = medir(c, destino(c, 0, 1000)); g = -(((r.rumboCuadricula + 540) % 360) - 180); } catch { /* fuera de UTM */ }
-  $('br-cuad').style.transform = g === null ? 'none' : `rotate(${g}deg)`;
-  $('br-cuad').style.display = g === null ? 'none' : '';
-  const signo = (v) => `${v > 0 ? '+' : v < 0 ? '−' : ''}${Math.abs(v).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}°`;
-  $('br-datos').innerHTML = `<span>Norte geográfico <b>0°</b></span>${g === null ? '' : `<span class="c">Norte de cuadrícula <b>${signo(g)}</b></span>`}`;
-}
-mapa.on('moveend', pintarBrujula);
-pintarBrujula();
-
 // ---------------------------------------------------------------- barra inferior: coordenada y altitud
 if (tactil) { document.body.classList.add('tactil'); const c = document.createElement('div'); c.className = 'cruz'; $('contenido').append(c); }
 let tAltura = 0, pedidaAltura = 0;
@@ -16018,7 +16436,12 @@ const ACCIONES = [
   { texto: 'Objetos', extra: 'plan dibujado pintado archivos importados panel lista filtros borrar', detalle: 'Todo lo pintado e importado', accion: () => ponerPanel('objetos', true) },
   { texto: 'Operaciones', extra: 'paquetes fases saltos operación en curso futuras pasadas', detalle: 'Paquetes de datos', accion: () => ponerPanel('operaciones', true) },
   { texto: 'Crear operación', extra: 'nueva operación paquete fase', detalle: 'Lo que pintes entra en ella', accion: () => { ponerPanel('operaciones', true); setTimeout(() => $('op-nueva-nombre')?.focus(), 50); } },
-  { texto: 'Lazo', extra: 'seleccionar círculo exportar enviar kmz kml gpx geojson csv compartir', detalle: 'Seleccionar en círculo y exportar', accion: () => elegirHerramienta('lazo') },
+  { texto: 'Lazo', extra: 'seleccionar círculo exportar enviar kmz kml gpx geojson csv zip compartir', detalle: 'Seleccionar y exportar', accion: () => elegirHerramienta('lazo') },
+  { texto: 'Lazo en círculo', extra: 'seleccionar redondo radio', detalle: 'Herramienta', accion: () => lazo.ponerForma('circulo') },
+  { texto: 'Lazo a mano', extra: 'seleccionar libre dibujar contorno polígono', detalle: 'Herramienta', accion: () => lazo.ponerForma('mano') },
+  ...Object.entries(FORMATOS_EXPORTAR).map(([k, f]) => ({ texto: `Exportar en ${f.nombre}`, extra: `lazo enviar compartir archivo ${k} ${f.detalle}`, detalle: f.detalle.split(/[,(:]/)[0], accion: () => { lazo.ponerFormato(k); elegirHerramienta('lazo'); } })),
+  { texto: 'Capas', extra: 'fondo mapas imagen cuadrícula sombreado curvas panel', detalle: 'Fondo, mapas y visualización', accion: () => ponerPanel('capas', true) },
+  { texto: 'Regla', extra: 'medir distancia rumbo perfil tramos', detalle: 'Herramienta', accion: () => elegirHerramienta('medir') },
   { texto: 'Recolocar ventanas', extra: 'paneles posición tamaño restablecer', detalle: 'A su sitio y tamaño de siempre', accion: () => ventanas.recolocar() },
   { texto: 'Pantalla y ventanas', extra: 'tema oscuro claro transparencia desenfoque tamaño personalizar', detalle: 'Ajustes', accion: () => abrirAjustes(true, 'apariencia') },
   { texto: 'Ajustes', extra: 'opciones configuración', detalle: 'Abrir', accion: () => abrirAjustes(true) },
@@ -16041,6 +16464,23 @@ function candidatos() {
   const ops = dibujo.plan().operaciones.map((o) => ({ grupo: 'Operaciones', texto: o.nombre, extra: 'operación fase paquete', detalle: o.padre ? nombreRutaOp(o.id) : 'Operación', accion: () => { ponerPanel('operaciones', true); operaciones.mostrar(o.id); dibujo.encuadrar(dibujo.plan().elementos.filter((e) => e.paquete === o.id).map((e) => e.id)); } }));
   return [...plan, ...ops, ...importar.candidatosBusqueda(), ...ACCIONES, ...simbolos.candidatosBusqueda()];
 }
+// Lugares: se pregunta al IGN (y si no, a OpenStreetMap) un rato después de dejar de escribir
+const buscadorLugares = crearBuscadorLugares();
+let tLugares = 0, lugaresEnCamino = false;
+function lugaresDe(q) {
+  const t = q.trim();
+  lugaresEnCamino = false;
+  if (t.length < 3 || /^\d+([.,]\d+)?$/.test(t)) return null;
+  const ya = buscadorLugares.enMemoria(t);
+  if (ya) return ya;
+  lugaresEnCamino = true;
+  clearTimeout(tLugares);
+  tLugares = setTimeout(() => buscadorLugares.buscar(t).then(() => { if ($('buscar-txt').value.trim() === t && !$('buscar-res').hidden) pintarResultados(t); }).catch(() => {}), 320);
+  return null;
+}
+async function situarLugar(l) {
+  try { const s = await buscadorLugares.situar(l); if (Number.isFinite(s.lat) && Number.isFinite(s.lon)) irA({ lat: s.lat, lon: s.lon, lado: s.lado }); } catch { dibujo.avisoBreve('No se pudo situar el lugar'); }
+}
 let resultados = [], marcado = 0;
 function pintarResultados(q) {
   const res = $('buscar-res');
@@ -16050,10 +16490,17 @@ function pintarResultados(q) {
   if (p) lista.push({ grupo: 'Coordenada', texto: coord(p), detalle: p.como === 'tal cual' ? (p.lado > 1 ? `centro del cuadrado de ${metros(p.lado)}` : '') : p.como, accion: () => irA(p), puntos: 101 });
   // Los mejores 14, agrupados (cada grupo en el orden de su mejor resultado)
   const mejores = buscar(q, candidatos()).slice(0, 14);
+  // Lugares (pueblos, ciudades, parajes): del nomenclátor del IGN, cuando ya han llegado
+  const lugares = p ? null : lugaresDe(q);
+  if (lugares?.length) {
+    const tope = mejores[0]?.puntos ?? 0;
+    mejores.push(...lugares.map((l, i) => ({ grupo: 'Lugares', texto: l.nombre, detalle: l.detalle, puntos: (tope >= 90 ? 70 : 100) - i * 0.01, accion: () => situarLugar(l) })));
+    mejores.sort((a, b) => b.puntos - a.puntos);
+  }
   const ordenGrupo = [...new Set(mejores.map((r) => r.grupo))];
   lista.push(...mejores.sort((a, b) => ordenGrupo.indexOf(a.grupo) - ordenGrupo.indexOf(b.grupo)));
   resultados = lista; marcado = 0;
-  if (!lista.length) { res.innerHTML = '<div class="br-vacio">Nada encontrado. Prueba con otra palabra o una coordenada (MGRS, UTM, grados).</div>'; res.hidden = false; return; }
+  if (!lista.length) { res.innerHTML = `<div class="br-vacio">${lugaresEnCamino ? 'Buscando lugares…' : 'Nada encontrado'}</div>`; res.hidden = false; return; }
   let grupoPrev = '';
   res.innerHTML = lista.map((r, i) => {
     const cab = r.grupo !== grupoPrev ? `<div class="br-grupo">${esc(r.grupo)}</div>` : '';

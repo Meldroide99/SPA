@@ -369,11 +369,10 @@ export function iniciarSimbolos({ L, mapa, elegirHerramienta, herramienta = () =
     const conj = String(s.conjunto ?? '10');
     const grande = svgUnidad(s, { tam: 26 });
     const ids = ['amigo', 'hostil', 'neutral', 'desconocido'];
-    const masIds = ['supuesto', 'sospechoso', 'pendiente'];
     const vista = `<button type="button" class="sim-vista" data-vista data-arrastrar>${grande.svg}<div><b>${esc(nombreUnidad(s))}</b></div></button>`;
     const CORTO = [['10', 'Unidades'], ['15', 'Material'], ['20', 'Instalaciones'], ['27', 'A pie'], ['40', 'Actividades'], ['11', 'Civiles']];
     const conjuntos = `<div class="sim-conjuntos">${CORTO.map(([k, n]) => `<button type="button" data-conjunto="${k}" aria-pressed="${conj === k}" title="${esc(CONJUNTOS[k].nombre)}">${n}</button>`).join('')}</div>`;
-    const bandos = `<div class="sim-paso"><span class="el-et">1 · Bando</span><div class="sim-rejilla sim-bandos">${[...ids, ...(est.masOpciones ? masIds : [])].map((id) => `<button type="button" class="sim-tile" data-identidad="${id}" aria-pressed="${s.identidad === id}">${miniUnidad({ ...s, identidad: id, escalon: '' }, 20)}<span>${IDENTIDADES[id].nombre}</span></button>`).join('')}</div></div>`;
+    const bandos = `<div class="sim-paso"><span class="el-et">1 · Bando</span><div class="sim-rejilla sim-bandos">${ids.map((id) => `<button type="button" class="sim-tile" data-identidad="${id}" aria-pressed="${s.identidad === id}">${miniUnidad({ ...s, identidad: id, escalon: '' }, 20)}<span>${IDENTIDADES[id].nombre}</span></button>`).join('')}</div></div>`;
     let tipo;
     if (conj === '10' && !est.todo) {
       const arma = ARMAS.find((a) => a.id === est.arma) ?? ARMAS[0];
@@ -421,7 +420,7 @@ export function iniciarSimbolos({ L, mapa, elegirHerramienta, herramienta = () =
     return grupos.map((gk) => {
       const lista = MEDIDAS.filter((m) => m.grupo === gk && !m.oculto);
       if (!lista.length) return '';
-      const abierto = est.abiertos[`m/${gk}`] ?? (gk === 'lineas' || gk === 'zonas' || gk === 'cometidos');
+      const abierto = est.abiertos[`m/${gk}`] ?? grupos.length === 1; // un solo grupo (Cometidos): abierto
       return `<details class="sim-grupo-det" data-grupo="m/${gk}"${abierto ? ' open' : ''}><summary>${GRUPOS[gk]} <small>${lista.length}</small></summary>${abierto ? `<div class="sim-lista-cm">${lista.map((m) => `<button type="button" class="sim-cm" data-medida="${m.id}" data-arrastrar title="${esc(m.nombre)}"><span class="sim-cm-ico">${miniMedida(m)}</span><span>${esc(m.nombre)}${m.sigla && gk !== 'cometidos' ? ` <small>${esc(m.sigla)}</small>` : ''}</span></button>`).join('')}</div>` : ''}</details>`;
     }).join('');
   }
@@ -556,7 +555,7 @@ export function iniciarSimbolos({ L, mapa, elegirHerramienta, herramienta = () =
       return {
         titulo: nombreUnidad(s), tipo: CONJUNTOS[conj]?.nombre ?? 'Unidad',
         html: `<div class="sim-vista sim-vista-ficha">${svgUnidad({ ...s, estado: el.propiedades.estado }, { tam: 26 }).svg}<div><b>${esc(nombreUnidad(s))}</b></div></div>
-          <div class="el-fila"><span class="el-et">Bando</span><div class="seg sim-seg" data-f="identidad">${['amigo', 'hostil', 'neutral', 'desconocido', 'supuesto', 'sospechoso', 'pendiente'].map((id) => `<button type="button" data-v="${id}" aria-pressed="${s.identidad === id}" title="${IDENTIDADES[id].nombre}">${miniUnidad({ ...s, identidad: id }, 16)}</button>`).join('')}</div></div>
+          <div class="el-fila"><span class="el-et">Bando</span><div class="seg sim-seg" data-f="identidad">${['amigo', 'hostil', 'neutral', 'desconocido'].map((id) => `<button type="button" data-v="${id}" aria-pressed="${s.identidad === id}" title="${IDENTIDADES[id].nombre}">${miniUnidad({ ...s, identidad: id }, 16)}</button>`).join('')}</div></div>
           ${conj === '10' ? selectorVisual('tipo', 'Tipo (ET)', tiposET, e ? `${e.arma.id}/${e.tipo.id}` : '') : ''}
           ${selectorVisual('icono', conj === '10' ? 'Icono APP-6 (todos)' : 'Tipo', todos, `${conj}:${s.icono}`)}
           ${escalonesDe(conj).length > 1 ? selectorVisual('escalon', 'Escalón', escalonesDe(conj).map((k) => ({ v: k, nombre: nombreEscalon(k, armaId), ico: `<b class="marca-esc">${ESCALONES[k].marca ?? '—'}</b>` })), s.escalon ?? '') : ''}

@@ -274,6 +274,9 @@ export function iniciarLazo({ L, mapa, dibujo, simbolos, importar, fmt, herramie
   });
 
   return {
+    /** Elegir la forma del lazo ('circulo' | 'mano') o el formato de exportación. */
+    ponerForma(f) { pref.forma = f; guardarPref(); trazo = null; if (!resultado) pintarCirculo(null); if (herramienta() !== 'lazo') elegirHerramienta('lazo'); else pintarPanel(); },
+    ponerFormato(f) { if (FORMATOS_EXPORTAR[f]) { pref.formato = f; guardarPref(); if (!panel.hidden) pintarPanel(); } },
     /** Al elegir o dejar la herramienta. */
     herramientaCambiada(h) {
       if (h === 'lazo') {

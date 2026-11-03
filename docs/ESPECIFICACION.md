@@ -431,9 +431,7 @@ y 180°) y asa ↻ en el mapa que se arrastra alrededor del centro, de 5 en 5°
   la de un track (distancia, desnivel, perfil y tramos con rumbos) y se puede
   guardar como línea o quitar (`src/ui/regla.js`).
 - **Botón derecho** con una unidad elegida en la paleta: deja de ponerla (como Esc).
-- **Brújula** arriba a la izquierda: norte geográfico y, en azul, el de cuadrícula
-  (convergencia en el centro del mapa, del motor geodésico); al pasar el ratón da
-  los valores.
+- **Brújula** arriba a la izquierda (desde v0.9.3, solo el norte).
 - **Objetos**: el filtro de operación muestra solo operaciones (sin fases).
 - **Operaciones**: los objetos van por categoría (unidades, líneas de coordinación,
   cometidos, dibujos) y, dentro, los iguales apilados con su número; sin coordenadas.
@@ -442,6 +440,33 @@ y 180°) y asa ↻ en el mapa que se arrastra alrededor del centro, de 5 en 5°
   (si no está fijada). Chincheta fijada en azul.
 - Fuera la línea de cuadrados de 100 km al alejar. La aclaración de las altitudes
   (nivel del mar, MDT05) solo en Ajustes.
+
+### v0.9.3 · interfaz viva
+- **Barra lateral** (izquierda, vidrio, redondeada): de ella salen **Capas,
+  Operaciones y Objetos**, cada uno desde su botón, con un pequeño muelle. Un
+  puntito marca el abierto. Sin uso, el panel vuelve a la barra.
+- **Reordenar**: mantener pulsado un botón (barra lateral o de herramientas) y
+  arrastrarlo; los demás se apartan, tiemblan un poco mientras tanto y el orden
+  se recuerda (`spa.orden.dock`, `spa.orden.herramientas`) (`src/ui/vivo.js`).
+- **Lupa** como el Dock del Mac: los iconos crecen al pasar el ratón (el de
+  debajo más, los vecinos un poco). El nombre de cada botón solo sale al pasar
+  el ratón, en una píldora de vidrio. Botones que se hunden al pulsar y rebotan.
+- **Zoom con la rueda** fluido (`src/mapa/zoom-suave.js`): un golpe de rueda =
+  un nivel, deslizado y con el punto del ratón quieto; en el panel táctil,
+  continuo, y se asienta en el nivel entero siguiente (mapas nítidos). Arrastre
+  con inercia que frena poco a poco según la fuerza.
+- **Desplegables cerrados de fábrica** (Capas, Ajustes, grupos de líneas de
+  coordinación; Cometidos, que es un solo grupo, abierto).
+- **Buscador**: también **lugares** (ciudades, pueblos, parajes, calles) del
+  nomenclátor oficial del IGN (CartoCiudad, JSONP) y, si no responde, de
+  OpenStreetMap (Nominatim) (`src/datos/lugares.js`). El híbrido es una imagen:
+  sus nombres no se pueden leer. Además: lazo en círculo / a mano, exportar en
+  cada formato, Capas, regla.
+- **Bandos**: solo los 4 (amigo, hostil, neutral, desconocido) en la paleta y al
+  modificar.
+- **Brújula**: solo la aguja del norte (fuera la azul y la convergencia).
+- **Sello SPA**: oro champán sobre gris, con «Planeamiento *táctico*» y
+  «S3 · Lauria».
 
 ## 13. Pendiente
 

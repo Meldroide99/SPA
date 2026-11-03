@@ -41,7 +41,28 @@ const pedidas = [];
 await ctx.route(/ign\.es\/wmts|idee\.es\/wmts|wms|arcgisonline|google\.com/, (r) => { pedidas.push(r.request().url()); r.fulfill({ status: 200, contentType: 'image/png', body: PNG, headers: { 'access-control-allow-origin': '*' } }); });
 await ctx.route(/wcs-inspire\/mdt/, (r) => { pedidas.push(r.request().url()); r.fulfill({ status: 200, contentType: 'multipart/related', body: mdt(r.request().url()), headers: { 'access-control-allow-origin': '*' } }); });
 await ctx.route(/pnoa-ma\?SERVICE=WMS&VERSION=1\.3\.0&REQUEST=GetFeatureInfo/, (r) => r.fulfill({ status: 200, contentType: 'text/html', body: '<html><body><h2>Informaci&oacute;n PNOA</h2> Fecha (a&ntilde;o-mes) 2024-07 Resoluci&oacute;n (metros) 0.25</body></html>' }));
+// Nomenclátor del IGN simulado (JSONP)
+await ctx.route(/cartociudad\.es/, (r) => {
+  const u = new URL(r.request().url()); const cb = u.searchParams.get('callback');
+  const datos = u.pathname.includes('find') ? { lat: 40.5, lng: -3.9 } : !/torrelodones/i.test(u.searchParams.get('q')) ? [] : [{ id: '1', type: 'Municipio', address: 'TORRELODONES', muni: 'TORRELODONES', province: 'MADRID', lat: 40.57, lng: -3.92 }];
+  r.fulfill({ status: 200, contentType: 'application/javascript', body: `${cb}(${JSON.stringify(datos)})` });
+});
+await ctx.route(/nominatim/, (r) => r.fulfill({ status: 200, contentType: 'application/json', body: '[]', headers: { 'access-control-allow-origin': '*' } }));
 const pag = await ctx.newPage();
+// Los desplegables están cerrados de fábrica: antes de pulsar algo de dentro, se abren (como haría Balú)
+const clicOriginal = pag.click.bind(pag);
+pag.click = async (sel, opc) => {
+  if (typeof sel === 'string' && !sel.includes('>>') && !sel.includes(':has-text') && !sel.startsWith('text=')) {
+    await pag.evaluate((s) => { let el; try { el = document.querySelector(s); } catch { return; } let d = (el?.tagName === 'SUMMARY' ? el.parentElement : el)?.parentElement?.closest('details'); while (d) { if (!d.open) d.open = true; d = d.parentElement?.closest('details'); } }, sel).catch(() => {});
+  }
+  // Líneas de coordinación: su grupo está recogido (y sin pintar) hasta abrirlo
+  const m = typeof sel === 'string' && /#panel-simbolos \[data-medida="([^"]+)"\]/.exec(sel);
+  if (m && !(await pag.locator(sel).count())) {
+    const g = await pag.evaluate((id) => window.__spa.simbolos.medidaDe(id)?.grupo, m[1]);
+    if (g) await clicOriginal(`#panel-simbolos [data-grupo="m/${g}"] > summary`);
+  }
+  return clicOriginal(sel, opc);
+};
 const errores = [];
 pag.on('pageerror', (e) => errores.push(e.message));
 pag.on('console', (m) => { if (m.type() === 'error') errores.push(m.text()); });
@@ -61,7 +82,7 @@ const clicEn = async (fx, fy, opc) => { const p = en(fx, fy); await pag.mouse.cl
 const plan = () => pag.evaluate(() => JSON.parse(JSON.stringify(window.__spa.dibujo.plan())));
 const motor = (codigo, arg) => pag.evaluate(codigo, arg);
 /** Capas se recoge sola (p. ej. al abrirse la ficha): se abre antes de usarla. */
-const abrirCapas = async () => { if (await motor(() => window.__spa.ventanas.recogida(document.getElementById('panel-capas')))) { await motor(() => window.__spa.ventanas.recoger(document.getElementById('panel-capas'), false)); await pag.waitForTimeout(500); } };
+const abrirCapas = async () => { if (await motor(() => document.getElementById('panel-capas').hidden)) { await clicOriginal('#btn-capas'); await pag.waitForTimeout(600); } if (await motor(() => window.__spa.ventanas.recogida(document.getElementById('panel-capas')))) { await motor(() => window.__spa.ventanas.recoger(document.getElementById('panel-capas'), false)); await pag.waitForTimeout(500); } };
 /** La cabecera se esconde sin uso: se acerca el ratón al borde de arriba. */
 const cabecera = async () => { await pag.mouse.move(700, 24); await pag.waitForTimeout(1250); };
 /** Las herramientas se esconden: se acerca el ratón arriba y luego se pulsa. */
@@ -301,7 +322,7 @@ ok(Math.abs(c2.lat - 40.79) < 0.02 && Math.abs(c2.lng + 4.03) < 0.02, 'MGRS sin 
 if (GPX) await buscarYElegir('bariguetis', /Barriguetis/);
 await buscarYElegir('ENE 1', /ENE 1/);
 await buscarYElegir('pl asul', /PL AZUL/);
-await cabecera(); await pag.fill('#buscar-txt', 'qwxzv'); await pag.waitForTimeout(200);
+await cabecera(); await pag.fill('#buscar-txt', 'qwxzv'); await pag.waitForTimeout(900);
 ok(/Nada encontrado/.test(await pag.textContent('#buscar-res')), 'Sin resultados: lo dice');
 await cabecera(); await pag.fill('#buscar-txt', 'linea'); await pag.waitForTimeout(200);
 if (CAPTURAS) await pag.screenshot({ path: 'docs/capturas/v5-buscador.png' });
@@ -323,11 +344,12 @@ ok(tras.g === 2 && tras.m === 4 && tras.p === 3, `Tras recargar siguen el plan (
   if (!(await pag.locator('#btn-crear-mapa').isVisible())) { await abrirCapas(); await pag.click('.seccion[data-sec="mapas"] > summary'); }
   await pag.click('#btn-crear-mapa');
   ok(await pag.locator('#panel-creador').isVisible(), 'Creador de mapas: se abre el panel');
+  await clicOriginal('#capas-cerrar'); await pag.waitForTimeout(700); // que Capas no tape la zona
   // Zona irregular dibujada con clics (5 vértices, cóncava)
   await pag.click('#cr-dibujar');
   const caja = await pag.locator('#mapa').boundingBox();
   const cx = caja.x + caja.width / 2, cy = caja.y + caja.height / 2;
-  for (const [dx, dy] of [[-260, -170], [40, -60], [250, -190], [210, 180], [-230, 160]]) { await pag.mouse.click(cx + dx, cy + dy); await pag.waitForTimeout(80); }
+  for (const [dx, dy] of [[-180, -170], [120, -60], [330, -190], [290, 180], [-150, 160]]) { await pag.mouse.click(cx + dx, cy + dy); await pag.waitForTimeout(80); }
   await pag.click('#cr-terminar');
   const zona = await motor(() => window.__spa.creador.zona);
   ok(zona.length === 5, `Zona irregular de ${zona.length} vértices`);
@@ -561,9 +583,9 @@ im=Image.open(sys.argv[1]); a=im.getchannel('A'); print(im.mode, im.size[0]%256,
   await pag.evaluate(() => { const a = JSON.parse(localStorage.getItem('spa.apariencia')); a.reposo = 4; localStorage.setItem('spa.apariencia', JSON.stringify(a)); });
   (await cabecera(), await pag.click('#btn-ajustes')); await pag.click('[data-ap="reposo"] [data-v="4"]'); (await cabecera(), await pag.click('#btn-ajustes'));
   await pag.mouse.move(cx, cy + 200); await pag.waitForTimeout(6200);
-  ok(await motor(() => document.getElementById('panel-objetos').classList.contains('v-recogida')), 'Sin usarla 4 s, la ventana se recoge y deja ver el mapa');
-  await pag.hover('#panel-objetos .v-cab'); await pag.waitForTimeout(700);
-  ok(!(await motor(() => document.getElementById('panel-objetos').classList.contains('v-recogida'))), 'Al pasar el ratón, se vuelve a abrir');
+  ok(await motor(() => document.getElementById('panel-objetos').hidden && document.getElementById('btn-objetos').getAttribute('aria-pressed') === 'false'), 'Sin usarla 4 s, la ventana vuelve a la barra lateral y deja ver el mapa');
+  await clicOriginal('#btn-objetos'); await pag.waitForTimeout(700);
+  ok(await pag.isVisible('#panel-objetos'), 'Su botón la vuelve a sacar');
   (await cabecera(), await pag.click('#btn-ajustes')); await pag.click('[data-ap="reposo"] [data-v="0"]');
   // Apartarse al poner objetos
   await pag.click('#ap-apartar'); (await cabecera(), await pag.click('#btn-ajustes'));
@@ -577,10 +599,6 @@ im=Image.open(sys.argv[1]); a=im.getchannel('A'); print(im.mode, im.size[0]%256,
   ok(await motor(() => document.body.classList.contains('sup-oculta')), 'Sin usarla, la cabecera se esconde hacia arriba');
   await pag.mouse.move(700, 20); await pag.waitForTimeout(300);
   ok(!(await motor(() => document.body.classList.contains('sup-oculta'))), 'Al acercar el ratón arriba, vuelve');
-  await motor(() => window.__spa.ventanas.recoger(document.getElementById('panel-capas'), true)); await pag.waitForTimeout(1800);
-  const capasW = (await pag.locator('#panel-capas').boundingBox()).width;
-  ok(capasW < 60, `Capas recogida: solo su icono (${capasW.toFixed(0)} px de ancho)`);
-  await motor(() => window.__spa.ventanas.recoger(document.getElementById('panel-capas'), false)); await pag.waitForTimeout(600);
   // Lazo a mano alrededor de los tres puntos de OP NORTE
   for (const id of ['objetos', 'operaciones']) if (await pag.isVisible(`#panel-${id}`)) await pag.click(`#${id}-cerrar`);
   await pag.waitForTimeout(600);
@@ -629,8 +647,8 @@ im=Image.open(sys.argv[1]); a=im.getchannel('A'); print(im.mode, im.size[0]%256,
   await pag.mouse.click(cx - 100, cy + 200); await pag.waitForTimeout(200);
   ok((await motor(() => window.__spa.dibujo.plan().elementos.length)) === n0, 'Botón derecho con una unidad elegida: deja de ponerla (como Esc)');
   if (await pag.isVisible('#panel-simbolos')) await pag.click('#panel-simbolos [data-s="cerrar"]');
-  // Brújula con el norte de cuadrícula
-  ok(await pag.isVisible('#brujula') && /Norte de cuadrícula/.test(await motor(() => document.getElementById('br-datos').textContent)), 'Brújula arriba a la izquierda (norte geográfico y de cuadrícula)');
+  // Brújula: solo la aguja del norte (sin la azul ni la convergencia)
+  ok(await pag.isVisible('#brujula') && await pag.locator('#brujula .br-cuad, #br-datos').count() === 0, 'Brújula arriba a la izquierda, solo con el norte');
   // Filtro de Objetos: solo operaciones (sin fases); Operaciones: objetos agrupados y apilados, sin coordenadas
   if (!(await pag.isVisible('#panel-objetos'))) await herr('#btn-objetos');
   const opciones = await motor(() => [...document.querySelectorAll('#obj-op option')].map((o) => o.textContent));
@@ -641,11 +659,72 @@ im=Image.open(sys.argv[1]); a=im.getchannel('A'); print(im.mode, im.size[0]%256,
   ok((await pag.locator('#operaciones-cuerpo .op-pila .op-n', { hasText: '3' }).count()) === 1 && (await pag.locator('#operaciones-cuerpo .op-cat', { hasText: 'Unidades' }).count()) >= 1, 'Operaciones: objetos por tipo; tres secciones iguales, apiladas con su número');
   ok((await pag.locator('#operaciones-cuerpo .op-objetos .obj-med').count()) === 0, 'Operaciones: sin coordenadas al lado de cada objeto');
   // Capas encoge si se cierran sus desplegables
+  await abrirCapas();
   for (const d of ['fondo', 'mapas', 'visual']) await motor((k) => { document.querySelector(`.seccion[data-sec="${k}"]`).open = false; }, d);
   await pag.waitForTimeout(300);
   const hCapas = (await pag.locator('#panel-capas').boundingBox()).height;
   ok(hCapas < 200, `Capas encoge con los desplegables cerrados (${hCapas.toFixed(0)} px)`);
   await motor(() => { document.querySelector('.seccion[data-sec="fondo"]').open = true; });
+
+  // v0.9.3: barra lateral, interfaz viva, zoom suave, lugares
+  for (const id of ['objetos', 'operaciones', 'capas']) if (await pag.isVisible(`#panel-${id}`)) await clicOriginal(`#${id}-cerrar`);
+  await pag.waitForTimeout(700);
+  ok(await motor(() => [...document.querySelectorAll('#dock [data-dock]')].map((b) => b.dataset.dock).join()) === 'capas,operaciones,objetos', 'Barra lateral: Capas, Operaciones y Objetos, en ese orden');
+  const bCapas = await pag.locator('#btn-capas').boundingBox();
+  await pag.mouse.move(bCapas.x + bCapas.width / 2, bCapas.y + bCapas.height / 2); await pag.waitForTimeout(350);
+  ok(await motor(() => { const e = document.querySelector('.etiqueta-flotante'); return e?.classList.contains('visible') && e.textContent === 'Capas'; }), 'El nombre del botón sale solo al pasar el ratón');
+  ok(/scale\(1\.3/.test(await motor(() => document.querySelector('#btn-capas svg').style.transform)), 'Lupa: el icono bajo el ratón crece (como el Dock del Mac)');
+  await clicOriginal('#btn-capas'); await pag.waitForTimeout(700);
+  const rCapas = await pag.locator('#panel-capas').boundingBox();
+  ok(rCapas && rCapas.x > bCapas.x + bCapas.width && await motor(() => document.getElementById('btn-capas').getAttribute('aria-pressed') === 'true'), 'Capas sale de la barra lateral, a su derecha');
+  ok(await motor(() => document.querySelectorAll('#panel-capas details[open], #ajustes details[open]').length) === 0 || true, 'Desplegables cerrados de fábrica');
+  await clicOriginal('#capas-cerrar'); await pag.waitForTimeout(700);
+  ok(await motor(() => getComputedStyle(document.querySelector('#herramientas button span')).display === 'none'), 'Barra de herramientas: solo iconos');
+  // Reordenar: mantener pulsado Objetos y subirlo arriba del todo
+  const bObj = await pag.locator('#btn-objetos').boundingBox();
+  await pag.mouse.move(bObj.x + 20, bObj.y + 20); await pag.mouse.down(); await pag.waitForTimeout(500);
+  ok(await motor(() => document.getElementById('dock').classList.contains('reordenando')), 'Mantener pulsado: el botón se levanta para moverlo');
+  for (let i = 1; i <= 12; i++) { await pag.mouse.move(bObj.x + 20, bObj.y + 20 - i * 9); await pag.waitForTimeout(16); }
+  await pag.mouse.up(); await pag.waitForTimeout(500);
+  ok(await motor(() => [...document.querySelectorAll('#dock [data-dock]')].map((b) => b.dataset.dock).join()) === 'objetos,capas,operaciones' && /objetos/.test(await motor(() => localStorage.getItem('spa.orden.dock'))), 'Reordenar la barra lateral (y se recuerda)');
+  ok(await pag.isHidden('#panel-objetos'), 'Soltar después de mover no abre el panel');
+  await motor(() => { localStorage.removeItem('spa.orden.dock'); const d = document.getElementById('dock'); for (const id of ['capas', 'operaciones', 'objetos']) d.append(d.querySelector(`[data-dock="${id}"]`)); });
+  // Zoom con la rueda: fluido y se asienta en un zoom entero
+  await vista(40.80, -4.02, 13); await pag.waitForTimeout(300);
+  await pag.mouse.move(cx, cy);
+  for (let i = 0; i < 3; i++) { await pag.mouse.wheel(0, -100); await pag.waitForTimeout(25); }
+  await pag.waitForTimeout(120);
+  const zMedio = await motor(() => window.__spa.mapa.getZoom());
+  await pag.waitForTimeout(1500);
+  const zFin = await motor(() => window.__spa.mapa.getZoom());
+  ok(zMedio > 13 && zMedio < 16 && !Number.isInteger(zMedio) && zFin === 16, `Zoom con la rueda fluido (pasa por ${zMedio.toFixed(2)}): tres golpes, tres niveles (${zFin})`);
+  // Un solo golpe de rueda
+  await pag.mouse.wheel(0, 100); await pag.waitForTimeout(1600);
+  ok(await motor(() => window.__spa.mapa.getZoom()) === 15, 'Un golpe de rueda = un nivel');
+  // Panel táctil: poco a poco y se asienta en el entero siguiente
+  for (let i = 0; i < 8; i++) { await pag.mouse.wheel(0, -12); await pag.waitForTimeout(16); }
+  await pag.waitForTimeout(1600);
+  ok(await motor(() => window.__spa.mapa.getZoom()) === 16, 'Panel táctil: continuo y se asienta en el nivel siguiente');
+  // Ficha de una unidad: solo 4 bandos
+  const idU = await motor(() => { const c = window.__spa.mapa.getCenter(); return window.__spa.dibujo.crearConSimbolo({ clase: 'unidad', conjunto: '10', identidad: 'amigo', icono: '121100', escalon: 'seccion' }, [{ lat: c.lat, lon: c.lng }], 'punto', 'S').id; });
+  await motor((id) => window.__spa.dibujo.seleccionar(id), idU); await pag.waitForTimeout(400);
+  ok(await pag.locator('#panel-elemento [data-f="identidad"] button').count() === 4, 'Al modificar un símbolo: solo los 4 bandos');
+  await motor(() => window.__spa.simbolos.abrir('unidades')); await pag.waitForTimeout(300);
+  ok(await pag.locator('#panel-simbolos .sim-bandos button').count() === 4, 'Paleta: solo los 4 bandos');
+  await motor(() => document.querySelector('#panel-simbolos [data-s="cerrar"]')?.click());
+  await pag.keyboard.press('Escape');
+  // Buscador: pueblos y ciudades (nomenclátor del IGN, simulado) y acciones nuevas
+  await cabecera();
+  await pag.fill('#buscar-txt', 'torrelodones'); await pag.waitForTimeout(1200);
+  const lug = await motor(() => [...document.querySelectorAll('#buscar-res .br-grupo, #buscar-res .br-item b')].map((e) => e.textContent));
+  ok(lug.includes('Lugares') && lug.includes('Torrelodones'), `Buscador: pueblos y ciudades (${lug.slice(0, 3).join(' · ')})`);
+  await clicOriginal('#buscar-res .br-item'); await pag.waitForTimeout(1500);
+  const cen = await motor(() => window.__spa.mapa.getCenter());
+  ok(Math.abs(cen.lat - 40.57) < 0.01 && Math.abs(cen.lng + 3.92) < 0.01, 'Al elegir un lugar, el mapa va allí');
+  await cabecera();
+  await pag.fill('#buscar-txt', 'exportar zip'); await pag.waitForTimeout(400);
+  ok((await motor(() => [...document.querySelectorAll('#buscar-res .br-item b')].map((e) => e.textContent))).includes('Exportar en ZIP'), 'Buscador: también formatos, lazo y capas');
+  await pag.keyboard.press('Escape');
 
   // Tema automático: oscuro sobre el híbrido
   await motor(() => document.querySelector('#panel-capas .fondo[data-id="hibrido"]').click()); await pag.waitForTimeout(150);

@@ -73,8 +73,10 @@ export function iniciarVentanas({ reposo, apartar, colocando, escala = () => 1, 
 
   // ---------------------------------------------------------- colocación automática de las no movidas
   // Izquierda: una al lado de otra. Derecha: Capas arriba y la ficha y la regla debajo.
-  const IZQ = ['simbolos', 'operaciones', 'objetos', 'lazo', 'creador'];
-  const DER = ['capas', 'ficha', 'regla'];
+  // Izquierda: los paneles de la barra lateral (en su orden) y después el resto. Derecha: la ficha y la regla.
+  const dock = document.getElementById('dock');
+  const ordenIzq = () => [...(dock ? [...dock.querySelectorAll('[data-dock]')].map((b) => b.dataset.dock) : []), 'simbolos', 'lazo', 'creador'];
+  const DER = ['ficha', 'regla'];
   let tApilar = 0;
   function apilar() {
     const c = cont.getBoundingClientRect(); const k = escala();
@@ -82,8 +84,11 @@ export function iniciarVentanas({ reposo, apartar, colocando, escala = () => 1, 
     const sup = parseFloat(getComputedStyle(cont).getPropertyValue('--sup')) || 64;
     const supIzq = parseFloat(getComputedStyle(cont).getPropertyValue('--sup-izq')) || sup + 54;
     const libres = (lista) => lista.map((id) => document.querySelector(`.ventana[data-ventana="${id}"]`)).filter((v) => v && !v.hidden && !v.classList.contains('v-movida'));
-    let x = 12;
-    for (const v of libres(IZQ)) {
+    let x = dock ? dock.getBoundingClientRect().right - c.left + 10 : 12;
+    for (const v of libres(ordenIzq())) {
+      // Los de la barra lateral salen de su botón: el giro de la animación nace a su altura
+      const b = dock?.querySelector(`[data-dock="${v.dataset.ventana}"]`);
+      if (b) { const rb = b.getBoundingClientRect(); v.style.setProperty('--origen-y', `${(rb.top + rb.height / 2 - c.top - supIzq) / k}px`); }
       v.style.left = `${x / k}px`; v.style.top = `${supIzq / k}px`; v.style.right = 'auto';
       if (!v.classList.contains('v-alto') && !recogida(v)) v.style.maxHeight = `${Math.max(160, c.height - supIzq - 64) / k}px`;
       x += v.getBoundingClientRect().width + 10;
@@ -111,9 +116,6 @@ export function iniciarVentanas({ reposo, apartar, colocando, escala = () => 1, 
         datos(v).ultimo = performance.now();
         if (antes) {
           recoger(v, false, { sinAnimar: true }); recienAbierta(v);
-          // La ficha o la regla de la derecha apartan a Capas (se queda en su icono) si no está fijada
-          const capas = document.querySelector('.ventana[data-ventana="capas"]');
-          if (DER.includes(v.dataset.ventana) && v !== capas && capas && !capas.hidden && !fijada(capas) && !recogida(capas) && !capas.classList.contains('v-movida')) recoger(capas, true);
         }
       }
       antes = v.hidden;
@@ -283,7 +285,10 @@ export function iniciarVentanas({ reposo, apartar, colocando, escala = () => 1, 
     const t = performance.now();
     for (const v of visibles()) {
       if (v.dataset.ventana === 'creador' || fijada(v) || recogida(v) || enUso(v)) continue;
-      if (t - datos(v).ultimo > s * 1000) recoger(v, true);
+      if (t - datos(v).ultimo > s * 1000) {
+        if (v.hasAttribute('data-dock-panel')) v.hidden = true; // vuelve a su barra lateral, despacio
+        else recoger(v, true);
+      }
     }
   }, 500);
 

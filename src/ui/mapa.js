@@ -2,7 +2,7 @@
 // mapas importados, visualización (cuadrícula, sombreado, curvas), buscador
 // universal, ajustes, regla, dibujo (dibujo.js) e importación (importar.js).
 // Usa Leaflet (global L).
-import { formatearPosicion, medir, destino, formatearRumbo } from '../geo/index.js';
+import { formatearPosicion, formatearRumbo } from '../geo/index.js';
 import { FONDOS, IMAGENES, ROTULOS, SUPERPUESTAS, ZONA_PILOTO, ATRIBUCION_MDT, crearCapa, fechaImagen } from '../mapa/capas.js';
 import { capaRelieve } from '../mapa/relieve.js';
 import { capaCuadricula } from '../mapa/cuadricula.js';
@@ -22,6 +22,10 @@ import { iniciarObjetos } from './objetos.js';
 import { iniciarPanelOperaciones } from './panel-operaciones.js';
 import { iniciarLazo } from './lazo.js';
 import { iniciarRegla } from './regla.js';
+import { lupa, etiquetas, reordenable } from './vivo.js';
+import { zoomSuave } from '../mapa/zoom-suave.js';
+import { crearBuscadorLugares } from '../datos/lugares.js';
+import { FORMATOS_EXPORTAR } from '../datos/exportar.js';
 
 const L = window.L;
 const $ = (id) => document.getElementById(id);
@@ -32,12 +36,14 @@ const CLAVE = 'spa.mapa.estado';
 const estado = {
   angulo: 'grados', coordenadas: 'mgrs', fondo: 'mtn', imagen: 'google', rotulos: true,
   fondoAuto: false, mtnDetalle: false, intensidadCuadricula: 35, simTam: { px: 34 },
-  superpuestas: { cuadricula: true }, secciones: { fondo: true }, ajustesAbiertos: { coordenadas: true }, vista: null,
+  superpuestas: { cuadricula: true }, secciones: {}, ajustesAbiertos: {}, vista: null,
 };
 try { Object.assign(estado, JSON.parse(localStorage.getItem(CLAVE) || '{}')); } catch { /* sin almacenamiento */ }
 if (!FONDOS.some((f) => f.id === estado.fondo)) estado.fondo = ['ortofoto', 'satelite'].includes(estado.fondo) ? 'hibrido' : 'mtn';
 if (!IMAGENES[estado.imagen] || !(estado.version >= 6)) estado.imagen = 'google'; // v0.6: Google por defecto
-estado.version = 6;
+// v0.9.3: los desplegables empiezan cerrados (Capas y Ajustes)
+if (!(estado.version >= 7)) { estado.secciones = {}; estado.ajustesAbiertos = {}; }
+estado.version = 7;
 delete estado.superpuestas.vertices;
 delete estado.superpuestas.piloto; // v0.9: sin zona piloto
 const guardar = () => { try { localStorage.setItem(CLAVE, JSON.stringify(estado)); } catch { /* nada */ } };
@@ -52,7 +58,13 @@ prepararRejillas().catch(() => {}); // ED50 y geoide (mapas antiguos, alturas de
 // ---------------------------------------------------------------- mapa
 // Vista de la primera vez (sin nada guardado): la zona de Guadarrama
 const vistaInicial = L.latLngBounds([ZONA_PILOTO.sur, ZONA_PILOTO.oeste], [ZONA_PILOTO.norte, ZONA_PILOTO.este]);
-const mapa = L.map('mapa', { zoomControl: true, attributionControl: true, minZoom: 5, maxZoom: 21, doubleClickZoom: false, zoomSnap: 1 });
+// Movimiento fluido: el arrastre sigue con inercia y frena poco a poco; la rueda acerca con suavidad (zoom-suave.js)
+const mapa = L.map('mapa', {
+  zoomControl: true, attributionControl: true, minZoom: 5, maxZoom: 21, doubleClickZoom: false, zoomSnap: 1,
+  scrollWheelZoom: false, inertia: true, inertiaDeceleration: 1500, inertiaMaxSpeed: 4000, easeLinearity: 0.18,
+  zoomAnimationThreshold: 6,
+});
+zoomSuave(L, mapa);
 mapa.attributionControl.setPrefix('<a href="https://leafletjs.com" target="_blank" rel="noopener">Leaflet</a>');
 L.control.scale({ metric: true, imperial: false, maxWidth: 160, position: 'bottomright' }).addTo(mapa);
 if (estado.vista) mapa.setView(estado.vista.centro, estado.vista.zoom); else mapa.fitBounds(vistaInicial, { padding: [20, 20] });
@@ -109,7 +121,7 @@ let fondoActual = null;
 let alCambiarFondo = () => {}; // la cuadrícula se pinta en blanco sobre el híbrido
 // eslint-disable-next-line prefer-const
 let importar = null;
-const VERSION = '0.9.2';
+const VERSION = '0.9.3';
 function ponerFondo(id, { automatico = false } = {}) {
   if (!capasFondo[id]) id = 'mtn';
   if (fondoActual) mapa.removeLayer(fondoActual);
@@ -228,12 +240,12 @@ for (const d of document.querySelectorAll('.seccion')) {
 }
 const abrirSeccion = (sec) => { const d = document.querySelector(`.seccion[data-sec="${sec}"]`); if (d) d.open = true; ponerPanelCapas(true); };
 // Capas: se recoge sola sin uso (ventanas.js); clic en el título la abre o la recoge
+// Capas sale de la barra lateral (como Operaciones y Objetos)
 function ponerPanelCapas(abierto) {
-  if (ventanas) ventanas.recoger($('panel-capas'), !abierto); else $('panel-capas').classList.toggle('v-recogida', !abierto);
+  $('panel-capas').hidden = !abierto;
+  if (abierto) ventanas?.usada($('panel-capas'));
   recolocarEtiquetas();
 }
-$('capas-toggle').addEventListener('click', (e) => { if (!e.target.closest('.v-pin')) ponerPanelCapas(ventanas ? ventanas.recogida($('panel-capas')) : $('panel-capas').classList.contains('v-recogida')); });
-if (window.matchMedia('(max-width: 760px)').matches) ponerPanelCapas(false);
 
 // ---------------------------------------------------------------- herramientas, dibujo e importación
 let herramienta = 'consultar';
@@ -361,12 +373,14 @@ const operaciones = iniciarPanelOperaciones({
   verEnObjetos: (id) => { ponerPanel('objetos', true); objetos.filtrarPaquete(id); },
   alCambiarPaneles: () => recolocarEtiquetas(),
 });
-const PANELES = { objetos: { api: objetos, boton: 'btn-objetos' }, operaciones: { api: operaciones, boton: 'btn-operaciones' } };
+const capas = { abrir: (si) => ponerPanelCapas(si), get abierto() { return !$('panel-capas').hidden; } };
+const PANELES = { capas: { api: capas, boton: 'btn-capas' }, operaciones: { api: operaciones, boton: 'btn-operaciones' }, objetos: { api: objetos, boton: 'btn-objetos' } };
 function ponerPanel(id, abierto) {
   const p = PANELES[id];
-  if (abierto && window.matchMedia('(max-width: 760px)').matches) { ponerPanelCapas(false); for (const k of Object.keys(PANELES)) if (k !== id) PANELES[k].api.abrir(false); }
+  if (abierto && window.matchMedia('(max-width: 760px)').matches) { for (const k of Object.keys(PANELES)) if (k !== id) PANELES[k].api.abrir(false); }
   p.api.abrir(abierto);
   $(p.boton).setAttribute('aria-pressed', String(abierto));
+  if (abierto) { const b = $(p.boton); b.classList.remove('bote'); void b.offsetWidth; b.classList.add('bote'); b.addEventListener('animationend', () => b.classList.remove('bote'), { once: true }); }
   if (abierto) ventanas?.usada(document.querySelector(`.ventana[data-ventana="${id}"]`));
   try { localStorage.setItem(`spa.panel.${id}`, abierto ? '1' : '0'); } catch { /* nada */ }
   recolocarEtiquetas();
@@ -374,8 +388,19 @@ function ponerPanel(id, abierto) {
 for (const id of Object.keys(PANELES)) {
   $(PANELES[id].boton).addEventListener('click', () => ponerPanel(id, !PANELES[id].api.abierto));
   $(`${id}-cerrar`).addEventListener('click', () => ponerPanel(id, false));
-  try { if (localStorage.getItem(`spa.panel.${id}`) === '1' || (id === 'objetos' && localStorage.getItem('spa.panelPlan') === '1')) ponerPanel(id, true); } catch { /* nada */ }
+  try { if (localStorage.getItem(`spa.panel.${id}`) === '1') ponerPanel(id, true); } catch { /* nada */ }
+  // El botón de la barra lateral sigue a su panel (se puede cerrar solo, al recogerse)
+  const panel = document.querySelector(`.ventana[data-ventana="${id}"]`);
+  new MutationObserver(() => $(PANELES[id].boton).setAttribute('aria-pressed', String(!panel.hidden))).observe(panel, { attributes: true, attributeFilter: ['hidden'] });
 }
+// Barras vivas: los iconos crecen al pasar el ratón, el nombre sale al pasar y se reordenan manteniendo pulsado
+lupa($('herramientas'), { eje: 'x' });
+etiquetas($('herramientas'), { lado: 'abajo' });
+reordenable($('herramientas'), { clave: 'spa.orden.herramientas', eje: 'x', grupos: '.h-grupo' });
+lupa($('dock'), { eje: 'y', max: 1.35 });
+etiquetas($('dock'), { lado: 'derecha' });
+reordenable($('dock'), { clave: 'spa.orden.dock', eje: 'y', alCambiar: () => recolocarEtiquetas() });
+
 // Píldora de la operación activa (abajo, junto a las coordenadas)
 function pintarPildoraOp() {
   const id = dibujo.activo, b = $('pildora-op');
@@ -479,21 +504,6 @@ mapa.on('contextmenu', (e) => {
   else if (simbolos.armado) { L.DomEvent.preventDefault(e.originalEvent); simbolos.desarmar(); } // botón derecho = Esc: dejar de poner la unidad
 });
 
-// ---------------------------------------------------------------- brújula: norte geográfico y de cuadrícula
-// La convergencia de cuadrícula (ángulo entre el norte geográfico y el de la
-// cuadrícula UTM) sale del motor geodésico en el centro del mapa.
-function pintarBrujula() {
-  const c = centro();
-  let g = null;
-  try { const r = medir(c, destino(c, 0, 1000)); g = -(((r.rumboCuadricula + 540) % 360) - 180); } catch { /* fuera de UTM */ }
-  $('br-cuad').style.transform = g === null ? 'none' : `rotate(${g}deg)`;
-  $('br-cuad').style.display = g === null ? 'none' : '';
-  const signo = (v) => `${v > 0 ? '+' : v < 0 ? '−' : ''}${Math.abs(v).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}°`;
-  $('br-datos').innerHTML = `<span>Norte geográfico <b>0°</b></span>${g === null ? '' : `<span class="c">Norte de cuadrícula <b>${signo(g)}</b></span>`}`;
-}
-mapa.on('moveend', pintarBrujula);
-pintarBrujula();
-
 // ---------------------------------------------------------------- barra inferior: coordenada y altitud
 if (tactil) { document.body.classList.add('tactil'); const c = document.createElement('div'); c.className = 'cruz'; $('contenido').append(c); }
 let tAltura = 0, pedidaAltura = 0;
@@ -566,7 +576,12 @@ const ACCIONES = [
   { texto: 'Objetos', extra: 'plan dibujado pintado archivos importados panel lista filtros borrar', detalle: 'Todo lo pintado e importado', accion: () => ponerPanel('objetos', true) },
   { texto: 'Operaciones', extra: 'paquetes fases saltos operación en curso futuras pasadas', detalle: 'Paquetes de datos', accion: () => ponerPanel('operaciones', true) },
   { texto: 'Crear operación', extra: 'nueva operación paquete fase', detalle: 'Lo que pintes entra en ella', accion: () => { ponerPanel('operaciones', true); setTimeout(() => $('op-nueva-nombre')?.focus(), 50); } },
-  { texto: 'Lazo', extra: 'seleccionar círculo exportar enviar kmz kml gpx geojson csv compartir', detalle: 'Seleccionar en círculo y exportar', accion: () => elegirHerramienta('lazo') },
+  { texto: 'Lazo', extra: 'seleccionar círculo exportar enviar kmz kml gpx geojson csv zip compartir', detalle: 'Seleccionar y exportar', accion: () => elegirHerramienta('lazo') },
+  { texto: 'Lazo en círculo', extra: 'seleccionar redondo radio', detalle: 'Herramienta', accion: () => lazo.ponerForma('circulo') },
+  { texto: 'Lazo a mano', extra: 'seleccionar libre dibujar contorno polígono', detalle: 'Herramienta', accion: () => lazo.ponerForma('mano') },
+  ...Object.entries(FORMATOS_EXPORTAR).map(([k, f]) => ({ texto: `Exportar en ${f.nombre}`, extra: `lazo enviar compartir archivo ${k} ${f.detalle}`, detalle: f.detalle.split(/[,(:]/)[0], accion: () => { lazo.ponerFormato(k); elegirHerramienta('lazo'); } })),
+  { texto: 'Capas', extra: 'fondo mapas imagen cuadrícula sombreado curvas panel', detalle: 'Fondo, mapas y visualización', accion: () => ponerPanel('capas', true) },
+  { texto: 'Regla', extra: 'medir distancia rumbo perfil tramos', detalle: 'Herramienta', accion: () => elegirHerramienta('medir') },
   { texto: 'Recolocar ventanas', extra: 'paneles posición tamaño restablecer', detalle: 'A su sitio y tamaño de siempre', accion: () => ventanas.recolocar() },
   { texto: 'Pantalla y ventanas', extra: 'tema oscuro claro transparencia desenfoque tamaño personalizar', detalle: 'Ajustes', accion: () => abrirAjustes(true, 'apariencia') },
   { texto: 'Ajustes', extra: 'opciones configuración', detalle: 'Abrir', accion: () => abrirAjustes(true) },
@@ -589,6 +604,23 @@ function candidatos() {
   const ops = dibujo.plan().operaciones.map((o) => ({ grupo: 'Operaciones', texto: o.nombre, extra: 'operación fase paquete', detalle: o.padre ? nombreRutaOp(o.id) : 'Operación', accion: () => { ponerPanel('operaciones', true); operaciones.mostrar(o.id); dibujo.encuadrar(dibujo.plan().elementos.filter((e) => e.paquete === o.id).map((e) => e.id)); } }));
   return [...plan, ...ops, ...importar.candidatosBusqueda(), ...ACCIONES, ...simbolos.candidatosBusqueda()];
 }
+// Lugares: se pregunta al IGN (y si no, a OpenStreetMap) un rato después de dejar de escribir
+const buscadorLugares = crearBuscadorLugares();
+let tLugares = 0, lugaresEnCamino = false;
+function lugaresDe(q) {
+  const t = q.trim();
+  lugaresEnCamino = false;
+  if (t.length < 3 || /^\d+([.,]\d+)?$/.test(t)) return null;
+  const ya = buscadorLugares.enMemoria(t);
+  if (ya) return ya;
+  lugaresEnCamino = true;
+  clearTimeout(tLugares);
+  tLugares = setTimeout(() => buscadorLugares.buscar(t).then(() => { if ($('buscar-txt').value.trim() === t && !$('buscar-res').hidden) pintarResultados(t); }).catch(() => {}), 320);
+  return null;
+}
+async function situarLugar(l) {
+  try { const s = await buscadorLugares.situar(l); if (Number.isFinite(s.lat) && Number.isFinite(s.lon)) irA({ lat: s.lat, lon: s.lon, lado: s.lado }); } catch { dibujo.avisoBreve('No se pudo situar el lugar'); }
+}
 let resultados = [], marcado = 0;
 function pintarResultados(q) {
   const res = $('buscar-res');
@@ -598,10 +630,17 @@ function pintarResultados(q) {
   if (p) lista.push({ grupo: 'Coordenada', texto: coord(p), detalle: p.como === 'tal cual' ? (p.lado > 1 ? `centro del cuadrado de ${metros(p.lado)}` : '') : p.como, accion: () => irA(p), puntos: 101 });
   // Los mejores 14, agrupados (cada grupo en el orden de su mejor resultado)
   const mejores = buscar(q, candidatos()).slice(0, 14);
+  // Lugares (pueblos, ciudades, parajes): del nomenclátor del IGN, cuando ya han llegado
+  const lugares = p ? null : lugaresDe(q);
+  if (lugares?.length) {
+    const tope = mejores[0]?.puntos ?? 0;
+    mejores.push(...lugares.map((l, i) => ({ grupo: 'Lugares', texto: l.nombre, detalle: l.detalle, puntos: (tope >= 90 ? 70 : 100) - i * 0.01, accion: () => situarLugar(l) })));
+    mejores.sort((a, b) => b.puntos - a.puntos);
+  }
   const ordenGrupo = [...new Set(mejores.map((r) => r.grupo))];
   lista.push(...mejores.sort((a, b) => ordenGrupo.indexOf(a.grupo) - ordenGrupo.indexOf(b.grupo)));
   resultados = lista; marcado = 0;
-  if (!lista.length) { res.innerHTML = '<div class="br-vacio">Nada encontrado. Prueba con otra palabra o una coordenada (MGRS, UTM, grados).</div>'; res.hidden = false; return; }
+  if (!lista.length) { res.innerHTML = `<div class="br-vacio">${lugaresEnCamino ? 'Buscando lugares…' : 'Nada encontrado'}</div>`; res.hidden = false; return; }
   let grupoPrev = '';
   res.innerHTML = lista.map((r, i) => {
     const cab = r.grupo !== grupoPrev ? `<div class="br-grupo">${esc(r.grupo)}</div>` : '';
