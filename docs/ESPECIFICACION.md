@@ -424,6 +424,25 @@ y 180°) y asa ↻ en el mapa que se arrastra alrededor del centro, de 5 en 5°
   izquierda, solo con la cuadrícula MGRS activada (ya no en medio del mapa).
 - Valores de fábrica: transparencia 60 %, desenfoque 6 px, tamaño 95 %.
 
+### v0.9.2
+- **Regla**: clic pone punto, botón derecho deshace, doble clic (o Intro) termina.
+  La distancia de cada tramo va encima de la línea, en su mitad, en píldora de
+  vidrio. La medida terminada se queda en el mapa; al pincharla sale su ficha como
+  la de un track (distancia, desnivel, perfil y tramos con rumbos) y se puede
+  guardar como línea o quitar (`src/ui/regla.js`).
+- **Botón derecho** con una unidad elegida en la paleta: deja de ponerla (como Esc).
+- **Brújula** arriba a la izquierda: norte geográfico y, en azul, el de cuadrícula
+  (convergencia en el centro del mapa, del motor geodésico); al pasar el ratón da
+  los valores.
+- **Objetos**: el filtro de operación muestra solo operaciones (sin fases).
+- **Operaciones**: los objetos van por categoría (unidades, líneas de coordinación,
+  cometidos, dibujos) y, dentro, los iguales apilados con su número; sin coordenadas.
+- **Ventanas**: el alto que elige el usuario es un tope; con los desplegables
+  cerrados encogen solas. Al abrirse la ficha o la regla, Capas se queda en su icono
+  (si no está fijada). Chincheta fijada en azul.
+- Fuera la línea de cuadrados de 100 km al alejar. La aclaración de las altitudes
+  (nivel del mar, MDT05) solo en Ajustes.
+
 ## 13. Pendiente
 
 - Rumbo magnético (modelo WMM).

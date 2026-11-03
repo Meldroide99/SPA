@@ -150,15 +150,6 @@ export function capaCuadricula(L, mapa, opc = {}) {
     const tam = mapa.getSize();
     const rects = obstaculos();
     const tapa = (p, ax, ay) => rects.some((r) => p.x + ax > r.x0 && p.x - ax < r.x1 && p.y + ay > r.y0 && p.y - ay < r.y1);
-    // Cuadrados de 100 km a la vista: en una etiqueta en la esquina de abajo a la izquierda (no en medio del mapa)
-    const cuadrados = [...new Set(etiquetas.filter((et) => et.eje === 'cuadrado').map((et) => et.texto))];
-    if (cuadrados.length) {
-      const porZona = new Map();
-      for (const t of cuadrados) { const [z, c] = t.split(' '); if (!porZona.has(z)) porZona.set(z, []); porZona.get(z).push(c); }
-      const texto = [...porZona].map(([z, cs]) => `${z} ${cs.join(' · ')}`).join('   ');
-      const pos = L.point(12, tam.y - 96);
-      L.marker(mapa.containerPointToLatLng(pos), { pane: panel, interactive: false, icon: L.divIcon({ className: 'etq-ancla', html: `<span class="cuad-100k">${texto}</span>`, iconSize: null }) }).addTo(grupo);
-    }
     for (const et of etiquetas) {
       if (et.eje === 'cuadrado') continue;
       const texto = textoEtiqueta(et.valor, et.paso);

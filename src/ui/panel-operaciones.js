@@ -9,7 +9,7 @@
 
 import {
   ESTADOS_OP, hijos, buscarPaquete, nuevoPaquete, objetosDe, asignar, moverPaquete, borrarPaquete,
-  duplicarPaquete, descendientes, nombreRuta, tocarPaquete, paquetes,
+  duplicarPaquete, descendientes, nombreRuta, tocarPaquete, paquetes, CATEGORIAS, categoriaDe,
 } from '../plan/operaciones.js';
 import { preguntar } from './dialogo.js';
 import { abrirMenu } from './objetos.js';
@@ -27,7 +27,7 @@ const FLECHA = '<svg viewBox="0 0 10 10"><path d="M3 1.5 7.5 5 3 8.5z"/></svg>';
  * @param {(id:string|null) => void} o.verEnObjetos abre Objetos filtrado por esa operación
  * @param {() => void} [o.alCambiarPaneles]
  */
-export function iniciarPanelOperaciones({ dibujo, exportar, verEnObjetos, alCambiarPaneles = () => {} }) {
+export function iniciarPanelOperaciones({ dibujo, simbolos = null, exportar, verEnObjetos, alCambiarPaneles = () => {} }) {
   const $ = (id) => document.getElementById(id);
   const panel = $('panel-operaciones'), cuerpo = $('operaciones-cuerpo');
   const plan = () => dibujo.plan();
@@ -54,11 +54,53 @@ export function iniciarPanelOperaciones({ dibujo, exportar, verEnObjetos, alCamb
       <button type="button" class="op-mas" data-acc="menu" aria-label="Más opciones">⋯</button></div>`;
     if (abierto) {
       for (const h of hs) html += nodo(h, niv + 1);
-      if (propios.length) html += `<div class="op-objetos" style="--niv:${niv}">${propios.map(filaObjeto).join('')}</div>`;
+      if (propios.length) html += `<div class="op-objetos" style="--niv:${niv}">${htmlObjetos(propios, o.id)}</div>`;
     }
     return html;
   }
-  const filaObjeto = (el) => `<div class="obj-fila${dibujo.seleccion === el.id ? ' sel' : ''}" data-el="${el.id}" draggable="true" title="Arrástralo a otra operación o fase"><span class="obj-ico">${dibujo.iconoDe(el)}</span><span class="obj-nom">${esc(dibujo.titulo(el))}</span><span class="obj-med">${esc(dibujo.resumen(el))}</span></div>`;
+  /**
+   * Objetos de un paquete agrupados por categoría (unidades, líneas de
+   * coordinación, cometidos, dibujos) y, dentro, por tipo: los iguales van
+   * apilados (como en la APP-6) con su número; al abrir la pila salen uno a uno.
+   */
+  function htmlObjetos(lista, idPaquete) {
+    const cats = new Map(Object.keys(CATEGORIAS).map((k) => [k, new Map()]));
+    for (const el of lista) {
+      const c = cats.get(categoriaDe(el, simbolos?.medidaDe));
+      const k = claveTipo(el);
+      if (!c.has(k)) c.set(k, []);
+      c.get(k).push(el);
+    }
+    let html = '';
+    for (const [cat, tipos] of cats) {
+      if (!tipos.size) continue;
+      const n = [...tipos.values()].reduce((s, x) => s + x.length, 0);
+      html += `<div class="op-cat">${CATEGORIAS[cat].nombre}<small>${n}</small></div>`;
+      for (const [k, els] of tipos) {
+        const ico = dibujo.iconoDe(els[0]);
+        if (els.length === 1) { html += filaObjeto(els[0]); continue; }
+        const clave = `${idPaquete ?? '__sueltos'}|${k}`, ab = Boolean(ui.abiertos[clave]);
+        html += `<div class="obj-fila op-pila" data-pila="${esc(clave)}" data-ids="${els.map((e) => e.id).join(',')}" draggable="true" aria-expanded="${ab}">
+          <span class="obj-ico pila"><i>${ico}</i><i>${ico}</i><i>${ico}</i></span><span class="obj-nom">${esc(nombreTipo(els[0]))}</span><span class="op-n">${els.length}</span></div>`;
+        if (ab) html += `<div class="op-pila-dentro">${els.map(filaObjeto).join('')}</div>`;
+      }
+    }
+    return html;
+  }
+  /** Tipo de un objeto (lo que hace que dos sean «iguales» y se apilen). */
+  function claveTipo(el) {
+    const s = el.simbolo;
+    if (s?.clase === 'unidad') return ['u', s.conjunto ?? '10', s.icono, s.mod1 ?? '', s.mod2 ?? '', s.escalon ?? '', s.identidad, s.movilidad ?? ''].join(':');
+    if (s?.clase === 'medida') return `m:${s.id}:${el.propiedades.bando}`;
+    return `d:${el.tipo}:${el.propiedades.bando}`;
+  }
+  const nombreTipo = (el) => simbolos?.nombreTipo?.(el) ?? dibujo.titulo(el);
+  const filaObjeto = (el) => `<div class="obj-fila${dibujo.seleccion === el.id ? ' sel' : ''}" data-el="${el.id}" draggable="true"><span class="obj-ico">${dibujo.iconoDe(el)}</span><span class="obj-nom">${esc(etiquetaObjeto(el))}</span></div>`;
+  /** Nombre de cada objeto: el suyo, o su designación (1/II/4), o el de su tipo. */
+  const etiquetaObjeto = (el) => {
+    const s = el.simbolo, desig = s?.clase === 'unidad' ? [s.T, s.M].filter(Boolean).join(' / ') : '';
+    return el.propiedades.nombre || (desig ? `${dibujo.titulo(el)} ${desig}` : dibujo.titulo(el));
+  };
 
   function pintar() {
     if (panel.hidden) return;
@@ -77,7 +119,7 @@ export function iniciarPanelOperaciones({ dibujo, exportar, verEnObjetos, alCamb
         <button type="button" class="op-ojo" data-acc="ojo" aria-pressed="${!vista().sueltosOcultos}" title="Mostrar u ocultar lo que no está en ninguna operación">${vista().sueltosOcultos ? OJO_NO : OJO}</button>
         <button type="button" class="op-nom" data-acc="activar" title="Pintar sin operación"><b>Sin operación</b>${dibujo.activo ? '' : '<small>● pintando aquí</small>'}</button>
         <span class="op-cuenta">${sueltos.length}</span><span></span></div>
-        ${ui.abiertos.__sueltos && sueltos.length ? `<div class="op-objetos" style="--niv:0">${sueltos.map(filaObjeto).join('')}</div>` : ''}</div>
+        ${ui.abiertos.__sueltos && sueltos.length ? `<div class="op-objetos" style="--niv:0">${htmlObjetos(sueltos, null)}</div>` : ''}</div>
       <div class="pm-acciones"><button type="button" data-acc="ver-todo">Ver todo</button><button type="button" data-acc="ocultar-todo" title="El mapa sin símbolos">Ocultar todo</button></div>
 `;
     cuerpo.scrollTop = scroll;
@@ -156,6 +198,8 @@ export function iniciarPanelOperaciones({ dibujo, exportar, verEnObjetos, alCamb
     const t = ev.target;
     const pest = t.closest('[data-pestana]');
     if (pest) { ui.pestana = pest.dataset.pestana; guardarUi(); pintar(); return; }
+    const pila = t.closest('.op-pila');
+    if (pila) { ui.abiertos[pila.dataset.pila] = !ui.abiertos[pila.dataset.pila]; guardarUi(); pintar(); return; }
     const fila = t.closest('.obj-fila');
     if (fila) { dibujo.seleccionar(fila.dataset.el, { centrar: true }); return; }
     const acc = t.closest('[data-acc]')?.dataset.acc; if (!acc) return;
@@ -179,8 +223,10 @@ export function iniciarPanelOperaciones({ dibujo, exportar, verEnObjetos, alCamb
   // ---------------------------------------------------------- arrastrar entre paquetes
   let arrastre = null; // { tipo: 'el'|'op', id }
   cuerpo.addEventListener('dragstart', (ev) => {
-    const f = ev.target.closest('.obj-fila[data-el]'), n = ev.target.closest('.op-nodo[data-op]');
-    if (f) arrastre = { tipo: 'el', id: f.dataset.el }; else if (n?.dataset.op) arrastre = { tipo: 'op', id: n.dataset.op }; else return;
+    const f = ev.target.closest('.obj-fila[data-el]'), pl = ev.target.closest('.op-pila'), n = ev.target.closest('.op-nodo[data-op]');
+    if (f) arrastre = { tipo: 'el', ids: [f.dataset.el], id: f.dataset.el };
+    else if (pl) arrastre = { tipo: 'el', ids: pl.dataset.ids.split(','), id: pl.dataset.ids };
+    else if (n?.dataset.op) arrastre = { tipo: 'op', id: n.dataset.op }; else return;
     ev.dataTransfer.effectAllowed = 'move'; ev.dataTransfer.setData('text/plain', arrastre.id);
   });
   cuerpo.addEventListener('dragover', (ev) => {
@@ -199,7 +245,7 @@ export function iniciarPanelOperaciones({ dibujo, exportar, verEnObjetos, alCamb
     if (!n || !a) return;
     ev.preventDefault();
     const destino = n.dataset.op || null, o = destino ? buscarPaquete(plan(), destino) : null;
-    if (a.tipo === 'el') { cambio(o ? `Meter en «${o.nombre}»` : 'Sacar de la operación', (p) => asignar(p, [a.id], destino)); if (destino) { ui.abiertos[destino] = true; guardarUi(); } }
+    if (a.tipo === 'el') { cambio(o ? `Meter en «${o.nombre}»` : 'Sacar de la operación', (p) => asignar(p, a.ids, destino)); if (destino) { ui.abiertos[destino] = true; guardarUi(); } }
     else if (a.id !== destino) { cambio(o ? `Meter «${buscarPaquete(plan(), a.id)?.nombre}» en «${o.nombre}»` : 'Sacar al primer nivel', (p) => moverPaquete(p, a.id, destino)); if (destino) { ui.abiertos[destino] = true; guardarUi(); } }
   });
   cuerpo.addEventListener('dragend', () => { arrastre = null; cuerpo.querySelectorAll('.soltar').forEach((x) => x.classList.remove('soltar')); });

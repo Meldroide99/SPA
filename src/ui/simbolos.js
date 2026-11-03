@@ -678,6 +678,14 @@ export function iniciarSimbolos({ L, mapa, elegirHerramienta, herramienta = () =
     get abierto() { return !panel.hidden; },
     get armado() { return armadoAhora(); },
     actualizarAviso: () => pintarAviso(),
+    desarmar: () => desarmar(),
+    /** Nombre del tipo (sin designación): para agrupar objetos iguales. */
+    nombreTipo(el) {
+      const s = el.simbolo;
+      if (s?.clase === 'unidad') return nombreUnidad({ ...s, T: '', M: '' });
+      if (s?.clase === 'medida') return medida(s.id)?.nombre ?? 'Línea';
+      return { punto: 'Puntos', linea: 'Líneas', area: 'Áreas', circulo: 'Círculos' }[el.tipo] ?? 'Dibujo';
+    },
     get entidades() { return ENTIDADES; },
   };
 }

@@ -59,7 +59,9 @@ const caja = await pag.locator('#mapa').boundingBox();
 const en = (fx, fy) => ({ x: caja.x + caja.width * fx, y: caja.y + caja.height * fy });
 const clicEn = async (fx, fy, opc) => { const p = en(fx, fy); await pag.mouse.click(p.x, p.y, opc); await pag.waitForTimeout(60); };
 const plan = () => pag.evaluate(() => JSON.parse(JSON.stringify(window.__spa.dibujo.plan())));
-const motor = (codigo) => pag.evaluate(codigo);
+const motor = (codigo, arg) => pag.evaluate(codigo, arg);
+/** Capas se recoge sola (p. ej. al abrirse la ficha): se abre antes de usarla. */
+const abrirCapas = async () => { if (await motor(() => window.__spa.ventanas.recogida(document.getElementById('panel-capas')))) { await motor(() => window.__spa.ventanas.recoger(document.getElementById('panel-capas'), false)); await pag.waitForTimeout(500); } };
 /** La cabecera se esconde sin uso: se acerca el ratón al borde de arriba. */
 const cabecera = async () => { await pag.mouse.move(700, 24); await pag.waitForTimeout(1250); };
 /** Las herramientas se esconden: se acerca el ratón arriba y luego se pulsa. */
@@ -215,7 +217,7 @@ ok(lienzos > 0, `GeoTIFF reproyectados y pintados (${lienzos} teselas con imagen
 if (CAPTURAS) await pag.screenshot({ path: 'docs/capturas/v4-mapas.png' });
 
 // ---------------------------------------------------------------- capas: detalle MTN25, híbrido, relieve
-await pag.click('.fondo[data-id="mtn"]');
+await abrirCapas(); await pag.click('.fondo[data-id="mtn"]');
 await vista(40.79, -4.03, 14); await pag.waitForTimeout(400);
 pedidas.length = 0;
 const abrirAjuste = async (sec) => {
@@ -239,7 +241,7 @@ const colorCuad = () => motor(() => { const p = document.querySelector('.leaflet
 const cuadMtn = await colorCuad();
 ok(await pag.locator('.fondo[data-id="ortofoto"], .fondo[data-id="satelite"], input[data-id="vertices"]').count() === 0, 'Sin ortofoto suelta, sin satélite suelto y sin vértices geodésicos');
 pedidas.length = 0;
-await pag.click('.fondo[data-id="hibrido"]'); await pag.waitForTimeout(500);
+await abrirCapas(); await pag.click('.fondo[data-id="hibrido"]'); await pag.waitForTimeout(500);
 ok(pedidas.some((u) => /lyrs=s&/.test(u)) && pedidas.some((u) => /lyrs=h&/.test(u)), 'Híbrido: imagen de Google + rótulos');
 const cuadHib = await colorCuad();
 ok(!cuadMtn || (cuadMtn.c !== '#FFFFFF' && !cuadMtn.claro), 'Cuadrícula oscura sobre el topográfico');
@@ -253,15 +255,15 @@ await pag.click('#imagen-fuente [data-v="google"]');
 await cerrarAjustes();
 pedidas.length = 0;
 await vista(40.79, -4.03, 13);
-await pag.click('.fondo[data-id="relieve"]'); await pag.waitForTimeout(1500);
+await abrirCapas(); await pag.click('.fondo[data-id="relieve"]'); await pag.waitForTimeout(1500);
 const relieve = await motor(() => [...document.querySelectorAll('.leaflet-tile-pane canvas')].filter((c) => {
   const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; for (let k = 3; k < d.length; k += 64) if (d[k]) return true; return false; }).length);
 ok(relieve > 0, `Relieve calculado con el MDT y pintado (${relieve} teselas)`);
 ok(pedidas.some((u) => /CoverageId=Elevacion4258_25&.*FORMAT=application\/asc&SCALESIZE/.test(u)), 'A zoom 13 el relieve pide el MDT (malla del zoom) en ASCII Grid');
-await pag.click('.fondo[data-id="mtn"]');
+await abrirCapas(); await pag.click('.fondo[data-id="mtn"]');
 
 // ---------------------------------------------------------------- mapa importado: encontrarlo y ponerlo encima
-await pag.click('.seccion[data-sec="mapas"] > summary');
+await abrirCapas(); await pag.click('.seccion[data-sec="mapas"] > summary');
 await vista(40.0, -1.0, 8); await pag.waitForTimeout(300);
 await pag.click('#mapas-importados .mi-nom >> text=/sqlite/'); await pag.waitForTimeout(1300);
 const selMapa = await motor(() => { const m = window.__spa.importar.mapas.find((x) => /sqlite/.test(x.nombre)); return { pane: m.capa.options.pane, marco: document.querySelectorAll('.leaflet-marcoMapa-pane .marco-mapa').length, zoom: window.__spa.mapa.getZoom(), dentro: window.__spa.mapa.getBounds().contains([m.limites.sur, m.limites.oeste]) }; });
@@ -317,8 +319,8 @@ ok(tras.g === 2 && tras.m === 4 && tras.p === 3, `Tras recargar siguen el plan (
   const { contarTeselas } = await import('../src/datos/creador.js');
   await motor(() => { window.showSaveFilePicker = undefined; window.showDirectoryPicker = undefined; }); // descarga normal
   await vista(40.84, -3.42, 15); await pag.waitForTimeout(300);
-  await pag.click('.seccion[data-sec="mapas"] > summary').catch(() => {});
-  if (!(await pag.locator('#btn-crear-mapa').isVisible())) await pag.click('.seccion[data-sec="mapas"] > summary');
+  await abrirCapas(); await pag.click('.seccion[data-sec="mapas"] > summary').catch(() => {});
+  if (!(await pag.locator('#btn-crear-mapa').isVisible())) { await abrirCapas(); await pag.click('.seccion[data-sec="mapas"] > summary'); }
   await pag.click('#btn-crear-mapa');
   ok(await pag.locator('#panel-creador').isVisible(), 'Creador de mapas: se abre el panel');
   // Zona irregular dibujada con clics (5 vértices, cóncava)
@@ -368,6 +370,7 @@ im=Image.open(sys.argv[1]); a=im.getchannel('A'); print(im.mode, im.size[0]%256,
 
 // ---------------------------------------------------------------- símbolos APP-6(E)
 {
+  await motor(() => window.__spa.ventanas.recoger(document.getElementById('panel-capas'), true)); await pag.waitForTimeout(1700);
   await vista(40.80, -4.02, 14); await pag.waitForTimeout(300);
   const n0 = await motor(() => window.__spa.dibujo.plan().elementos.length);
   const caja = await pag.locator('#mapa').boundingBox();
@@ -586,8 +589,9 @@ im=Image.open(sys.argv[1]); a=im.getchannel('A'); print(im.mode, im.size[0]%256,
   const pts = await motor((id) => window.__spa.dibujo.plan().elementos.filter((e) => e.paquete && (e.paquete === id || window.__spa.dibujo.plan().operaciones.find((o) => o.id === e.paquete)?.padre === id || window.__spa.dibujo.plan().operaciones.find((o) => o.id === window.__spa.dibujo.plan().operaciones.find((x) => x.id === e.paquete)?.padre)?.padre === id)).map((e) => { const p = window.__spa.dibujo.puntosDe(e)[0]; const q = window.__spa.mapa.latLngToContainerPoint([p.lat, p.lon]); const r = document.getElementById('mapa').getBoundingClientRect(); return [q.x + r.left, q.y + r.top]; }), op.id);
   const xs = pts.map((q) => q[0]), ys = pts.map((q) => q[1]);
   const [x0, x1, y0, y1] = [Math.min(...xs) - 40, Math.max(...xs) + 40, Math.min(...ys) - 40, Math.max(...ys) + 40];
-  await pag.mouse.move(x0, y0); await pag.mouse.down();
-  for (const [x, y] of [[x1, y0], [x1, y1], [x0, y1], [x0, y0 + 5]]) await pag.mouse.move(x, y, { steps: 8 });
+  if (await pag.isVisible('#panel-simbolos')) await pag.click('#panel-simbolos [data-s="cerrar"]');
+  await pag.mouse.move(x1 - 60, y1 + 30, { steps: 4 }); await pag.mouse.move(x1, y1, { steps: 3 }); await pag.waitForTimeout(200); await pag.mouse.down();
+  for (const [x, y] of [[x0, y1], [x0, y0], [x1, y0], [x1, y1 - 5]]) await pag.mouse.move(x, y, { steps: 8 });
   await pag.mouse.up(); await pag.waitForTimeout(400);
   ok((await pag.locator('#lazo-cuerpo [data-item]').count()) >= 3 && /a mano/.test(await pag.textContent('#lazo-cuerpo')), 'Lazo a mano: selecciona lo que queda dentro del dibujo');
   await pag.click('#lazo-cuerpo [data-formato="zip"]');
@@ -602,6 +606,46 @@ im=Image.open(sys.argv[1]); a=im.getchannel('A'); print(im.mode, im.size[0]%256,
   const anchos = await motor(() => [...document.querySelectorAll('.leaflet-elementos-pane .simbolo-unidad svg')].slice(-2).map((x) => Math.round(x.getBoundingClientRect().width)));
   ok(anchos.length === 2 && anchos[0] === anchos[1], `Mismo tamaño aunque se pusieran a zooms distintos (${anchos.join(' = ')} px)`);
   ok((await pag.locator('.leaflet-rotulos-pane .etq-linea').count()) >= 1 && (await pag.locator('.leaflet-elementos-pane .etq-linea').count()) === 0, 'Nombres de las líneas en su capa, por encima de las líneas (no tachados)');
+
+  // v0.9.2 — Regla: botón derecho deshace, doble clic termina, distancia sobre cada tramo; al pincharla, su ficha como un track
+  await vista(40.80, -4.02, 14); await pag.waitForTimeout(300);
+  await herr('[data-herr="medir"]');
+  for (const [dx, dy] of [[-200, 100], [0, 60], [150, 120]]) { await pag.mouse.click(cx + dx, cy + dy); await pag.waitForTimeout(80); }
+  await pag.mouse.click(cx + 150, cy + 120, { button: 'right' }); await pag.waitForTimeout(100);
+  ok((await motor(() => window.__spa.regla.medida.length)) === 2, 'Regla: el botón derecho quita el último punto');
+  await pag.mouse.click(cx + 220, cy + 160); await pag.waitForTimeout(80); await pag.mouse.dblclick(cx + 220, cy + 160); await pag.waitForTimeout(300);
+  ok((await motor(() => window.__spa.regla.terminadas.at(-1)?.puntos.length)) === 3 && (await motor(() => window.__spa.regla.medida.length)) === 0, 'Regla: doble clic termina la medida (sin puntos repetidos)');
+  ok((await pag.locator('.leaflet-rotulos-pane .etq-regla').count()) === 2, 'Distancia de cada tramo encima de la línea, en su mitad (vidrio)');
+  const tr = await motor(() => { const p = window.__spa.regla.terminadas.at(-1).puntos; const a = window.__spa.mapa.latLngToContainerPoint([p[0].lat, p[0].lon]), b = window.__spa.mapa.latLngToContainerPoint([p[1].lat, p[1].lon]); const r = document.getElementById('mapa').getBoundingClientRect(); return { x: (a.x + b.x) / 2 + r.left, y: (a.y + b.y) / 2 + r.top }; });
+  await pag.mouse.click(tr.x, tr.y); await pag.waitForTimeout(800);
+  ok(await pag.isVisible('#panel-elemento [data-regla="guardar"]') && await pag.locator('#panel-elemento #el-perfil svg').count() === 1 && /Distancia/.test(await pag.textContent('#panel-elemento')), 'Al pinchar la medida: su ficha como la de un track (distancia, desnivel y perfil)');
+  await pag.click('#panel-elemento [data-regla="quitar"]');
+  // Botón derecho con una unidad elegida = Esc: deja de ponerla
+  await motor(() => window.__spa.simbolos?.abrir?.('unidades'));
+  await pag.hover('#btn-app6').catch(() => {}); await herr('#btn-app6'); await pag.click('#menu-app6 [data-simbolos="unidades"]').catch(() => {});
+  await pag.waitForTimeout(200);
+  const n0 = await motor(() => window.__spa.dibujo.plan().elementos.length);
+  await pag.mouse.click(cx - 100, cy + 200, { button: 'right' }); await pag.waitForTimeout(100);
+  await pag.mouse.click(cx - 100, cy + 200); await pag.waitForTimeout(200);
+  ok((await motor(() => window.__spa.dibujo.plan().elementos.length)) === n0, 'Botón derecho con una unidad elegida: deja de ponerla (como Esc)');
+  if (await pag.isVisible('#panel-simbolos')) await pag.click('#panel-simbolos [data-s="cerrar"]');
+  // Brújula con el norte de cuadrícula
+  ok(await pag.isVisible('#brujula') && /Norte de cuadrícula/.test(await motor(() => document.getElementById('br-datos').textContent)), 'Brújula arriba a la izquierda (norte geográfico y de cuadrícula)');
+  // Filtro de Objetos: solo operaciones (sin fases); Operaciones: objetos agrupados y apilados, sin coordenadas
+  if (!(await pag.isVisible('#panel-objetos'))) await herr('#btn-objetos');
+  const opciones = await motor(() => [...document.querySelectorAll('#obj-op option')].map((o) => o.textContent));
+  ok(!opciones.some((t) => /›/.test(t)), `Filtro de Objetos: solo operaciones, sin sus fases (${opciones.length - 2})`);
+  if (!(await pag.isVisible('#panel-operaciones'))) await herr('#btn-operaciones');
+  await motor((id) => { const d = window.__spa.dibujo; for (let i = 0; i < 3; i++) { const c = window.__spa.mapa.getCenter(); const el = d.crearConSimbolo({ clase: 'unidad', conjunto: '10', identidad: 'amigo', icono: '121100', escalon: 'seccion', T: String(i + 1) }, [{ lat: c.lat + i * 0.001, lon: c.lng }], 'punto', 'S'); d.cambio('meter', (p) => { p.elementos.find((e) => e.id === el.id).paquete = id; }); } }, op.id);
+  await motor((id) => { window.__spa.operaciones.mostrar(id); }, op.id); await pag.waitForTimeout(300);
+  ok((await pag.locator('#operaciones-cuerpo .op-pila .op-n', { hasText: '3' }).count()) === 1 && (await pag.locator('#operaciones-cuerpo .op-cat', { hasText: 'Unidades' }).count()) >= 1, 'Operaciones: objetos por tipo; tres secciones iguales, apiladas con su número');
+  ok((await pag.locator('#operaciones-cuerpo .op-objetos .obj-med').count()) === 0, 'Operaciones: sin coordenadas al lado de cada objeto');
+  // Capas encoge si se cierran sus desplegables
+  for (const d of ['fondo', 'mapas', 'visual']) await motor((k) => { document.querySelector(`.seccion[data-sec="${k}"]`).open = false; }, d);
+  await pag.waitForTimeout(300);
+  const hCapas = (await pag.locator('#panel-capas').boundingBox()).height;
+  ok(hCapas < 200, `Capas encoge con los desplegables cerrados (${hCapas.toFixed(0)} px)`);
+  await motor(() => { document.querySelector('.seccion[data-sec="fondo"]').open = true; });
 
   // Tema automático: oscuro sobre el híbrido
   await motor(() => document.querySelector('#panel-capas .fondo[data-id="hibrido"]').click()); await pag.waitForTimeout(150);

@@ -35,7 +35,7 @@
             <div class="seg seg-ancho" data-ap="reposo"><button type="button" data-v="0">Nunca</button><button type="button" data-v="4">4 s</button><button type="button" data-v="8">8 s</button><button type="button" data-v="15">15 s</button><button type="button" data-v="30">30 s</button></div>
             <label class="sup sup-auto"><input type="checkbox" id="ap-apartar"><span class="txt"><b>Apartar ventanas al poner objetos</b></span></label>
             <label class="sup sup-auto"><input type="checkbox" id="ap-barra"><span class="txt"><b>Barras siempre visibles</b></span></label>
-            <label class="sup sup-auto"><input type="checkbox" id="ap-altitud"><span class="txt"><b>Altitud junto a las coordenadas</b></span></label>
+            <label class="sup sup-auto"><input type="checkbox" id="ap-altitud"><span class="txt"><b>Altitud junto a las coordenadas</b><small>Sobre el nivel del mar · MDT05 del IGN · al metro</small></span></label>
             <div class="pm-acciones"><button type="button" id="ap-recolocar">Recolocar ventanas</button><button type="button" id="ap-defecto">Valores de fábrica</button></div>
           </div>
         </details>
@@ -92,6 +92,17 @@
     <div id="mapa" aria-label="Mapa"></div>
 
     <div class="herr-zona" id="herr-zona"></div>
+    <div class="brujula vidrio" id="brujula" role="img" aria-label="Norte">
+      <svg viewBox="0 0 40 40" aria-hidden="true">
+        <g class="br-marcas"><path d="M20 3.5v3M20 33.5v3M3.5 20h3M33.5 20h3"/></g>
+        <g class="br-cuad" id="br-cuad"><path d="M20 20V7.5"/><path d="M17.8 9.6 20 7.2l2.2 2.4"/></g>
+        <path class="br-norte" d="M20 8 23.2 20H16.8z"/>
+        <path class="br-sur" d="M20 32 16.8 20h6.4z"/>
+        <circle cx="20" cy="20" r="1.6" class="br-eje"/>
+      </svg>
+      <span class="br-n">N</span>
+      <div class="br-datos" id="br-datos"></div>
+    </div>
     <button type="button" class="herr-pista" id="herr-pista" title="Herramientas (acerca el ratón arriba)"><span id="herr-actual">Mover</span><svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button>
     <div class="herramientas" id="herramientas" role="toolbar" aria-label="Herramientas">
       <div class="h-grupo">
@@ -191,9 +202,9 @@
     <section class="ventana panel-medida panel-creador" id="panel-creador" data-ventana="creador" hidden aria-label="Creador de mapas"></section>
     <section class="ventana panel-simbolos" id="panel-simbolos" data-ventana="simbolos" hidden aria-label="Símbolos"></section>
     <section class="ventana panel-medida" id="panel-medida" data-ventana="regla" hidden aria-live="polite">
-      <div class="pm-cab"><strong>Regla</strong><span id="pm-ayuda">Toca el mapa para añadir puntos</span></div>
+      <div class="pm-cab v-cab"><strong>Regla</strong><span class="v-sub" id="pm-ayuda"></span></div>
       <div id="pm-cuerpo"></div>
-      <div class="pm-acciones"><button type="button" id="pm-deshacer">Quitar último</button><button type="button" id="pm-nueva">Nueva medida</button></div>
+      <div class="pm-acciones"><button type="button" id="pm-deshacer">Quitar último</button><button type="button" id="pm-nueva">Nueva</button></div>
     </section>
     <div class="pildoras" id="pildoras">
       <button type="button" class="pildora pildora-op vidrio" id="pildora-op" hidden title="Operación activa"></button>

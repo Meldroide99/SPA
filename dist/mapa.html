@@ -1390,8 +1390,8 @@ body.barra-fija .herr-pista { opacity: 0; pointer-events: none; }
 .v-pin { flex: none; border: 0; background: none; width: 22px; height: 22px; border-radius: 50%; padding: 3px; cursor: pointer; color: var(--gris-2); opacity: .55; transition: opacity .15s; }
 .v-pin svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linejoin: round; }
 .ventana:hover .v-pin, .v-pin[aria-pressed="true"] { opacity: 1; }
-.v-pin[aria-pressed="true"] { color: var(--acento); }
-.v-pin[aria-pressed="true"] svg { fill: currentColor; fill-opacity: .25; }
+.v-pin[aria-pressed="true"] { color: #fff; background: var(--acento); opacity: 1; box-shadow: 0 1px 4px -1px rgba(12,95,168,.6); }
+.v-pin[aria-pressed="true"] svg { fill: currentColor; fill-opacity: .35; stroke: currentColor; }
 .pm-cab, .pp-cab { cursor: grab; user-select: none; gap: 8px; align-items: center; }
 .pm-cab strong, .pp-cab strong { font: 600 14.5px/1.2 var(--sans); letter-spacing: -.01em; }
 .pm-cab > span:not(.v-sub) { margin-left: auto; font-size: 11.5px; }
@@ -1411,17 +1411,17 @@ body.v-cursor-nesw, body.v-cursor-nesw * { cursor: nesw-resize !important; }
 .panel-capas.v-recogida { padding: 6px; border-radius: 999px; }
 .panel-capas.v-recogida .v-cab { padding: 2px; min-height: 0; }
 .panel-capas.v-recogida .v-cab > :not(svg) { display: none; }
-.panel-capas.v-recogida .v-cab svg { width: 20px; height: 20px; }
+.panel-capas.v-recogida .v-cab > svg { width: 20px; height: 20px; }
 .ventana.v-recogida > :first-child { margin: 0 !important; border: 0 !important; padding-bottom: 0 !important; }
 /* Al poner objetos: casi transparentes y se puede pinchar el mapa a través */
 body.v-apartadas .ventana:not(.v-despierta), body.v-apartadas .pildora-op { opacity: .16; pointer-events: none; filter: saturate(.6); transition-duration: .8s; }
 body.v-apartadas .ventana.v-despierta { opacity: 1; }
-body.arrastrando .ventana { opacity: .12 !important; pointer-events: none !important; transition: opacity .12s; }
+body.arrastrando .ventana { opacity: .12 !important; pointer-events: none !important; transition: opacity .12s !important; }
 
 /* Tamaños por defecto (más compactos) */
 .panel-capas { top: var(--sup); right: 12px; width: 250px; max-height: calc(100% - var(--sup) - 64px); padding: 6px 4px 6px; }
 .panel-capas .v-cab { padding: 2px 8px 4px; font: inherit; width: auto; }
-.panel-capas .v-cab svg { width: 17px; height: 17px; fill: none; stroke: var(--oro); stroke-width: 1.6; flex: none; }
+.panel-capas .v-cab > svg { width: 17px; height: 17px; fill: none; stroke: var(--oro); stroke-width: 1.6; flex: none; }
 .panel-capas .panel-cuerpo { padding: 0 6px 6px; }
 .panel-medida { top: var(--ficha-top); left: auto; right: 12px; width: min(312px, calc(100% - 24px)); max-height: calc(100% - var(--ficha-top) - 64px); padding: 10px 12px; }
 .panel-creador { left: 12px; right: auto; top: var(--sup-izq); width: min(350px, calc(100% - 24px)); max-height: calc(100% - var(--sup-izq) - 64px); }
@@ -1624,6 +1624,46 @@ body.tema-oscuro .barra-sup .buscar input { color: #fff; }
 .aviso-breve button { border: 0; background: none; color: #8EC5FF; font: 600 13px var(--sans); cursor: pointer; padding: 0; }
 .aviso-breve button:hover { text-decoration: underline; }
 
+/* Regla: distancia de cada tramo encima de la línea */
+.etq-regla { font: 600 11.5px var(--mono); letter-spacing: .01em; }
+.etq-regla.tenue { opacity: .8; }
+
+/* Operaciones: objetos por categoría y tipo; los iguales, apilados */
+.op-cat { display: flex; align-items: baseline; gap: 6px; font-size: 10.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--gris); padding: 6px 4px 2px; }
+.op-cat small { font: 500 10.5px var(--mono); letter-spacing: 0; }
+.op-objetos .obj-fila { grid-template-columns: 30px minmax(0, 1fr) auto; }
+.op-pila { cursor: pointer; }
+.op-pila .op-n { font: 600 11px var(--mono); color: var(--tinta-2); background: var(--hundido); border-radius: 999px; padding: 1px 7px; }
+.obj-ico.pila { position: relative; width: 30px; height: 22px; }
+.obj-ico.pila i { position: absolute; left: 0; top: 0; line-height: 0; }
+.obj-ico.pila i:nth-child(2) { left: 3px; top: 3px; }
+.obj-ico.pila i:nth-child(3) { left: 6px; top: 6px; }
+.obj-ico.pila i:not(:last-child) { opacity: .55; }
+.obj-ico.pila svg { max-width: 22px; max-height: 16px; }
+.op-pila-dentro { padding-left: 16px; display: grid; gap: 1px; }
+
+/* Brújula (arriba a la izquierda): norte geográfico y, en azul, el de cuadrícula */
+.brujula { position: absolute; z-index: 1006; left: 12px; top: var(--sup); width: 40px; height: 40px; border-radius: 50%; zoom: var(--escala-ui); display: grid; place-items: center; transition: width .4s var(--curva), border-radius .4s var(--curva); overflow: hidden; }
+.brujula svg { width: 34px; height: 34px; flex: none; }
+.br-marcas path { stroke: var(--gris-2); stroke-width: 1.4; stroke-linecap: round; }
+.br-norte { fill: #C0392B; }
+.br-sur { fill: var(--gris-2); opacity: .55; }
+.br-eje { fill: var(--superficie); stroke: var(--gris); stroke-width: .8; }
+.br-cuad path { fill: none; stroke: #2E7BD6; stroke-width: 1.3; stroke-linecap: round; stroke-linejoin: round; }
+.br-cuad { transform-origin: 20px 20px; transition: transform .6s var(--curva); }
+.br-n { position: absolute; top: -1px; left: 50%; transform: translateX(-50%); font: 700 7.5px var(--sans); color: #C0392B; pointer-events: none; display: none; }
+.br-datos { display: none; }
+/* Al pasar el ratón se abre y da los nortes */
+.brujula:hover { width: 188px; border-radius: 22px; grid-template-columns: 40px 1fr; justify-items: start; }
+.brujula:hover .br-datos { display: grid; gap: 1px; font-size: 10.5px; line-height: 1.25; color: var(--tinta-2); white-space: nowrap; padding-right: 10px; }
+.br-datos b { font: 600 11px var(--mono); color: var(--tinta); }
+.br-datos .c { color: #2E7BD6; }
+.herr-pista { left: 60px; }
+.herramientas { left: 60px; }
+@media (max-width: 760px) { .herramientas { max-width: calc(100% - 72px); } }
+.brujula { z-index: 1012; }
+.brujula:hover { --vidrio-op: .9; }
+
 </style>
 </head>
 <body class="app-mapa">
@@ -1653,7 +1693,7 @@ body.tema-oscuro .barra-sup .buscar input { color: #fff; }
             <div class="seg seg-ancho" data-ap="reposo"><button type="button" data-v="0">Nunca</button><button type="button" data-v="4">4 s</button><button type="button" data-v="8">8 s</button><button type="button" data-v="15">15 s</button><button type="button" data-v="30">30 s</button></div>
             <label class="sup sup-auto"><input type="checkbox" id="ap-apartar"><span class="txt"><b>Apartar ventanas al poner objetos</b></span></label>
             <label class="sup sup-auto"><input type="checkbox" id="ap-barra"><span class="txt"><b>Barras siempre visibles</b></span></label>
-            <label class="sup sup-auto"><input type="checkbox" id="ap-altitud"><span class="txt"><b>Altitud junto a las coordenadas</b></span></label>
+            <label class="sup sup-auto"><input type="checkbox" id="ap-altitud"><span class="txt"><b>Altitud junto a las coordenadas</b><small>Sobre el nivel del mar · MDT05 del IGN · al metro</small></span></label>
             <div class="pm-acciones"><button type="button" id="ap-recolocar">Recolocar ventanas</button><button type="button" id="ap-defecto">Valores de fábrica</button></div>
           </div>
         </details>
@@ -1710,6 +1750,17 @@ body.tema-oscuro .barra-sup .buscar input { color: #fff; }
     <div id="mapa" aria-label="Mapa"></div>
 
     <div class="herr-zona" id="herr-zona"></div>
+    <div class="brujula vidrio" id="brujula" role="img" aria-label="Norte">
+      <svg viewBox="0 0 40 40" aria-hidden="true">
+        <g class="br-marcas"><path d="M20 3.5v3M20 33.5v3M3.5 20h3M33.5 20h3"/></g>
+        <g class="br-cuad" id="br-cuad"><path d="M20 20V7.5"/><path d="M17.8 9.6 20 7.2l2.2 2.4"/></g>
+        <path class="br-norte" d="M20 8 23.2 20H16.8z"/>
+        <path class="br-sur" d="M20 32 16.8 20h6.4z"/>
+        <circle cx="20" cy="20" r="1.6" class="br-eje"/>
+      </svg>
+      <span class="br-n">N</span>
+      <div class="br-datos" id="br-datos"></div>
+    </div>
     <button type="button" class="herr-pista" id="herr-pista" title="Herramientas (acerca el ratón arriba)"><span id="herr-actual">Mover</span><svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button>
     <div class="herramientas" id="herramientas" role="toolbar" aria-label="Herramientas">
       <div class="h-grupo">
@@ -1809,9 +1860,9 @@ body.tema-oscuro .barra-sup .buscar input { color: #fff; }
     <section class="ventana panel-medida panel-creador" id="panel-creador" data-ventana="creador" hidden aria-label="Creador de mapas"></section>
     <section class="ventana panel-simbolos" id="panel-simbolos" data-ventana="simbolos" hidden aria-label="Símbolos"></section>
     <section class="ventana panel-medida" id="panel-medida" data-ventana="regla" hidden aria-live="polite">
-      <div class="pm-cab"><strong>Regla</strong><span id="pm-ayuda">Toca el mapa para añadir puntos</span></div>
+      <div class="pm-cab v-cab"><strong>Regla</strong><span class="v-sub" id="pm-ayuda"></span></div>
       <div id="pm-cuerpo"></div>
-      <div class="pm-acciones"><button type="button" id="pm-deshacer">Quitar último</button><button type="button" id="pm-nueva">Nueva medida</button></div>
+      <div class="pm-acciones"><button type="button" id="pm-deshacer">Quitar último</button><button type="button" id="pm-nueva">Nueva</button></div>
     </section>
     <div class="pildoras" id="pildoras">
       <button type="button" class="pildora pildora-op vidrio" id="pildora-op" hidden title="Operación activa"></button>
@@ -5941,15 +5992,6 @@ function capaCuadricula(L, mapa, opc = {}) {
     const tam = mapa.getSize();
     const rects = obstaculos();
     const tapa = (p, ax, ay) => rects.some((r) => p.x + ax > r.x0 && p.x - ax < r.x1 && p.y + ay > r.y0 && p.y - ay < r.y1);
-    // Cuadrados de 100 km a la vista: en una etiqueta en la esquina de abajo a la izquierda (no en medio del mapa)
-    const cuadrados = [...new Set(etiquetas.filter((et) => et.eje === 'cuadrado').map((et) => et.texto))];
-    if (cuadrados.length) {
-      const porZona = new Map();
-      for (const t of cuadrados) { const [z, c] = t.split(' '); if (!porZona.has(z)) porZona.set(z, []); porZona.get(z).push(c); }
-      const texto = [...porZona].map(([z, cs]) => `${z} ${cs.join(' · ')}`).join('   ');
-      const pos = L.point(12, tam.y - 96);
-      L.marker(mapa.containerPointToLatLng(pos), { pane: panel, interactive: false, icon: L.divIcon({ className: 'etq-ancla', html: `<span class="cuad-100k">${texto}</span>`, iconSize: null }) }).addTo(grupo);
-    }
     for (const et of etiquetas) {
       if (et.eje === 'cuadrado') continue;
       const texto = textoEtiqueta(et.valor, et.paso);
@@ -6744,7 +6786,7 @@ function htmlTrazo({ trazo, grosor }, campo) {
 
 /** Línea de altitud de un punto (se rellena cuando llega el dato). */
 function htmlAltitud(id = 'el-altitud') {
-  return `<div class="el-altitud"><span class="el-et">Altitud</span><b id="${id}">…</b><small>sobre el nivel del mar · MDT05 del IGN</small></div>`;
+  return `<div class="el-altitud"><span class="el-et">Altitud</span><b id="${id}">…</b></div>`;
 }
 async function rellenarAltitud(alturas, p, id = 'el-altitud') {
   const caja = () => document.getElementById(id);
@@ -6760,8 +6802,8 @@ async function rellenarAltitud(alturas, p, id = 'el-altitud') {
 
 /** Bloque de distancia + desnivel + perfil para una línea. */
 function htmlLinea(puntos, fmt) {
-  return `<div class="pm-total"><div class="grande">${fmt.metros(longitudLinea(puntos))}</div><div class="peq">Distancia total, sobre el terreno a nivel del mar</div></div>
-    <div class="el-desnivel" id="el-desnivel"><span>Calculando alturas…</span></div>
+  return `<div class="pm-total"><div class="grande">${fmt.metros(longitudLinea(puntos))}</div><div class="peq">Distancia</div></div>
+    <div class="el-desnivel" id="el-desnivel"><span>…</span></div>
     <div class="perfil" id="el-perfil"></div>`;
 }
 
@@ -6783,7 +6825,7 @@ async function rellenarPerfil(puntos, alturas, clave, alMover) {
   const des = document.getElementById('el-desnivel'), caja = document.getElementById('el-perfil');
   if (!des || !caja) return r;
   const s = r.resumen;
-  if (s.min === null) { des.innerHTML = '<span>Sin datos de altura (fuera de España o sin conexión con el IGN)</span>'; caja.innerHTML = ''; return r; }
+  if (s.min === null) { des.innerHTML = '<span>Sin datos de altura</span>'; caja.innerHTML = ''; return r; }
   des.innerHTML = `<span title="Desnivel acumulado de subida">↗ <b>${Math.round(s.subida)} m</b></span><span title="Desnivel acumulado de bajada">↘ <b>${Math.round(s.bajada)} m</b></span>
     <span title="Altitud mínima y máxima">${Math.round(s.min)}–${Math.round(s.max)} m</span><span title="Altitud inicial y final">${Math.round(s.inicio)} → ${Math.round(s.fin)} m</span>`;
   pintarPerfil(caja, r.m, alMover);
@@ -13845,6 +13887,14 @@ function iniciarSimbolos({ L, mapa, elegirHerramienta, herramienta = () => 'cons
     get abierto() { return !panel.hidden; },
     get armado() { return armadoAhora(); },
     actualizarAviso: () => pintarAviso(),
+    desarmar: () => desarmar(),
+    /** Nombre del tipo (sin designación): para agrupar objetos iguales. */
+    nombreTipo(el) {
+      const s = el.simbolo;
+      if (s?.clase === 'unidad') return nombreUnidad({ ...s, T: '', M: '' });
+      if (s?.clase === 'medida') return medida(s.id)?.nombre ?? 'Línea';
+      return { punto: 'Puntos', linea: 'Líneas', area: 'Áreas', circulo: 'Círculos' }[el.tipo] ?? 'Dibujo';
+    },
     get entidades() { return ENTIDADES; },
   };
 }
@@ -13918,7 +13968,8 @@ function iniciarVentanas({ reposo, apartar, colocando, escala = () => 1, alCambi
     }
     if (v.classList.contains('v-recogida')) return; // recogida: su tamaño es el de la cabecera
     if (g?.w) { v.style.width = `${g.w / k}px`; v.style.maxWidth = 'none'; } else { v.style.width = ''; v.style.maxWidth = ''; }
-    if (g?.h) { v.style.height = `${Math.min(g.h, cont.getBoundingClientRect().height - (limitar(v, g).y ?? 0) - 8) / k}px`; v.style.maxHeight = 'none'; v.classList.add('v-alto'); }
+    // El alto elegido es un tope: si el contenido es menor (desplegables cerrados), la ventana encoge sola
+    if (g?.h) { v.style.height = ''; v.style.maxHeight = `${Math.min(g.h, cont.getBoundingClientRect().height - (limitar(v, g).y ?? 0) - 8) / k}px`; v.classList.add('v-alto'); }
     else {
       v.style.height = ''; v.classList.remove('v-alto');
       // Movida: que no se salga por abajo (el alto que quede hasta el borde)
@@ -13944,11 +13995,14 @@ function iniciarVentanas({ reposo, apartar, colocando, escala = () => 1, alCambi
       if (!v.classList.contains('v-alto') && !recogida(v)) v.style.maxHeight = `${Math.max(160, c.height - supIzq - 64) / k}px`;
       x += v.getBoundingClientRect().width + 10;
     }
-    let y = sup;
+    let y = sup, derecha = 12, anchoCol = 0;
     for (const v of libres(DER)) {
-      v.style.top = `${y / k}px`; v.style.right = `${12 / k}px`; v.style.left = 'auto';
-      if (!recogida(v)) v.style.maxHeight = v.classList.contains('v-alto') ? 'none' : `${Math.max(140, c.height - y - 64) / k}px`;
-      y += v.getBoundingClientRect().height + 10;
+      // Sin sitio debajo: otra columna a la izquierda, arriba
+      if (y > sup && c.height - y - 64 < 260) { derecha += anchoCol + 10; y = sup; anchoCol = 0; }
+      v.style.top = `${y / k}px`; v.style.right = `${derecha / k}px`; v.style.left = 'auto';
+      if (!recogida(v) && !v.classList.contains('v-alto')) v.style.maxHeight = `${Math.max(140, c.height - y - 64) / k}px`;
+      const r = v.getBoundingClientRect();
+      y += r.height + 10; anchoCol = Math.max(anchoCol, r.width);
     }
   }
   const pedirApilar = () => { cancelAnimationFrame(tApilar); tApilar = requestAnimationFrame(apilar); };
@@ -13958,7 +14012,19 @@ function iniciarVentanas({ reposo, apartar, colocando, escala = () => 1, alCambi
   for (const v of ventanas()) {
     ro.observe(v);
     let antes = v.hidden;
-    new MutationObserver(() => { pedirApilar(); if (!v.hidden) { datos(v).ultimo = performance.now(); if (antes) { recoger(v, false, { sinAnimar: true }); recienAbierta(v); } } antes = v.hidden; }).observe(v, { attributes: true, attributeFilter: ['hidden'] });
+    new MutationObserver(() => {
+      pedirApilar();
+      if (!v.hidden) {
+        datos(v).ultimo = performance.now();
+        if (antes) {
+          recoger(v, false, { sinAnimar: true }); recienAbierta(v);
+          // La ficha o la regla de la derecha apartan a Capas (se queda en su icono) si no está fijada
+          const capas = document.querySelector('.ventana[data-ventana="capas"]');
+          if (DER.includes(v.dataset.ventana) && v !== capas && capas && !capas.hidden && !fijada(capas) && !recogida(capas) && !capas.classList.contains('v-movida')) recoger(capas, true);
+        }
+      }
+      antes = v.hidden;
+    }).observe(v, { attributes: true, attributeFilter: ['hidden'] });
   }
 
   // Al tocar una ventana, se pone delante
@@ -13983,14 +14049,16 @@ function iniciarVentanas({ reposo, apartar, colocando, escala = () => 1, alCambi
   // ---------------------------------------------------------- bordes para cambiar el tamaño
   /** ¿Está el puntero en el borde (o esquina) de alguna ventana? → { v, dir: 'n'|'s'|'e'|'w'|'ne'… } */
   function bordeEn(x, y) {
-    const lista = visibles().filter((v) => !recogida(v)).sort((a, b) => (Number(b.style.zIndex) || 1000) - (Number(a.style.zIndex) || 1000));
+    const apartadas = document.body.classList.contains('v-apartadas');
+    const lista = visibles().filter((v) => !recogida(v) && !(apartadas && !v.classList.contains('v-despierta')) && getComputedStyle(v).pointerEvents !== 'none').sort((a, b) => (Number(b.style.zIndex) || 1000) - (Number(a.style.zIndex) || 1000));
     for (const v of lista) {
       const r = v.getBoundingClientRect();
       if (x < r.left - BORDE_FUERA || x > r.right + BORDE_FUERA || y < r.top - BORDE_FUERA || y > r.bottom + BORDE_FUERA) continue;
       const n = y < r.top + BORDE_DENTRO, s = y > r.bottom - BORDE_DENTRO, w = x < r.left + BORDE_DENTRO, e = x > r.right - BORDE_DENTRO;
       if (!(n || s || w || e)) return null; // dentro de la ventana: no es borde
-      const encima = document.elementFromPoint(x, y)?.closest?.('.ventana');
-      if (encima && encima !== v) continue; // otra ventana por encima
+      // Solo si lo que hay bajo el puntero es la propia ventana o el mapa (no otra ventana, ni Ajustes, ni un menú)
+      const bajo = document.elementFromPoint(x, y);
+      if (!bajo || !(v.contains(bajo) || bajo.closest('#mapa'))) continue;
       return { v, dir: `${n ? 'n' : s ? 's' : ''}${w ? 'w' : e ? 'e' : ''}` };
     }
     return null;
@@ -14295,10 +14363,9 @@ function iniciarObjetos({ dibujo, simbolos, exportar, alCambiarPaneles = () => {
     }).join('');
     const bd = f.bandos.length === 1 ? f.bandos[0] : '';
     $('obj-bando').innerHTML = `<option value="">Bando</option>${Object.entries(BANDOS).map(([k, b]) => `<option value="${k}" ${k === bd ? 'selected' : ''}>${b.nombre}</option>`).join('')}`;
-    const ops = [];
-    const rec = (padre, niv) => { for (const o of hijos(plan(), padre)) { ops.push({ o, niv }); rec(o.id, niv + 1); } };
-    rec(null, 0);
-    if (f.paquete && f.paquete !== '__sin' && !buscarPaquete(plan(), f.paquete)) f.paquete = '';
+    // En el filtro, solo las operaciones (sin sus fases): filtrar una incluye todo lo de dentro
+    const ops = hijos(plan(), null).map((o) => ({ o, niv: 0 }));
+    if (f.paquete && f.paquete !== '__sin' && !ops.some(({ o }) => o.id === f.paquete)) f.paquete = '';
     $('obj-op').innerHTML = `<option value="">Operación</option><option value="__sin" ${f.paquete === '__sin' ? 'selected' : ''}>Sin operación</option>${ops.map(({ o }) => `<option value="${o.id}" ${o.id === f.paquete ? 'selected' : ''}>${esc(nombreRuta(plan(), o.id))}</option>`).join('')}`;
     const est = f.estados.length === 1 ? f.estados[0] : '';
     $('obj-estado').innerHTML = `<option value="">Estado</option>${Object.entries(ESTADOS).map(([k, e]) => `<option value="${k}" ${k === est ? 'selected' : ''}>${e.nombre}s</option>`).join('')}`;
@@ -14459,7 +14526,7 @@ __mods["src/ui/panel-operaciones.js"] = (function () {
 //   - Menú ⋯: fase nueva, renombrar, pasar a futura/pasada, encuadrar,
 //     exportar o enviar, duplicar, borrar (con o sin sus objetos).
 
-const { ESTADOS_OP, hijos, buscarPaquete, nuevoPaquete, objetosDe, asignar, moverPaquete, borrarPaquete, duplicarPaquete, descendientes, nombreRuta, tocarPaquete, paquetes } = __req("src/plan/operaciones.js");
+const { ESTADOS_OP, hijos, buscarPaquete, nuevoPaquete, objetosDe, asignar, moverPaquete, borrarPaquete, duplicarPaquete, descendientes, nombreRuta, tocarPaquete, paquetes, CATEGORIAS, categoriaDe } = __req("src/plan/operaciones.js");
 const { preguntar } = __req("src/ui/dialogo.js");
 const { abrirMenu } = __req("src/ui/objetos.js");
 
@@ -14476,7 +14543,7 @@ const FLECHA = '<svg viewBox="0 0 10 10"><path d="M3 1.5 7.5 5 3 8.5z"/></svg>';
  * @param {(id:string|null) => void} o.verEnObjetos abre Objetos filtrado por esa operación
  * @param {() => void} [o.alCambiarPaneles]
  */
-function iniciarPanelOperaciones({ dibujo, exportar, verEnObjetos, alCambiarPaneles = () => {} }) {
+function iniciarPanelOperaciones({ dibujo, simbolos = null, exportar, verEnObjetos, alCambiarPaneles = () => {} }) {
   const $ = (id) => document.getElementById(id);
   const panel = $('panel-operaciones'), cuerpo = $('operaciones-cuerpo');
   const plan = () => dibujo.plan();
@@ -14503,11 +14570,53 @@ function iniciarPanelOperaciones({ dibujo, exportar, verEnObjetos, alCambiarPane
       <button type="button" class="op-mas" data-acc="menu" aria-label="Más opciones">⋯</button></div>`;
     if (abierto) {
       for (const h of hs) html += nodo(h, niv + 1);
-      if (propios.length) html += `<div class="op-objetos" style="--niv:${niv}">${propios.map(filaObjeto).join('')}</div>`;
+      if (propios.length) html += `<div class="op-objetos" style="--niv:${niv}">${htmlObjetos(propios, o.id)}</div>`;
     }
     return html;
   }
-  const filaObjeto = (el) => `<div class="obj-fila${dibujo.seleccion === el.id ? ' sel' : ''}" data-el="${el.id}" draggable="true" title="Arrástralo a otra operación o fase"><span class="obj-ico">${dibujo.iconoDe(el)}</span><span class="obj-nom">${esc(dibujo.titulo(el))}</span><span class="obj-med">${esc(dibujo.resumen(el))}</span></div>`;
+  /**
+   * Objetos de un paquete agrupados por categoría (unidades, líneas de
+   * coordinación, cometidos, dibujos) y, dentro, por tipo: los iguales van
+   * apilados (como en la APP-6) con su número; al abrir la pila salen uno a uno.
+   */
+  function htmlObjetos(lista, idPaquete) {
+    const cats = new Map(Object.keys(CATEGORIAS).map((k) => [k, new Map()]));
+    for (const el of lista) {
+      const c = cats.get(categoriaDe(el, simbolos?.medidaDe));
+      const k = claveTipo(el);
+      if (!c.has(k)) c.set(k, []);
+      c.get(k).push(el);
+    }
+    let html = '';
+    for (const [cat, tipos] of cats) {
+      if (!tipos.size) continue;
+      const n = [...tipos.values()].reduce((s, x) => s + x.length, 0);
+      html += `<div class="op-cat">${CATEGORIAS[cat].nombre}<small>${n}</small></div>`;
+      for (const [k, els] of tipos) {
+        const ico = dibujo.iconoDe(els[0]);
+        if (els.length === 1) { html += filaObjeto(els[0]); continue; }
+        const clave = `${idPaquete ?? '__sueltos'}|${k}`, ab = Boolean(ui.abiertos[clave]);
+        html += `<div class="obj-fila op-pila" data-pila="${esc(clave)}" data-ids="${els.map((e) => e.id).join(',')}" draggable="true" aria-expanded="${ab}">
+          <span class="obj-ico pila"><i>${ico}</i><i>${ico}</i><i>${ico}</i></span><span class="obj-nom">${esc(nombreTipo(els[0]))}</span><span class="op-n">${els.length}</span></div>`;
+        if (ab) html += `<div class="op-pila-dentro">${els.map(filaObjeto).join('')}</div>`;
+      }
+    }
+    return html;
+  }
+  /** Tipo de un objeto (lo que hace que dos sean «iguales» y se apilen). */
+  function claveTipo(el) {
+    const s = el.simbolo;
+    if (s?.clase === 'unidad') return ['u', s.conjunto ?? '10', s.icono, s.mod1 ?? '', s.mod2 ?? '', s.escalon ?? '', s.identidad, s.movilidad ?? ''].join(':');
+    if (s?.clase === 'medida') return `m:${s.id}:${el.propiedades.bando}`;
+    return `d:${el.tipo}:${el.propiedades.bando}`;
+  }
+  const nombreTipo = (el) => simbolos?.nombreTipo?.(el) ?? dibujo.titulo(el);
+  const filaObjeto = (el) => `<div class="obj-fila${dibujo.seleccion === el.id ? ' sel' : ''}" data-el="${el.id}" draggable="true"><span class="obj-ico">${dibujo.iconoDe(el)}</span><span class="obj-nom">${esc(etiquetaObjeto(el))}</span></div>`;
+  /** Nombre de cada objeto: el suyo, o su designación (1/II/4), o el de su tipo. */
+  const etiquetaObjeto = (el) => {
+    const s = el.simbolo, desig = s?.clase === 'unidad' ? [s.T, s.M].filter(Boolean).join(' / ') : '';
+    return el.propiedades.nombre || (desig ? `${dibujo.titulo(el)} ${desig}` : dibujo.titulo(el));
+  };
 
   function pintar() {
     if (panel.hidden) return;
@@ -14526,7 +14635,7 @@ function iniciarPanelOperaciones({ dibujo, exportar, verEnObjetos, alCambiarPane
         <button type="button" class="op-ojo" data-acc="ojo" aria-pressed="${!vista().sueltosOcultos}" title="Mostrar u ocultar lo que no está en ninguna operación">${vista().sueltosOcultos ? OJO_NO : OJO}</button>
         <button type="button" class="op-nom" data-acc="activar" title="Pintar sin operación"><b>Sin operación</b>${dibujo.activo ? '' : '<small>● pintando aquí</small>'}</button>
         <span class="op-cuenta">${sueltos.length}</span><span></span></div>
-        ${ui.abiertos.__sueltos && sueltos.length ? `<div class="op-objetos" style="--niv:0">${sueltos.map(filaObjeto).join('')}</div>` : ''}</div>
+        ${ui.abiertos.__sueltos && sueltos.length ? `<div class="op-objetos" style="--niv:0">${htmlObjetos(sueltos, null)}</div>` : ''}</div>
       <div class="pm-acciones"><button type="button" data-acc="ver-todo">Ver todo</button><button type="button" data-acc="ocultar-todo" title="El mapa sin símbolos">Ocultar todo</button></div>
 `;
     cuerpo.scrollTop = scroll;
@@ -14605,6 +14714,8 @@ function iniciarPanelOperaciones({ dibujo, exportar, verEnObjetos, alCambiarPane
     const t = ev.target;
     const pest = t.closest('[data-pestana]');
     if (pest) { ui.pestana = pest.dataset.pestana; guardarUi(); pintar(); return; }
+    const pila = t.closest('.op-pila');
+    if (pila) { ui.abiertos[pila.dataset.pila] = !ui.abiertos[pila.dataset.pila]; guardarUi(); pintar(); return; }
     const fila = t.closest('.obj-fila');
     if (fila) { dibujo.seleccionar(fila.dataset.el, { centrar: true }); return; }
     const acc = t.closest('[data-acc]')?.dataset.acc; if (!acc) return;
@@ -14628,8 +14739,10 @@ function iniciarPanelOperaciones({ dibujo, exportar, verEnObjetos, alCambiarPane
   // ---------------------------------------------------------- arrastrar entre paquetes
   let arrastre = null; // { tipo: 'el'|'op', id }
   cuerpo.addEventListener('dragstart', (ev) => {
-    const f = ev.target.closest('.obj-fila[data-el]'), n = ev.target.closest('.op-nodo[data-op]');
-    if (f) arrastre = { tipo: 'el', id: f.dataset.el }; else if (n?.dataset.op) arrastre = { tipo: 'op', id: n.dataset.op }; else return;
+    const f = ev.target.closest('.obj-fila[data-el]'), pl = ev.target.closest('.op-pila'), n = ev.target.closest('.op-nodo[data-op]');
+    if (f) arrastre = { tipo: 'el', ids: [f.dataset.el], id: f.dataset.el };
+    else if (pl) arrastre = { tipo: 'el', ids: pl.dataset.ids.split(','), id: pl.dataset.ids };
+    else if (n?.dataset.op) arrastre = { tipo: 'op', id: n.dataset.op }; else return;
     ev.dataTransfer.effectAllowed = 'move'; ev.dataTransfer.setData('text/plain', arrastre.id);
   });
   cuerpo.addEventListener('dragover', (ev) => {
@@ -14648,7 +14761,7 @@ function iniciarPanelOperaciones({ dibujo, exportar, verEnObjetos, alCambiarPane
     if (!n || !a) return;
     ev.preventDefault();
     const destino = n.dataset.op || null, o = destino ? buscarPaquete(plan(), destino) : null;
-    if (a.tipo === 'el') { cambio(o ? `Meter en «${o.nombre}»` : 'Sacar de la operación', (p) => asignar(p, [a.id], destino)); if (destino) { ui.abiertos[destino] = true; guardarUi(); } }
+    if (a.tipo === 'el') { cambio(o ? `Meter en «${o.nombre}»` : 'Sacar de la operación', (p) => asignar(p, a.ids, destino)); if (destino) { ui.abiertos[destino] = true; guardarUi(); } }
     else if (a.id !== destino) { cambio(o ? `Meter «${buscarPaquete(plan(), a.id)?.nombre}» en «${o.nombre}»` : 'Sacar al primer nivel', (p) => moverPaquete(p, a.id, destino)); if (destino) { ui.abiertos[destino] = true; guardarUi(); } }
   });
   cuerpo.addEventListener('dragend', () => { arrastre = null; cuerpo.querySelectorAll('.soltar').forEach((x) => x.classList.remove('soltar')); });
@@ -15155,6 +15268,185 @@ function iniciarLazo({ L, mapa, dibujo, simbolos, importar, fmt, herramienta, el
 return { iniciarLazo };
 })();
 
+// ── src/ui/regla.js
+__mods["src/ui/regla.js"] = (function () {
+'use strict';
+// Regla (herramienta Medir): distancias y rumbos sin guardar en el plan.
+//   - Clic: punto. Botón derecho: deshace el último. Doble clic: termina.
+//   - Sobre cada tramo, en su mitad, la distancia en una píldora de vidrio.
+//   - Una medida terminada se queda en el mapa; al pincharla sale su ficha
+//     como la de un track: distancia, desnivel, perfil y tramos. Desde ahí se
+//     guarda como línea o se quita.
+// Todas las medidas salen del motor geodésico (elipsoide WGS84).
+
+const { medir, puntosGeodesica, longitudLinea } = __req("src/geo/index.js");
+const { nuevoElemento } = __req("src/plan/plan.js");
+const { tomarFicha, alPerderFicha, htmlLinea, rellenarPerfil } = __req("src/ui/ficha.js");
+
+const ROJO = '#A3362B';
+const DUENO = 'regla';
+const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+/**
+ * @param {object} o
+ * @param {*} o.L @param {*} o.mapa @param {*} o.alturas @param {*} o.dibujo
+ * @param {{metros, coord, rumbo}} o.fmt
+ * @param {() => string} o.herramienta
+ * @param {(h:string) => void} o.elegirHerramienta
+ * @param {() => void} [o.alCambiarPaneles]
+ */
+function iniciarRegla({ L, mapa, alturas, dibujo, fmt, herramienta, elegirHerramienta, alCambiarPaneles = () => {} }) {
+  const $ = (id) => document.getElementById(id);
+  if (!mapa.getPane('rotulos')) { const p = mapa.createPane('rotulos'); p.style.zIndex = 466; p.style.pointerEvents = 'none'; }
+  if (!mapa.getPane('regla')) mapa.createPane('regla').style.zIndex = 462;
+  const capa = L.layerGroup().addTo(mapa);
+  const medida = [];          // la que se está midiendo
+  const terminadas = [];      // [{ id, puntos }]
+  let cursor = null, sel = null;
+  const px = (p) => mapa.latLngToContainerPoint([p.lat, p.lon]);
+
+  // ---------------------------------------------------------- pintar
+  /** Distancia de un tramo encima de la línea, en su mitad, girada con ella. */
+  function rotulo(a, b, texto, { tenue = false } = {}) {
+    const pa = px(a), pb = px(b);
+    if (pa.distanceTo(pb) < 46) return null;
+    const m = puntosGeodesica(a, b, 2)[1], pm = px(m);
+    let ang = (Math.atan2(pb.y - pa.y, pb.x - pa.x) * 180) / Math.PI;
+    if (ang > 90) ang -= 180; if (ang < -90) ang += 180;
+    const r = (ang * Math.PI) / 180, n = L.point(Math.sin(r), -Math.cos(r)); // normal hacia «arriba» del texto
+    const q = mapa.containerPointToLatLng(pm.add(n.multiplyBy(13)));
+    return L.marker(q, { pane: 'rotulos', interactive: false, keyboard: false, icon: L.divIcon({ className: 'etq-ancla', html: `<span class="etq-linea etq-regla${tenue ? ' tenue' : ''}" style="color:${ROJO};transform:translate(-50%,-50%) rotate(${ang.toFixed(1)}deg)">${esc(texto)}</span>`, iconSize: null }) });
+  }
+  function tramos(pts, g, opc = {}) {
+    for (let i = 1; i < pts.length; i++) {
+      const linea = L.polyline(puntosGeodesica(pts[i - 1], pts[i], 16).map((q) => [q.lat, q.lon]), { pane: 'regla', color: ROJO, weight: opc.sel ? 4 : 3, opacity: 0.92, interactive: false, dashArray: opc.provisional ? '6 6' : null });
+      g.addLayer(linea);
+      const t = rotulo(pts[i - 1], pts[i], fmt.metros(medir(pts[i - 1], pts[i]).distancia), { tenue: opc.provisional });
+      if (t) g.addLayer(t);
+    }
+  }
+  function pintar() {
+    capa.clearLayers();
+    for (const t of terminadas) {
+      const g = L.layerGroup();
+      if (t.id === sel) g.addLayer(L.polyline(t.puntos.map((p) => [p.lat, p.lon]), { pane: 'regla', color: '#E0B252', weight: 9, opacity: 0.6, interactive: false }));
+      tramos(t.puntos, g, { sel: t.id === sel });
+      t.puntos.forEach((p) => g.addLayer(L.circleMarker([p.lat, p.lon], { pane: 'regla', radius: 4, color: '#fff', weight: 2, fillColor: ROJO, fillOpacity: 1, interactive: false })));
+      // Zona de clic (ancha e invisible)
+      const clic = L.polyline(t.puntos.map((p) => [p.lat, p.lon]), { pane: 'regla', color: ROJO, weight: 16, opacity: 0, bubblingMouseEvents: false });
+      clic.on('click', (e) => { if (herramienta() !== 'consultar') return; L.DomEvent.stopPropagation(e); seleccionar(t.id); });
+      g.addLayer(clic);
+      g.addTo(capa);
+    }
+    if (!medida.length) return;
+    const g = L.layerGroup().addTo(capa);
+    tramos(medida, g);
+    if (cursor && herramienta() === 'medir') tramos([medida.at(-1), cursor], g, { provisional: true });
+    medida.forEach((p) => g.addLayer(L.circleMarker([p.lat, p.lon], { pane: 'regla', radius: 5, color: '#fff', weight: 2, fillColor: ROJO, fillOpacity: 1, interactive: false })));
+    pintarVentana();
+  }
+  mapa.on('zoomend', pintar);
+
+  // Ventana «Regla» mientras se mide: el total y los tramos
+  function pintarVentana() {
+    const cuerpo = $('pm-cuerpo'); if (!cuerpo) return;
+    const vivos = cursor && herramienta() === 'medir' && medida.length ? [...medida, cursor] : medida;
+    if (vivos.length < 2) { cuerpo.innerHTML = ''; $('pm-ayuda').textContent = ''; return; }
+    $('pm-ayuda').textContent = `${medida.length} punto${medida.length === 1 ? '' : 's'}`;
+    cuerpo.innerHTML = `<div class="pm-total"><div class="grande">${fmt.metros(longitudLinea(vivos))}</div></div>${tablaTramos(medida)}`;
+  }
+  function tablaTramos(pts) {
+    if (pts.length < 2) return '';
+    const filas = [];
+    for (let i = 1; i < pts.length; i++) {
+      const r = medir(pts[i - 1], pts[i]);
+      filas.push(`<tr><td>${i}</td><td>${fmt.metros(r.distancia)}</td><td>${fmt.rumbo(r.rumbo)}</td><td>${fmt.rumbo(r.rumboCuadricula)}</td></tr>`);
+    }
+    return `<table class="pm-tramos"><thead><tr><th>Tramo</th><th>Distancia</th><th>Rumbo geo</th><th>Rumbo cuad.</th></tr></thead><tbody>${filas.join('')}</tbody></table>`;
+  }
+
+  // ---------------------------------------------------------- medir
+  function clic(p) {
+    if (medida.length && px(p).distanceTo(px(medida.at(-1))) < 4) return; // el doble clic manda dos clics
+    medida.push(p); pintar();
+  }
+  function quitarUltimo() { if (!medida.length) return false; medida.pop(); pintar(); return true; }
+  function terminar() {
+    if (medida.length < 2) { medida.length = 0; pintar(); return; }
+    const t = { id: `m${Date.now()}`, puntos: medida.splice(0) };
+    terminadas.push(t);
+    cursor = null;
+    elegirHerramienta('consultar');
+    pintar();
+  }
+  function moverCursor(p) {
+    if (herramienta() !== 'medir' || !medida.length) return;
+    cursor = p; pintar();
+  }
+
+  // ---------------------------------------------------------- ficha de una medida terminada
+  const panel = $('panel-elemento');
+  const esMio = () => panel.dataset.dueno === DUENO;
+  function seleccionar(id) {
+    sel = id;
+    const t = terminadas.find((x) => x.id === id);
+    if (!t) { cerrarFicha(); return; }
+    dibujo.quitarSeleccion();
+    tomarFicha(DUENO);
+    panel.dataset.dueno = DUENO;
+    panel.innerHTML = `<div class="pm-cab v-cab"><strong><span class="muestra-bando" style="--c:${ROJO}"></span>Medida</strong><span class="v-sub">${t.puntos.length} puntos</span><button type="button" class="pm-x" data-regla="cerrar" aria-label="Cerrar">×</button></div>
+      ${htmlLinea(t.puntos, fmt)}
+      ${tablaTramos(t.puntos)}
+      <div class="pm-acciones"><button type="button" data-regla="guardar">Guardar como línea</button><button type="button" data-regla="quitar" class="peligro">Quitar</button></div>`;
+    panel.hidden = false; alCambiarPaneles();
+    pintar();
+    rellenarPerfil(t.puntos, alturas, `regla/${t.id}`, marcarPerfil).catch(() => {});
+  }
+  const capaCursor = L.layerGroup().addTo(mapa);
+  function marcarPerfil(p) {
+    capaCursor.clearLayers();
+    if (p) L.circleMarker([p.lat, p.lon], { pane: 'regla', radius: 6, color: '#fff', weight: 2, fillColor: '#0C2E4B', fillOpacity: 1, interactive: false }).addTo(capaCursor);
+  }
+  function cerrarFicha() {
+    capaCursor.clearLayers();
+    if (sel) { sel = null; pintar(); }
+    if (esMio()) { panel.hidden = true; delete panel.dataset.dueno; alCambiarPaneles(); }
+  }
+  alPerderFicha(DUENO, () => { capaCursor.clearLayers(); if (sel) { sel = null; pintar(); } });
+  panel.addEventListener('click', (ev) => {
+    if (!esMio()) return;
+    const a = ev.target.closest('[data-regla]')?.dataset.regla; if (!a) return;
+    const t = terminadas.find((x) => x.id === sel);
+    if (a === 'cerrar') cerrarFicha();
+    if (a === 'quitar' && t) { terminadas.splice(terminadas.indexOf(t), 1); cerrarFicha(); pintar(); }
+    if (a === 'guardar' && t) {
+      const el = nuevoElemento('linea', t.puntos.map((p) => ({ lat: p.lat, lon: p.lon })), { nombre: 'Medida', paquete: dibujo.activo ?? null });
+      dibujo.anadir([el], 'Guardar medida como línea');
+      terminadas.splice(terminadas.indexOf(t), 1); sel = null; pintar();
+      dibujo.seleccionar(el.id);
+    }
+  });
+
+  return {
+    clic, quitarUltimo, terminar, moverCursor, pintar,
+    get medida() { return medida; },
+    get terminadas() { return terminadas; },
+    /** Al cambiar de herramienta: lo que se estaba midiendo sin terminar se descarta. */
+    herramientaCambiada(h) {
+      if (h === 'medir') { cerrarFicha(); pintar(); return; }
+      if (medida.length >= 2) { terminadas.push({ id: `m${Date.now()}`, puntos: medida.splice(0) }); }
+      medida.length = 0; cursor = null; pintar();
+    },
+    /** Esc: borra lo que se está midiendo; si no hay nada, deja la herramienta. */
+    escape() { if (medida.length) { medida.length = 0; cursor = null; pintar(); } else elegirHerramienta('consultar'); },
+    nueva() { medida.length = 0; cursor = null; pintar(); },
+    seleccionar,
+  };
+}
+
+return { iniciarRegla };
+})();
+
 // ── src/ui/mapa.js
 __mods["src/ui/mapa.js"] = (function () {
 'use strict';
@@ -15162,7 +15454,7 @@ __mods["src/ui/mapa.js"] = (function () {
 // mapas importados, visualización (cuadrícula, sombreado, curvas), buscador
 // universal, ajustes, regla, dibujo (dibujo.js) e importación (importar.js).
 // Usa Leaflet (global L).
-const { formatearPosicion, medir, puntosGeodesica, formatearRumbo } = __req("src/geo/index.js");
+const { formatearPosicion, medir, destino, formatearRumbo } = __req("src/geo/index.js");
 const { FONDOS, IMAGENES, ROTULOS, SUPERPUESTAS, ZONA_PILOTO, ATRIBUCION_MDT, crearCapa, fechaImagen } = __req("src/mapa/capas.js");
 const { capaRelieve } = __req("src/mapa/relieve.js");
 const { capaCuadricula } = __req("src/mapa/cuadricula.js");
@@ -15181,6 +15473,7 @@ const { iniciarApariencia } = __req("src/ui/apariencia.js");
 const { iniciarObjetos } = __req("src/ui/objetos.js");
 const { iniciarPanelOperaciones } = __req("src/ui/panel-operaciones.js");
 const { iniciarLazo } = __req("src/ui/lazo.js");
+const { iniciarRegla } = __req("src/ui/regla.js");
 
 const L = window.L;
 const $ = (id) => document.getElementById(id);
@@ -15268,7 +15561,7 @@ let fondoActual = null;
 let alCambiarFondo = () => {}; // la cuadrícula se pinta en blanco sobre el híbrido
 // eslint-disable-next-line prefer-const
 let importar = null;
-const VERSION = '0.9.1';
+const VERSION = '0.9.2';
 function ponerFondo(id, { automatico = false } = {}) {
   if (!capasFondo[id]) id = 'mtn';
   if (fondoActual) mapa.removeLayer(fondoActual);
@@ -15345,7 +15638,7 @@ $('mtn-detalle').checked = Boolean(estado.mtnDetalle);
 $('mtn-detalle').addEventListener('change', (ev) => { estado.mtnDetalle = ev.target.checked; guardar(); capasFondo.mtn.ponerDetalle?.(estado.mtnDetalle); });
 
 // ---------------------------------------------------------------- visualización
-const SELECTORES_OBSTACULO = '.barra-sup, .herramientas.visible, .herr-pista, .ventana, .pildora, .aviso, .aviso-breve, .leaflet-control-zoom, .leaflet-control-scale, .leaflet-control-attribution';
+const SELECTORES_OBSTACULO = '.brujula, .barra-sup, .herramientas.visible, .herr-pista, .ventana, .pildora, .aviso, .aviso-breve, .leaflet-control-zoom, .leaflet-control-scale, .leaflet-control-attribution';
 function obstaculos() {
   const base = $('mapa').getBoundingClientRect();
   return [...document.querySelectorAll(SELECTORES_OBSTACULO)].map((el) => el.getBoundingClientRect()).filter((r) => r.width && r.height)
@@ -15498,7 +15791,7 @@ function elegirHerramienta(h) {
   $('panel-medida').hidden = h !== 'medir';
   mapa.getContainer().classList.toggle('cursor-cruz', h === 'medir' || h === 'zona-mapa' || h === 'lazo' || HERRAMIENTAS_DIBUJO.includes(h));
   if (h === 'medir') importar.cerrarFicha();
-  pintarMedida();
+  regla?.herramientaCambiada(h);
   dibujo.herramientaCambiada(h);
   creador?.herramientaCambiada(h);
   lazo?.herramientaCambiada(h);
@@ -15516,7 +15809,7 @@ const lazo = iniciarLazo({
 });
 const objetos = iniciarObjetos({ dibujo, simbolos, exportar: (ids, nombre) => lazo.exportar(ids, nombre), alCambiarPaneles: () => recolocarEtiquetas() });
 const operaciones = iniciarPanelOperaciones({
-  dibujo, exportar: (ids, nombre) => lazo.exportar(ids, nombre),
+  dibujo, simbolos, exportar: (ids, nombre) => lazo.exportar(ids, nombre),
   verEnObjetos: (id) => { ponerPanel('objetos', true); objetos.filtrarPaquete(id); },
   alCambiarPaneles: () => recolocarEtiquetas(),
 });
@@ -15614,7 +15907,7 @@ function ponerPref(clave, v) {
   estado[clave] = v; guardar();
   document.querySelectorAll(`[data-pref="${clave}"] button`).forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.v === String(v))));
   if (ultimaPos) mostrarPos(ultimaPos, $('be-et').textContent);
-  pintarMedida(); dibujo.refrescar();
+  regla?.pintar(); dibujo.refrescar();
 }
 for (const grupo of document.querySelectorAll('[data-pref]')) {
   grupo.addEventListener('click', (ev) => { const b = ev.target.closest('button'); if (b) ponerPref(grupo.dataset.pref, b.dataset.v); });
@@ -15624,18 +15917,34 @@ for (const grupo of document.querySelectorAll('[data-pref]')) {
 mapa.on('click', (e) => {
   const p = { lat: e.latlng.lat, lon: e.latlng.lng };
   if (herramienta === 'lazo' || lazo.recienTerminado) return; // el lazo maneja sus gestos
-  if (herramienta === 'medir') { medida.push(p); pintarMedida(); return; }
+  if (herramienta === 'medir') { regla.clic(p); return; }
   if (herramienta === 'zona-mapa') { creador.clic(p); return; }
   if (HERRAMIENTAS_DIBUJO.includes(herramienta)) { dibujo.clic(p); return; }
   if (simbolos.colocarEn(e.latlng)) return; // paleta de unidades abierta: cada clic pone la unidad elegida
   if (!dibujo.quitarSeleccion()) importar.cerrarFicha();
 });
-mapa.on('dblclick', () => { if (HERRAMIENTAS_DIBUJO.includes(herramienta)) dibujo.dobleClic(); else if (herramienta === 'zona-mapa') creador.dobleClic(); });
+mapa.on('dblclick', () => { if (HERRAMIENTAS_DIBUJO.includes(herramienta)) dibujo.dobleClic(); else if (herramienta === 'medir') regla.terminar(); else if (herramienta === 'zona-mapa') creador.dobleClic(); });
 mapa.on('contextmenu', (e) => {
   if (HERRAMIENTAS_DIBUJO.includes(herramienta)) { L.DomEvent.preventDefault(e.originalEvent); dibujo.quitarUltimo(); }
-  else if (herramienta === 'medir') { L.DomEvent.preventDefault(e.originalEvent); medida.pop(); pintarMedida(); }
+  else if (herramienta === 'medir') { L.DomEvent.preventDefault(e.originalEvent); regla.quitarUltimo(); }
   else if (herramienta === 'zona-mapa') { L.DomEvent.preventDefault(e.originalEvent); creador.quitarUltimo(); }
+  else if (simbolos.armado) { L.DomEvent.preventDefault(e.originalEvent); simbolos.desarmar(); } // botón derecho = Esc: dejar de poner la unidad
 });
+
+// ---------------------------------------------------------------- brújula: norte geográfico y de cuadrícula
+// La convergencia de cuadrícula (ángulo entre el norte geográfico y el de la
+// cuadrícula UTM) sale del motor geodésico en el centro del mapa.
+function pintarBrujula() {
+  const c = centro();
+  let g = null;
+  try { const r = medir(c, destino(c, 0, 1000)); g = -(((r.rumboCuadricula + 540) % 360) - 180); } catch { /* fuera de UTM */ }
+  $('br-cuad').style.transform = g === null ? 'none' : `rotate(${g}deg)`;
+  $('br-cuad').style.display = g === null ? 'none' : '';
+  const signo = (v) => `${v > 0 ? '+' : v < 0 ? '−' : ''}${Math.abs(v).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}°`;
+  $('br-datos').innerHTML = `<span>Norte geográfico <b>0°</b></span>${g === null ? '' : `<span class="c">Norte de cuadrícula <b>${signo(g)}</b></span>`}`;
+}
+mapa.on('moveend', pintarBrujula);
+pintarBrujula();
 
 // ---------------------------------------------------------------- barra inferior: coordenada y altitud
 if (tactil) { document.body.classList.add('tactil'); const c = document.createElement('div'); c.className = 'cruz'; $('contenido').append(c); }
@@ -15662,44 +15971,20 @@ mapa.on('mousemove', (e) => {
   const p = { lat: e.latlng.lat, lon: e.latlng.lng };
   mostrarPos(p, 'Cursor');
   dibujo.moverCursor(p);
+  regla?.moverCursor(p);
 });
 mapa.on('moveend', () => { if (tactil || !ultimaPos) mostrarPos(centro(), 'Centro'); });
 mapa.on('mouseout', () => { if (ultimaPos) $('be-et').textContent = 'Última'; });
 
-// ---------------------------------------------------------------- regla de medida
-const medida = [];
-const capaMedida = L.layerGroup().addTo(mapa);
-function pintarMedida() {
-  capaMedida.clearLayers();
-  for (let i = 1; i < medida.length; i++) {
-    L.polyline(puntosGeodesica(medida[i - 1], medida[i], 16).map((q) => [q.lat, q.lon]), { color: '#A3362B', weight: 3, opacity: 0.9, interactive: false }).addTo(capaMedida);
-  }
-  medida.forEach((p, i) => L.circleMarker([p.lat, p.lon], { radius: 5, color: '#fff', weight: 2, fillColor: '#A3362B', fillOpacity: 1, interactive: false })
-    .bindTooltip(String.fromCharCode(65 + (i % 26)), { permanent: true, direction: 'right', className: 'etq-cuad', offset: [6, 0] }).addTo(capaMedida));
-  const cuerpo = $('pm-cuerpo');
-  if (medida.length < 2) {
-    $('pm-ayuda').textContent = medida.length ? 'Toca el siguiente punto' : 'Toca el mapa para añadir puntos';
-    cuerpo.innerHTML = medida.length ? `<p class="pm-nota">Origen A: <code>${esc(coord(medida[0]))}</code></p>` : '';
-    return;
-  }
-  $('pm-ayuda').textContent = 'Clic derecho quita el último';
-  let total = 0, totalMapa = 0;
-  const filas = [];
-  for (let i = 1; i < medida.length; i++) {
-    const r = medir(medida[i - 1], medida[i]);
-    total += r.distancia; totalMapa += r.distanciaCuadricula;
-    const de = String.fromCharCode(65 + ((i - 1) % 26)), a = String.fromCharCode(65 + (i % 26));
-    filas.push(`<tr><td>${de}→${a}</td><td>${metros(r.distancia)}</td><td>${rumbo(r.rumbo)}</td><td>${rumbo(r.rumboCuadricula)}</td></tr>`);
-  }
-  cuerpo.innerHTML = `<div class="pm-total"><div class="grande">${metros(total)}</div><div class="peq">Real, sobre el elipsoide · Sobre el mapa: ${metros(totalMapa)}</div></div>
-    <table class="pm-tramos"><thead><tr><th>Tramo</th><th>Distancia</th><th>Rumbo geo</th><th>Rumbo cuad.</th></tr></thead><tbody>${filas.join('')}</tbody></table>
-`;
-}
-$('pm-deshacer').addEventListener('click', () => { medida.pop(); pintarMedida(); });
-$('pm-nueva').addEventListener('click', () => { medida.length = 0; pintarMedida(); });
+// ---------------------------------------------------------------- regla de medida (regla.js)
+const regla = iniciarRegla({ L, mapa, alturas, dibujo, fmt: { metros, coord, rumbo }, herramienta: () => herramienta, elegirHerramienta: (h) => elegirHerramienta(h), alCambiarPaneles: () => recolocarEtiquetas() });
+$('pm-deshacer').addEventListener('click', () => regla.quitarUltimo());
+$('pm-nueva').addEventListener('click', () => regla.nueva());
 document.addEventListener('keydown', (e) => {
+  if (/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement?.tagName)) return;
   if (e.key === 'Escape' && herramienta === 'zona-mapa') { elegirHerramienta('consultar'); return; }
-  if (e.key === 'Escape' && herramienta === 'medir') { if (medida.length) { medida.length = 0; pintarMedida(); } else elegirHerramienta('consultar'); }
+  if (e.key === 'Escape' && herramienta === 'medir') regla.escape();
+  if (e.key === 'Enter' && herramienta === 'medir') regla.terminar();
 });
 
 // ---------------------------------------------------------------- buscador universal
@@ -15804,7 +16089,7 @@ document.addEventListener('click', (ev) => { if (!ev.target.closest('#buscar')) 
 mostrarPos(centro(), 'Centro');
 elegirHerramienta('consultar');
 // Para pruebas automáticas
-window.__spa = { creador, mapa, estado, medida, pintarMedida, diag, dibujo, importar, cuadricula, alturas, capasFondo, capasImagen, objetos, operaciones, lazo, ventanas, apariencia };
+window.__spa = { creador, mapa, estado, regla, simbolos, diag, dibujo, importar, cuadricula, alturas, capasFondo, capasImagen, objetos, operaciones, lazo, ventanas, apariencia };
 
 return {  };
 })();

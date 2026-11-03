@@ -61,7 +61,8 @@ export function iniciarVentanas({ reposo, apartar, colocando, escala = () => 1, 
     }
     if (v.classList.contains('v-recogida')) return; // recogida: su tamaño es el de la cabecera
     if (g?.w) { v.style.width = `${g.w / k}px`; v.style.maxWidth = 'none'; } else { v.style.width = ''; v.style.maxWidth = ''; }
-    if (g?.h) { v.style.height = `${Math.min(g.h, cont.getBoundingClientRect().height - (limitar(v, g).y ?? 0) - 8) / k}px`; v.style.maxHeight = 'none'; v.classList.add('v-alto'); }
+    // El alto elegido es un tope: si el contenido es menor (desplegables cerrados), la ventana encoge sola
+    if (g?.h) { v.style.height = ''; v.style.maxHeight = `${Math.min(g.h, cont.getBoundingClientRect().height - (limitar(v, g).y ?? 0) - 8) / k}px`; v.classList.add('v-alto'); }
     else {
       v.style.height = ''; v.classList.remove('v-alto');
       // Movida: que no se salga por abajo (el alto que quede hasta el borde)
@@ -87,11 +88,14 @@ export function iniciarVentanas({ reposo, apartar, colocando, escala = () => 1, 
       if (!v.classList.contains('v-alto') && !recogida(v)) v.style.maxHeight = `${Math.max(160, c.height - supIzq - 64) / k}px`;
       x += v.getBoundingClientRect().width + 10;
     }
-    let y = sup;
+    let y = sup, derecha = 12, anchoCol = 0;
     for (const v of libres(DER)) {
-      v.style.top = `${y / k}px`; v.style.right = `${12 / k}px`; v.style.left = 'auto';
-      if (!recogida(v)) v.style.maxHeight = v.classList.contains('v-alto') ? 'none' : `${Math.max(140, c.height - y - 64) / k}px`;
-      y += v.getBoundingClientRect().height + 10;
+      // Sin sitio debajo: otra columna a la izquierda, arriba
+      if (y > sup && c.height - y - 64 < 260) { derecha += anchoCol + 10; y = sup; anchoCol = 0; }
+      v.style.top = `${y / k}px`; v.style.right = `${derecha / k}px`; v.style.left = 'auto';
+      if (!recogida(v) && !v.classList.contains('v-alto')) v.style.maxHeight = `${Math.max(140, c.height - y - 64) / k}px`;
+      const r = v.getBoundingClientRect();
+      y += r.height + 10; anchoCol = Math.max(anchoCol, r.width);
     }
   }
   const pedirApilar = () => { cancelAnimationFrame(tApilar); tApilar = requestAnimationFrame(apilar); };
@@ -101,7 +105,19 @@ export function iniciarVentanas({ reposo, apartar, colocando, escala = () => 1, 
   for (const v of ventanas()) {
     ro.observe(v);
     let antes = v.hidden;
-    new MutationObserver(() => { pedirApilar(); if (!v.hidden) { datos(v).ultimo = performance.now(); if (antes) { recoger(v, false, { sinAnimar: true }); recienAbierta(v); } } antes = v.hidden; }).observe(v, { attributes: true, attributeFilter: ['hidden'] });
+    new MutationObserver(() => {
+      pedirApilar();
+      if (!v.hidden) {
+        datos(v).ultimo = performance.now();
+        if (antes) {
+          recoger(v, false, { sinAnimar: true }); recienAbierta(v);
+          // La ficha o la regla de la derecha apartan a Capas (se queda en su icono) si no está fijada
+          const capas = document.querySelector('.ventana[data-ventana="capas"]');
+          if (DER.includes(v.dataset.ventana) && v !== capas && capas && !capas.hidden && !fijada(capas) && !recogida(capas) && !capas.classList.contains('v-movida')) recoger(capas, true);
+        }
+      }
+      antes = v.hidden;
+    }).observe(v, { attributes: true, attributeFilter: ['hidden'] });
   }
 
   // Al tocar una ventana, se pone delante
@@ -126,14 +142,16 @@ export function iniciarVentanas({ reposo, apartar, colocando, escala = () => 1, 
   // ---------------------------------------------------------- bordes para cambiar el tamaño
   /** ¿Está el puntero en el borde (o esquina) de alguna ventana? → { v, dir: 'n'|'s'|'e'|'w'|'ne'… } */
   function bordeEn(x, y) {
-    const lista = visibles().filter((v) => !recogida(v)).sort((a, b) => (Number(b.style.zIndex) || 1000) - (Number(a.style.zIndex) || 1000));
+    const apartadas = document.body.classList.contains('v-apartadas');
+    const lista = visibles().filter((v) => !recogida(v) && !(apartadas && !v.classList.contains('v-despierta')) && getComputedStyle(v).pointerEvents !== 'none').sort((a, b) => (Number(b.style.zIndex) || 1000) - (Number(a.style.zIndex) || 1000));
     for (const v of lista) {
       const r = v.getBoundingClientRect();
       if (x < r.left - BORDE_FUERA || x > r.right + BORDE_FUERA || y < r.top - BORDE_FUERA || y > r.bottom + BORDE_FUERA) continue;
       const n = y < r.top + BORDE_DENTRO, s = y > r.bottom - BORDE_DENTRO, w = x < r.left + BORDE_DENTRO, e = x > r.right - BORDE_DENTRO;
       if (!(n || s || w || e)) return null; // dentro de la ventana: no es borde
-      const encima = document.elementFromPoint(x, y)?.closest?.('.ventana');
-      if (encima && encima !== v) continue; // otra ventana por encima
+      // Solo si lo que hay bajo el puntero es la propia ventana o el mapa (no otra ventana, ni Ajustes, ni un menú)
+      const bajo = document.elementFromPoint(x, y);
+      if (!bajo || !(v.contains(bajo) || bajo.closest('#mapa'))) continue;
       return { v, dir: `${n ? 'n' : s ? 's' : ''}${w ? 'w' : e ? 'e' : ''}` };
     }
     return null;

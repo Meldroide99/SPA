@@ -2,7 +2,7 @@
 // mapas importados, visualización (cuadrícula, sombreado, curvas), buscador
 // universal, ajustes, regla, dibujo (dibujo.js) e importación (importar.js).
 // Usa Leaflet (global L).
-import { formatearPosicion, medir, puntosGeodesica, formatearRumbo } from '../geo/index.js';
+import { formatearPosicion, medir, destino, formatearRumbo } from '../geo/index.js';
 import { FONDOS, IMAGENES, ROTULOS, SUPERPUESTAS, ZONA_PILOTO, ATRIBUCION_MDT, crearCapa, fechaImagen } from '../mapa/capas.js';
 import { capaRelieve } from '../mapa/relieve.js';
 import { capaCuadricula } from '../mapa/cuadricula.js';
@@ -21,6 +21,7 @@ import { iniciarApariencia } from './apariencia.js';
 import { iniciarObjetos } from './objetos.js';
 import { iniciarPanelOperaciones } from './panel-operaciones.js';
 import { iniciarLazo } from './lazo.js';
+import { iniciarRegla } from './regla.js';
 
 const L = window.L;
 const $ = (id) => document.getElementById(id);
@@ -108,7 +109,7 @@ let fondoActual = null;
 let alCambiarFondo = () => {}; // la cuadrícula se pinta en blanco sobre el híbrido
 // eslint-disable-next-line prefer-const
 let importar = null;
-const VERSION = '0.9.1';
+const VERSION = '0.9.2';
 function ponerFondo(id, { automatico = false } = {}) {
   if (!capasFondo[id]) id = 'mtn';
   if (fondoActual) mapa.removeLayer(fondoActual);
@@ -185,7 +186,7 @@ $('mtn-detalle').checked = Boolean(estado.mtnDetalle);
 $('mtn-detalle').addEventListener('change', (ev) => { estado.mtnDetalle = ev.target.checked; guardar(); capasFondo.mtn.ponerDetalle?.(estado.mtnDetalle); });
 
 // ---------------------------------------------------------------- visualización
-const SELECTORES_OBSTACULO = '.barra-sup, .herramientas.visible, .herr-pista, .ventana, .pildora, .aviso, .aviso-breve, .leaflet-control-zoom, .leaflet-control-scale, .leaflet-control-attribution';
+const SELECTORES_OBSTACULO = '.brujula, .barra-sup, .herramientas.visible, .herr-pista, .ventana, .pildora, .aviso, .aviso-breve, .leaflet-control-zoom, .leaflet-control-scale, .leaflet-control-attribution';
 function obstaculos() {
   const base = $('mapa').getBoundingClientRect();
   return [...document.querySelectorAll(SELECTORES_OBSTACULO)].map((el) => el.getBoundingClientRect()).filter((r) => r.width && r.height)
@@ -338,7 +339,7 @@ function elegirHerramienta(h) {
   $('panel-medida').hidden = h !== 'medir';
   mapa.getContainer().classList.toggle('cursor-cruz', h === 'medir' || h === 'zona-mapa' || h === 'lazo' || HERRAMIENTAS_DIBUJO.includes(h));
   if (h === 'medir') importar.cerrarFicha();
-  pintarMedida();
+  regla?.herramientaCambiada(h);
   dibujo.herramientaCambiada(h);
   creador?.herramientaCambiada(h);
   lazo?.herramientaCambiada(h);
@@ -356,7 +357,7 @@ const lazo = iniciarLazo({
 });
 const objetos = iniciarObjetos({ dibujo, simbolos, exportar: (ids, nombre) => lazo.exportar(ids, nombre), alCambiarPaneles: () => recolocarEtiquetas() });
 const operaciones = iniciarPanelOperaciones({
-  dibujo, exportar: (ids, nombre) => lazo.exportar(ids, nombre),
+  dibujo, simbolos, exportar: (ids, nombre) => lazo.exportar(ids, nombre),
   verEnObjetos: (id) => { ponerPanel('objetos', true); objetos.filtrarPaquete(id); },
   alCambiarPaneles: () => recolocarEtiquetas(),
 });
@@ -454,7 +455,7 @@ function ponerPref(clave, v) {
   estado[clave] = v; guardar();
   document.querySelectorAll(`[data-pref="${clave}"] button`).forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.v === String(v))));
   if (ultimaPos) mostrarPos(ultimaPos, $('be-et').textContent);
-  pintarMedida(); dibujo.refrescar();
+  regla?.pintar(); dibujo.refrescar();
 }
 for (const grupo of document.querySelectorAll('[data-pref]')) {
   grupo.addEventListener('click', (ev) => { const b = ev.target.closest('button'); if (b) ponerPref(grupo.dataset.pref, b.dataset.v); });
@@ -464,18 +465,34 @@ for (const grupo of document.querySelectorAll('[data-pref]')) {
 mapa.on('click', (e) => {
   const p = { lat: e.latlng.lat, lon: e.latlng.lng };
   if (herramienta === 'lazo' || lazo.recienTerminado) return; // el lazo maneja sus gestos
-  if (herramienta === 'medir') { medida.push(p); pintarMedida(); return; }
+  if (herramienta === 'medir') { regla.clic(p); return; }
   if (herramienta === 'zona-mapa') { creador.clic(p); return; }
   if (HERRAMIENTAS_DIBUJO.includes(herramienta)) { dibujo.clic(p); return; }
   if (simbolos.colocarEn(e.latlng)) return; // paleta de unidades abierta: cada clic pone la unidad elegida
   if (!dibujo.quitarSeleccion()) importar.cerrarFicha();
 });
-mapa.on('dblclick', () => { if (HERRAMIENTAS_DIBUJO.includes(herramienta)) dibujo.dobleClic(); else if (herramienta === 'zona-mapa') creador.dobleClic(); });
+mapa.on('dblclick', () => { if (HERRAMIENTAS_DIBUJO.includes(herramienta)) dibujo.dobleClic(); else if (herramienta === 'medir') regla.terminar(); else if (herramienta === 'zona-mapa') creador.dobleClic(); });
 mapa.on('contextmenu', (e) => {
   if (HERRAMIENTAS_DIBUJO.includes(herramienta)) { L.DomEvent.preventDefault(e.originalEvent); dibujo.quitarUltimo(); }
-  else if (herramienta === 'medir') { L.DomEvent.preventDefault(e.originalEvent); medida.pop(); pintarMedida(); }
+  else if (herramienta === 'medir') { L.DomEvent.preventDefault(e.originalEvent); regla.quitarUltimo(); }
   else if (herramienta === 'zona-mapa') { L.DomEvent.preventDefault(e.originalEvent); creador.quitarUltimo(); }
+  else if (simbolos.armado) { L.DomEvent.preventDefault(e.originalEvent); simbolos.desarmar(); } // botón derecho = Esc: dejar de poner la unidad
 });
+
+// ---------------------------------------------------------------- brújula: norte geográfico y de cuadrícula
+// La convergencia de cuadrícula (ángulo entre el norte geográfico y el de la
+// cuadrícula UTM) sale del motor geodésico en el centro del mapa.
+function pintarBrujula() {
+  const c = centro();
+  let g = null;
+  try { const r = medir(c, destino(c, 0, 1000)); g = -(((r.rumboCuadricula + 540) % 360) - 180); } catch { /* fuera de UTM */ }
+  $('br-cuad').style.transform = g === null ? 'none' : `rotate(${g}deg)`;
+  $('br-cuad').style.display = g === null ? 'none' : '';
+  const signo = (v) => `${v > 0 ? '+' : v < 0 ? '−' : ''}${Math.abs(v).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}°`;
+  $('br-datos').innerHTML = `<span>Norte geográfico <b>0°</b></span>${g === null ? '' : `<span class="c">Norte de cuadrícula <b>${signo(g)}</b></span>`}`;
+}
+mapa.on('moveend', pintarBrujula);
+pintarBrujula();
 
 // ---------------------------------------------------------------- barra inferior: coordenada y altitud
 if (tactil) { document.body.classList.add('tactil'); const c = document.createElement('div'); c.className = 'cruz'; $('contenido').append(c); }
@@ -502,44 +519,20 @@ mapa.on('mousemove', (e) => {
   const p = { lat: e.latlng.lat, lon: e.latlng.lng };
   mostrarPos(p, 'Cursor');
   dibujo.moverCursor(p);
+  regla?.moverCursor(p);
 });
 mapa.on('moveend', () => { if (tactil || !ultimaPos) mostrarPos(centro(), 'Centro'); });
 mapa.on('mouseout', () => { if (ultimaPos) $('be-et').textContent = 'Última'; });
 
-// ---------------------------------------------------------------- regla de medida
-const medida = [];
-const capaMedida = L.layerGroup().addTo(mapa);
-function pintarMedida() {
-  capaMedida.clearLayers();
-  for (let i = 1; i < medida.length; i++) {
-    L.polyline(puntosGeodesica(medida[i - 1], medida[i], 16).map((q) => [q.lat, q.lon]), { color: '#A3362B', weight: 3, opacity: 0.9, interactive: false }).addTo(capaMedida);
-  }
-  medida.forEach((p, i) => L.circleMarker([p.lat, p.lon], { radius: 5, color: '#fff', weight: 2, fillColor: '#A3362B', fillOpacity: 1, interactive: false })
-    .bindTooltip(String.fromCharCode(65 + (i % 26)), { permanent: true, direction: 'right', className: 'etq-cuad', offset: [6, 0] }).addTo(capaMedida));
-  const cuerpo = $('pm-cuerpo');
-  if (medida.length < 2) {
-    $('pm-ayuda').textContent = medida.length ? 'Toca el siguiente punto' : 'Toca el mapa para añadir puntos';
-    cuerpo.innerHTML = medida.length ? `<p class="pm-nota">Origen A: <code>${esc(coord(medida[0]))}</code></p>` : '';
-    return;
-  }
-  $('pm-ayuda').textContent = 'Clic derecho quita el último';
-  let total = 0, totalMapa = 0;
-  const filas = [];
-  for (let i = 1; i < medida.length; i++) {
-    const r = medir(medida[i - 1], medida[i]);
-    total += r.distancia; totalMapa += r.distanciaCuadricula;
-    const de = String.fromCharCode(65 + ((i - 1) % 26)), a = String.fromCharCode(65 + (i % 26));
-    filas.push(`<tr><td>${de}→${a}</td><td>${metros(r.distancia)}</td><td>${rumbo(r.rumbo)}</td><td>${rumbo(r.rumboCuadricula)}</td></tr>`);
-  }
-  cuerpo.innerHTML = `<div class="pm-total"><div class="grande">${metros(total)}</div><div class="peq">Real, sobre el elipsoide · Sobre el mapa: ${metros(totalMapa)}</div></div>
-    <table class="pm-tramos"><thead><tr><th>Tramo</th><th>Distancia</th><th>Rumbo geo</th><th>Rumbo cuad.</th></tr></thead><tbody>${filas.join('')}</tbody></table>
-`;
-}
-$('pm-deshacer').addEventListener('click', () => { medida.pop(); pintarMedida(); });
-$('pm-nueva').addEventListener('click', () => { medida.length = 0; pintarMedida(); });
+// ---------------------------------------------------------------- regla de medida (regla.js)
+const regla = iniciarRegla({ L, mapa, alturas, dibujo, fmt: { metros, coord, rumbo }, herramienta: () => herramienta, elegirHerramienta: (h) => elegirHerramienta(h), alCambiarPaneles: () => recolocarEtiquetas() });
+$('pm-deshacer').addEventListener('click', () => regla.quitarUltimo());
+$('pm-nueva').addEventListener('click', () => regla.nueva());
 document.addEventListener('keydown', (e) => {
+  if (/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement?.tagName)) return;
   if (e.key === 'Escape' && herramienta === 'zona-mapa') { elegirHerramienta('consultar'); return; }
-  if (e.key === 'Escape' && herramienta === 'medir') { if (medida.length) { medida.length = 0; pintarMedida(); } else elegirHerramienta('consultar'); }
+  if (e.key === 'Escape' && herramienta === 'medir') regla.escape();
+  if (e.key === 'Enter' && herramienta === 'medir') regla.terminar();
 });
 
 // ---------------------------------------------------------------- buscador universal
@@ -644,4 +637,4 @@ document.addEventListener('click', (ev) => { if (!ev.target.closest('#buscar')) 
 mostrarPos(centro(), 'Centro');
 elegirHerramienta('consultar');
 // Para pruebas automáticas
-window.__spa = { creador, mapa, estado, medida, pintarMedida, diag, dibujo, importar, cuadricula, alturas, capasFondo, capasImagen, objetos, operaciones, lazo, ventanas, apariencia };
+window.__spa = { creador, mapa, estado, regla, simbolos, diag, dibujo, importar, cuadricula, alturas, capasFondo, capasImagen, objetos, operaciones, lazo, ventanas, apariencia };

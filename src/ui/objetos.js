@@ -55,10 +55,9 @@ export function iniciarObjetos({ dibujo, simbolos, exportar, alCambiarPaneles = 
     }).join('');
     const bd = f.bandos.length === 1 ? f.bandos[0] : '';
     $('obj-bando').innerHTML = `<option value="">Bando</option>${Object.entries(BANDOS).map(([k, b]) => `<option value="${k}" ${k === bd ? 'selected' : ''}>${b.nombre}</option>`).join('')}`;
-    const ops = [];
-    const rec = (padre, niv) => { for (const o of hijos(plan(), padre)) { ops.push({ o, niv }); rec(o.id, niv + 1); } };
-    rec(null, 0);
-    if (f.paquete && f.paquete !== '__sin' && !buscarPaquete(plan(), f.paquete)) f.paquete = '';
+    // En el filtro, solo las operaciones (sin sus fases): filtrar una incluye todo lo de dentro
+    const ops = hijos(plan(), null).map((o) => ({ o, niv: 0 }));
+    if (f.paquete && f.paquete !== '__sin' && !ops.some(({ o }) => o.id === f.paquete)) f.paquete = '';
     $('obj-op').innerHTML = `<option value="">Operación</option><option value="__sin" ${f.paquete === '__sin' ? 'selected' : ''}>Sin operación</option>${ops.map(({ o }) => `<option value="${o.id}" ${o.id === f.paquete ? 'selected' : ''}>${esc(nombreRuta(plan(), o.id))}</option>`).join('')}`;
     const est = f.estados.length === 1 ? f.estados[0] : '';
     $('obj-estado').innerHTML = `<option value="">Estado</option>${Object.entries(ESTADOS).map(([k, e]) => `<option value="${k}" ${k === est ? 'selected' : ''}>${e.nombre}s</option>`).join('')}`;

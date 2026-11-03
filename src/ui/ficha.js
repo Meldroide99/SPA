@@ -26,7 +26,7 @@ export function htmlTrazo({ trazo, grosor }, campo) {
 
 /** Línea de altitud de un punto (se rellena cuando llega el dato). */
 export function htmlAltitud(id = 'el-altitud') {
-  return `<div class="el-altitud"><span class="el-et">Altitud</span><b id="${id}">…</b><small>sobre el nivel del mar · MDT05 del IGN</small></div>`;
+  return `<div class="el-altitud"><span class="el-et">Altitud</span><b id="${id}">…</b></div>`;
 }
 export async function rellenarAltitud(alturas, p, id = 'el-altitud') {
   const caja = () => document.getElementById(id);
@@ -42,8 +42,8 @@ export async function rellenarAltitud(alturas, p, id = 'el-altitud') {
 
 /** Bloque de distancia + desnivel + perfil para una línea. */
 export function htmlLinea(puntos, fmt) {
-  return `<div class="pm-total"><div class="grande">${fmt.metros(longitudLinea(puntos))}</div><div class="peq">Distancia total, sobre el terreno a nivel del mar</div></div>
-    <div class="el-desnivel" id="el-desnivel"><span>Calculando alturas…</span></div>
+  return `<div class="pm-total"><div class="grande">${fmt.metros(longitudLinea(puntos))}</div><div class="peq">Distancia</div></div>
+    <div class="el-desnivel" id="el-desnivel"><span>…</span></div>
     <div class="perfil" id="el-perfil"></div>`;
 }
 
@@ -65,7 +65,7 @@ export async function rellenarPerfil(puntos, alturas, clave, alMover) {
   const des = document.getElementById('el-desnivel'), caja = document.getElementById('el-perfil');
   if (!des || !caja) return r;
   const s = r.resumen;
-  if (s.min === null) { des.innerHTML = '<span>Sin datos de altura (fuera de España o sin conexión con el IGN)</span>'; caja.innerHTML = ''; return r; }
+  if (s.min === null) { des.innerHTML = '<span>Sin datos de altura</span>'; caja.innerHTML = ''; return r; }
   des.innerHTML = `<span title="Desnivel acumulado de subida">↗ <b>${Math.round(s.subida)} m</b></span><span title="Desnivel acumulado de bajada">↘ <b>${Math.round(s.bajada)} m</b></span>
     <span title="Altitud mínima y máxima">${Math.round(s.min)}–${Math.round(s.max)} m</span><span title="Altitud inicial y final">${Math.round(s.inicio)} → ${Math.round(s.fin)} m</span>`;
   pintarPerfil(caja, r.m, alMover);
