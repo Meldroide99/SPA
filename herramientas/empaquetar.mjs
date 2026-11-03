@@ -62,6 +62,11 @@ function cargar(ruta) {
   src = src.replace(/export\s*\*\s*from\s*'([^']+)';?/g, (m, rel) => {
     const dep = resolve(dirname(ruta), rel); deps.push(dep); estrellas.push(dep); return '';
   });
+  // export { a, b as c };
+  src = src.replace(/export\s*\{([^}]*)\};?/g, (m, nombres) => {
+    for (const n of nombres.split(',').map((x) => x.trim()).filter(Boolean)) { const [a, b] = n.split(/\s+as\s+/); exportados.push(b ? `${b}: ${a}` : a); }
+    return '';
+  });
   // export function/const/let/class NOMBRE
   src = src.replace(/export\s+(async\s+function\*?|function\*?|const|let|class)\s*([A-Za-z_$][\w$]*)/g, (m, tipo, nombre) => {
     exportados.push(nombre); return `${tipo} ${nombre}`;

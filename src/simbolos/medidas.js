@@ -1,19 +1,27 @@
-// Medidas de coordinación y cometidos tácticos (APP-6(E) cap. 8 y su
-// apéndice A; nombres de la PD0-002 cap. 2 y apéndice I). Las siglas son las
-// OTAN, como en la PD0-002 (PL, LD, OBJ, B de bloquear…).
+// Geometría de las medidas de coordinación y de los cometidos tácticos
+// (APP-6(E) cap. 8 y su apéndice A). El catálogo está en medidas-catalogo.js y
+// los iconos puntuales en medidas-glifos.js.
 //
-// Cada gráfico se construye a partir de sus puntos de anclaje (los mismos que
-// define la norma). Se calcula en un plano local en metros alrededor del
-// primer punto y se devuelve en lat/lon: los puntos de anclaje son exactos;
-// el dibujo intermedio (puntas de flecha, arcos) es solo gráfico.
+// Cada gráfico se construye a partir de sus puntos de anclaje (los que define
+// la norma), en un plano local en metros alrededor del primer punto, y se
+// devuelve en lat/lon. Los puntos de anclaje son exactos; el dibujo intermedio
+// (puntas, arcos, motivos) es solo gráfico. Los motivos repetidos (dientes,
+// alambradas, rayados…) se dimensionan en píxeles de pantalla (props.mpp =
+// metros por píxel) para que se vean igual a cualquier zoom.
+
+import { MEDIDAS, GRUPOS, medida, puntosNecesarios, tipoElemento } from './medidas-catalogo.js';
+import { glifoPunto, glifoZona } from './medidas-glifos.js';
+
+export { MEDIDAS, GRUPOS, medida, puntosNecesarios, tipoElemento, glifoPunto, glifoZona };
 
 const R = 6378137;
 /** Plano local (metros, x este / y norte) alrededor de p0. */
-function plano(p0) {
+export function plano(p0) {
   const k = Math.cos((p0.lat * Math.PI) / 180);
   const a = (p) => [((p.lon - p0.lon) * Math.PI / 180) * R * k, ((p.lat - p0.lat) * Math.PI / 180) * R];
   const g = ([x, y]) => [p0.lat + (y / R) * (180 / Math.PI), p0.lon + (x / (R * k)) * (180 / Math.PI)];
-  return { a, g };
+  const gp = (q) => { const [lat, lon] = g(q); return { lat, lon }; };
+  return { a, g, gp };
 }
 const sum = (p, q) => [p[0] + q[0], p[1] + q[1]];
 const res = (p, q) => [p[0] - q[0], p[1] - q[1]];
@@ -23,342 +31,22 @@ const uni = (p) => { const l = lon(p) || 1; return [p[0] / l, p[1] / l]; };
 const perp = (p) => [-p[1], p[0]]; // 90° a la izquierda
 const med = (p, q) => mul(sum(p, q), 0.5);
 const rot = (p, ang) => { const c = Math.cos(ang), s = Math.sin(ang); return [p[0] * c - p[1] * s, p[0] * s + p[1] * c]; };
-const angulo = (v) => (Math.atan2(v[0], v[1]) * 180) / Math.PI; // rumbo de un vector (para girar textos)
+const dot = (p, q) => p[0] * q[0] + p[1] * q[1];
+const angulo = (v) => (Math.atan2(v[0], v[1]) * 180) / Math.PI; // rumbo de un vector
+const angDe = (v) => Math.atan2(v[1], v[0]);
+const longitud = (P) => P.slice(1).reduce((t, p, i) => t + lon(res(p, P[i])), 0);
 
-/** Punta de flecha abierta en `tip` llegando desde la dirección `dir` (unitario). */
+/** Punta de flecha abierta en `tip` llegando desde `dir` (unitario). */
 const punta = (tip, dir, t, ang = 0.5) => [sum(tip, mul(rot(dir, Math.PI - ang), t)), tip, sum(tip, mul(rot(dir, Math.PI + ang), t))];
-/** Arco circular (centro, radio, ángulo inicial y final en radianes, sentido antihorario si a1 > a0). */
+/** Arco (centro, radio, ángulos en radianes). */
 function arco(c, r, a0, a1, n = 36) {
   const pts = [];
   for (let i = 0; i <= n; i++) { const a = a0 + ((a1 - a0) * i) / n; pts.push([c[0] + r * Math.cos(a), c[1] + r * Math.sin(a)]); }
   return pts;
 }
-const angDe = (v) => Math.atan2(v[1], v[0]);
+const bezier = (p0, c, p1, n = 20) => Array.from({ length: n + 1 }, (_, i) => { const t = i / n; return sum(sum(mul(p0, (1 - t) ** 2), mul(c, 2 * t * (1 - t))), mul(p1, t * t)); });
 
-// ---------------------------------------------------------------- catálogo
-// tipo: elemento del plan que lo guarda ('punto' | 'linea' | 'area')
-// n: puntos exactos (cometidos) o mínimo (min) para líneas y áreas
-export const GRUPOS = {
-  lineas: 'Líneas',
-  ejes: 'Ejes y direcciones de ataque',
-  areas: 'Zonas y posiciones',
-  puntos: 'Puntos',
-  cometidos: 'Cometidos tácticos (verbos)',
-};
-export const MEDIDAS = [
-  // Líneas (PD0-002 tablas 2.2, 2.5, 2.7)
-  { id: 'limite', grupo: 'lineas', nombre: 'Límite', tipo: 'linea', min: 2, claves: 'boundary lateral', campos: ['escalon', 'izq', 'der'] },
-  { id: 'pl', grupo: 'lineas', nombre: 'Línea de fase', sigla: 'PL', tipo: 'linea', min: 2, claves: 'phase line' },
-  { id: 'ld', grupo: 'lineas', nombre: 'Línea de partida', sigla: 'LD', tipo: 'linea', min: 2, claves: 'lp línea de partida' },
-  { id: 'ldlc', grupo: 'lineas', nombre: 'Línea de partida / de contacto', sigla: 'LD/LC', tipo: 'linea', min: 2 },
-  { id: 'loa', grupo: 'lineas', nombre: 'Límite de avance', sigla: 'LOA', tipo: 'linea', min: 2 },
-  { id: 'fcl', grupo: 'lineas', nombre: 'Línea de coordinación final', sigla: 'FCL', tipo: 'linea', min: 2 },
-  { id: 'pld', grupo: 'lineas', nombre: 'Línea probable de despliegue', sigla: 'PLD', tipo: 'linea', min: 2, discontinua: true },
-  { id: 'lc', grupo: 'lineas', nombre: 'Línea de contacto', sigla: 'LC', tipo: 'linea', min: 2 },
-  { id: 'feba', grupo: 'lineas', nombre: 'Borde anterior de la zona de defensa', sigla: 'FEBA', tipo: 'linea', min: 2 },
-  // Ejes y direcciones (tabla 2.7)
-  { id: 'ataque-principal', grupo: 'ejes', nombre: 'Ataque principal (eje)', tipo: 'linea', min: 2, ayuda: 'Marca el eje desde la retaguardia hasta la punta.', campos: ['ancho'] },
-  { id: 'ataque-apoyo', grupo: 'ejes', nombre: 'Ataque de apoyo (eje)', tipo: 'linea', min: 2, campos: ['ancho'] },
-  { id: 'contraataque', grupo: 'ejes', nombre: 'Contraataque', sigla: 'CATK', tipo: 'linea', min: 2, campos: ['ancho'] },
-  { id: 'dir-principal', grupo: 'ejes', nombre: 'Dirección del ataque principal', tipo: 'linea', min: 2 },
-  { id: 'dir-apoyo', grupo: 'ejes', nombre: 'Dirección del ataque de apoyo', tipo: 'linea', min: 2 },
-  // Zonas (tablas 2.5–2.7)
-  { id: 'aa', grupo: 'areas', nombre: 'Zona de reunión', sigla: 'AA', tipo: 'area', min: 3 },
-  { id: 'obj', grupo: 'areas', nombre: 'Objetivo', sigla: 'OBJ', tipo: 'area', min: 3 },
-  { id: 'atk', grupo: 'areas', nombre: 'Posición de partida', sigla: 'ATK', tipo: 'area', min: 3 },
-  { id: 'aslt', grupo: 'areas', nombre: 'Posición de asalto', sigla: 'ASLT', tipo: 'area', min: 3 },
-  { id: 'ea', grupo: 'areas', nombre: 'Área de fuego sobre objetivos', sigla: 'EA', tipo: 'area', min: 3, claves: 'engagement area' },
-  { id: 'bp', grupo: 'areas', nombre: 'Posición defensiva', sigla: 'BP', tipo: 'area', min: 3, claves: 'battle position' },
-  { id: 'dz', grupo: 'areas', nombre: 'Zona de lanzamiento', sigla: 'DZ', tipo: 'area', min: 3, claves: 'paracaidistas salto' },
-  { id: 'lz', grupo: 'areas', nombre: 'Zona de aterrizaje', sigla: 'LZ', tipo: 'area', min: 3, claves: 'helicópteros toma' },
-  { id: 'pz', grupo: 'areas', nombre: 'Zona de recogida', sigla: 'PZ', tipo: 'area', min: 3 },
-  { id: 'sbf', grupo: 'areas', nombre: 'Posición de apoyo por el fuego', sigla: 'SBF', tipo: 'linea', n: 4, ayuda: 'Puntos 1 y 2: base; 3 y 4: puntas de las flechas.' },
-  { id: 'abf', grupo: 'areas', nombre: 'Posición de ataque por el fuego', sigla: 'ABF', tipo: 'linea', n: 3, ayuda: 'Punto 1: punta de la flecha; 2 y 3: extremos de la base.' },
-  // Puntos (tabla 2.4)
-  { id: 'ckp', grupo: 'puntos', nombre: 'Punto de control', sigla: 'CKP', tipo: 'punto', n: 1 },
-  { id: 'cop', grupo: 'puntos', nombre: 'Punto de contacto', sigla: 'CP', tipo: 'punto', n: 1 },
-  { id: 'coord', grupo: 'puntos', nombre: 'Punto de coordinación', sigla: 'PC', tipo: 'punto', n: 1 },
-  { id: 'rly', grupo: 'puntos', nombre: 'Punto de reunión', sigla: 'RLY', tipo: 'punto', n: 1 },
-  { id: 'sp', grupo: 'puntos', nombre: 'Punto inicial', sigla: 'SP', tipo: 'punto', n: 1 },
-  { id: 'rp', grupo: 'puntos', nombre: 'Punto de dislocación', sigla: 'RP', tipo: 'punto', n: 1 },
-  { id: 'pp', grupo: 'puntos', nombre: 'Punto de paso', sigla: 'PP', tipo: 'punto', n: 1 },
-  { id: 'pd', grupo: 'puntos', nombre: 'Punto de partida', sigla: 'PD', tipo: 'punto', n: 1 },
-  { id: 'op', grupo: 'puntos', nombre: 'Observatorio', sigla: 'OP', tipo: 'punto', n: 1 },
-  // Cometidos tácticos (apéndice A al cap. 8 / apéndice I de la PD0-002)
-  { id: 'bloquear', grupo: 'cometidos', nombre: 'Bloquear', sigla: 'B', tipo: 'linea', n: 3, ayuda: 'Puntos 1 y 2: la barra (de cara al enemigo); 3: el final de la línea.' },
-  { id: 'brecha', grupo: 'cometidos', nombre: 'Brecha', sigla: 'B', tipo: 'linea', n: 3, ayuda: 'Puntos 1 y 2: la abertura; 3: la parte de atrás.' },
-  { id: 'desbordar', grupo: 'cometidos', nombre: 'Desbordar', sigla: 'B', tipo: 'linea', n: 3, ayuda: 'Puntos 1 y 2: las puntas; 3: la parte de atrás.' },
-  { id: 'canalizar', grupo: 'cometidos', nombre: 'Canalizar', sigla: 'C', tipo: 'linea', n: 3, ayuda: 'Puntos 1 y 2: la abertura; 3: la parte de atrás.' },
-  { id: 'limpiar', grupo: 'cometidos', nombre: 'Operación de limpieza', sigla: 'C', tipo: 'linea', n: 3, ayuda: 'Puntos 1 y 2: la línea de llegada; 3: el inicio de las flechas.' },
-  { id: 'contener', grupo: 'cometidos', nombre: 'Contener', sigla: 'C', tipo: 'linea', n: 2, ayuda: 'Puntos 1 y 2: extremos del semicírculo.' },
-  { id: 'controlar', grupo: 'cometidos', nombre: 'Controlar', sigla: 'C', tipo: 'linea', n: 2, ayuda: 'Punto 1: centro; 2: inicio y radio.' },
-  { id: 'asegurar', grupo: 'cometidos', nombre: 'Asegurar', sigla: 'S', tipo: 'linea', n: 2, ayuda: 'Punto 1: centro; 2: inicio y radio (abertura hacia lo propio).' },
-  { id: 'ocupar', grupo: 'cometidos', nombre: 'Ocupar', sigla: 'O', tipo: 'linea', n: 2, ayuda: 'Punto 1: centro; 2: inicio y radio.' },
-  { id: 'aislar', grupo: 'cometidos', nombre: 'Aislar', sigla: 'I', tipo: 'linea', n: 2, ayuda: 'Punto 1: centro; 2: inicio y radio.' },
-  { id: 'tomar', grupo: 'cometidos', nombre: 'Tomar', sigla: 'S', tipo: 'linea', n: 3, ayuda: 'Punto 1: centro del círculo de la unidad; 2: radio; 3: punta de la flecha.' },
-  { id: 'destruir', grupo: 'cometidos', nombre: 'Destruir', sigla: 'D', tipo: 'linea', n: 2, ayuda: 'Punto 1: centro; 2: tamaño.' },
-  { id: 'neutralizar', grupo: 'cometidos', nombre: 'Neutralizar', sigla: 'N', tipo: 'linea', n: 2, ayuda: 'Punto 1: centro; 2: tamaño.' },
-  { id: 'suprimir', grupo: 'cometidos', nombre: 'Suprimir', sigla: 'S', tipo: 'linea', n: 2, ayuda: 'Punto 1: centro; 2: tamaño.' },
-  { id: 'fijar', grupo: 'cometidos', nombre: 'Fijar', sigla: 'F', tipo: 'linea', n: 2, ayuda: 'Punto 1: punta de la flecha; 2: el inicio.' },
-  { id: 'retardar', grupo: 'cometidos', nombre: 'Retardar', sigla: 'D', tipo: 'linea', n: 3, ayuda: 'Punto 1: punta de la flecha; 2: fin del tramo recto; 3: lado y tamaño del arco.' },
-  { id: 'retirarse', grupo: 'cometidos', nombre: 'Retirarse', sigla: 'W', tipo: 'linea', n: 3, ayuda: 'Punto 1: punta de la flecha; 2: fin del tramo recto; 3: lado y tamaño del arco.' },
-  { id: 'retirarse-presion', grupo: 'cometidos', nombre: 'Retirarse bajo presión', sigla: 'WP', tipo: 'linea', n: 3 },
-  { id: 'ruptura', grupo: 'cometidos', nombre: 'Ruptura del contacto', sigla: 'DIS', tipo: 'linea', n: 3 },
-  { id: 'demostracion', grupo: 'cometidos', nombre: 'Demostración', sigla: 'DEM', tipo: 'linea', n: 3 },
-  { id: 'desorganizar', grupo: 'cometidos', nombre: 'Desorganizar / perturbar', sigla: 'D', tipo: 'linea', n: 3, ayuda: 'Puntos 1 y 2: la línea base; 3: punta de la flecha más larga.' },
-  { id: 'interdiccion', grupo: 'cometidos', nombre: 'Interdicción', sigla: 'I', tipo: 'linea', n: 2, ayuda: 'Punto 1: centro; 2: tamaño y dirección.' },
-  { id: 'penetrar', grupo: 'cometidos', nombre: 'Penetrar', sigla: 'P', tipo: 'linea', n: 3, ayuda: 'Puntos 1 y 2: la barra; 3: el inicio de la flecha.' },
-  { id: 'envolver', grupo: 'cometidos', nombre: 'Envolver', sigla: 'E', tipo: 'linea', n: 3, ayuda: 'Punto 1: inicio; 2: fin del tramo recto; 3: fin del arco.' },
-  { id: 'emboscada', grupo: 'cometidos', nombre: 'Emboscada', tipo: 'linea', n: 3, ayuda: 'Punto 1: punta de la flecha; 2 y 3: extremos de la base.' },
-  { id: 'cubrir', grupo: 'cometidos', nombre: 'Cubrir', sigla: 'C', tipo: 'linea', n: 3, ayuda: 'Punto 1: la unidad; 2 y 3: puntas de las flechas.' },
-  { id: 'vigilar', grupo: 'cometidos', nombre: 'Vigilar / proteger', sigla: 'G', tipo: 'linea', n: 3, ayuda: 'Punto 1: la unidad; 2 y 3: puntas de las flechas.' },
-  { id: 'observar', grupo: 'cometidos', nombre: 'Observar / vigilar (pantalla)', sigla: 'S', tipo: 'linea', n: 3, ayuda: 'Punto 1: la unidad; 2 y 3: puntas de las flechas.' },
-];
-export const medida = (id) => MEDIDAS.find((m) => m.id === id);
-export const puntosNecesarios = (m) => m.n ?? m.min ?? 1;
-
-// ---------------------------------------------------------------- geometría
-/**
- * Gráfico de una medida.
- * @param {object} m definición (MEDIDAS)
- * @param {Array<{lat,lon}>} anclas puntos de anclaje
- * @param {object} props {nombre, ancho(m), escalon, izq, der}
- * @returns {{lineas: Array<{pts:[[lat,lon]], discontinua?, grosor?}>, rellenos: Array<{pts}>, textos: Array<{pos:[lat,lon], texto, rumbo?, tam?}>}}
- */
-export function geometria(m, anclas, props = {}) {
-  const out = { lineas: [], rellenos: [], textos: [] };
-  if (!anclas.length) return out;
-  const { a, g } = plano(anclas[0]);
-  const P = anclas.map(a);
-  const L = (pts, opc = {}) => out.lineas.push({ pts: pts.map(g), ...opc });
-  const F = (pts) => out.rellenos.push({ pts: pts.map(g) });
-  const T = (p, texto, opc = {}) => { if (texto) out.textos.push({ pos: g(p), texto, ...opc }); };
-  const nombre = props.nombre ?? '';
-  const etiqueta = [m.sigla, nombre].filter(Boolean).join(' ');
-
-  // Líneas con rótulo en los extremos
-  if (m.grupo === 'lineas') {
-    L(P, { discontinua: m.discontinua });
-    if (m.id === 'limite') {
-      const i = Math.floor((P.length - 1) / 2), c = med(P[i], P[i + 1]);
-      const d = uni(res(P[i + 1], P[i])), n = perp(d), L0 = lon(res(P[i + 1], P[i]));
-      T(c, props.escalonMarca || '', { tam: 15, rumbo: angulo(d) - 90, fondo: true });
-      T(sum(c, mul(n, Math.max(30, L0 * 0.06))), props.izq, { rumbo: angulo(d) - 90 });
-      T(sum(c, mul(n, -Math.max(30, L0 * 0.06))), props.der, { rumbo: angulo(d) - 90 });
-    } else {
-      T(P[0], etiqueta, { extremo: 'inicio', dir: angulo(res(P[1], P[0])) });
-      T(P.at(-1), etiqueta, { extremo: 'fin', dir: angulo(res(P.at(-1), P.at(-2))) });
-    }
-    return out;
-  }
-  if (m.grupo === 'areas' && m.tipo === 'area') {
-    L([...P, P[0]]);
-    T(centroide(P), etiqueta, { tam: 14, negrita: true });
-    return out;
-  }
-  if (m.grupo === 'ejes') {
-    if (m.id.startsWith('dir-')) {
-      L(P);
-      const dir = uni(res(P.at(-1), P.at(-2))), t = Math.max(25, longitud(P) * 0.08);
-      L(punta(P.at(-1), dir, t));
-      if (m.id === 'dir-principal') L(punta(sum(P.at(-1), mul(dir, -t * 0.45)), dir, t));
-      T(med(P.at(-2), P.at(-1)), nombre, { rumbo: angulo(dir) - 90, arriba: true });
-      return out;
-    }
-    const ancho = props.ancho > 0 ? props.ancho : Math.max(80, longitud(P) * 0.14);
-    const flecha = flechaAncha(P, ancho, m.id === 'ataque-principal');
-    for (const l of flecha) L(l, { discontinua: m.id === 'contraataque' });
-    const i = Math.max(0, P.length - 2);
-    T(med(P[i], P[i + 1]), m.id === 'contraataque' ? ['CATK', nombre].filter(Boolean).join(' ') : nombre, { rumbo: angulo(res(P[i + 1], P[i])) - 90, negrita: true });
-    return out;
-  }
-  if (m.tipo === 'punto') return out; // los puntos se pintan con un icono (marcadorPunto)
-
-  // ---------------------------------------------------------- posiciones de fuego
-  if (m.id === 'sbf' && P.length >= 4) {
-    const [p1, p2, p3, p4] = P, base = res(p2, p1), n = uni(perp(base)), t = lon(base) * 0.18;
-    const atras = mul(n, -t);
-    L([sum(p1, sum(atras, mul(uni(base), -t * 0.6))), p1, p2, sum(p2, sum(atras, mul(uni(base), t * 0.6)))]);
-    L([p1, p3]); L(punta(p3, uni(res(p3, p1)), t * 0.5));
-    L([p2, p4]); L(punta(p4, uni(res(p4, p2)), t * 0.5));
-    T(med(p1, p2), nombre);
-    return out;
-  }
-  if (m.id === 'abf' && P.length >= 3) {
-    const [p1, p2, p3] = P, base = res(p3, p2), n = uni(perp(base)), t = lon(base) * 0.18;
-    const haciaFuera = mul(n, Math.sign((p1[0] - p2[0]) * n[0] + (p1[1] - p2[1]) * n[1]) || 1);
-    L([sum(p2, sum(mul(haciaFuera, -t), mul(uni(base), -t * 0.6))), p2, p3, sum(p3, sum(mul(haciaFuera, -t), mul(uni(base), t * 0.6)))]);
-    const c = med(p2, p3); L([c, p1]); L(punta(p1, uni(res(p1, c)), t * 0.5));
-    T(c, nombre);
-    return out;
-  }
-
-  // ---------------------------------------------------------- cometidos
-  const s = m.sigla ?? '';
-  switch (m.id) {
-    case 'bloquear': case 'penetrar': {
-      const [p1, p2, p3] = P, c = med(p1, p2);
-      L([p1, p2]);
-      L([p3, c]);
-      if (m.id === 'penetrar') L(punta(c, uni(res(c, p3)), lon(res(p2, p1)) * 0.18));
-      T(med(c, p3), s, { fondo: true });
-      break;
-    }
-    case 'brecha': case 'desbordar': case 'canalizar': {
-      const [p1, p2, p3] = P, ab = res(p2, p1), n = uni(perp(ab));
-      const prof = (p3[0] - p1[0]) * n[0] + (p3[1] - p1[1]) * n[1];
-      const atras = mul(n, prof);
-      const q1 = sum(p1, atras), q2 = sum(p2, atras);
-      L([p1, q1, q2, p2]);
-      const t = lon(ab) * 0.12, fuera = uni(ab), haciaDelante = mul(n, -Math.sign(prof) || 1);
-      if (m.id === 'desbordar') { L(punta(p1, haciaDelante, t)); L(punta(p2, haciaDelante, t)); }
-      else {
-        const sg = m.id === 'brecha' ? -1 : 1; // brecha: rabos hacia fuera; canalizar: hacia dentro
-        L([sum(p1, sum(mul(fuera, sg * t * 0.7), mul(haciaDelante, t * 0.7))), sum(p1, sum(mul(fuera, -sg * t * 0.7), mul(haciaDelante, -t * 0.7)))]);
-        L([sum(p2, sum(mul(fuera, -sg * t * 0.7), mul(haciaDelante, t * 0.7))), sum(p2, sum(mul(fuera, sg * t * 0.7), mul(haciaDelante, -t * 0.7)))]);
-      }
-      T(med(q1, q2), s, { fondo: true });
-      break;
-    }
-    case 'limpiar': {
-      const [p1, p2, p3] = P, ab = res(p2, p1), n = uni(perp(ab));
-      const prof = (p3[0] - p1[0]) * n[0] + (p3[1] - p1[1]) * n[1];
-      L([p1, p2]);
-      const t = lon(ab) * 0.1, dir = mul(n, -Math.sign(prof) || 1);
-      for (const k of [0.2, 0.5, 0.8]) {
-        const tip = sum(p1, mul(ab, k)), cola = sum(tip, mul(n, prof));
-        L([cola, tip]); L(punta(tip, dir, t));
-        if (k === 0.5) T(med(cola, tip), s, { fondo: true });
-      }
-      break;
-    }
-    case 'contener': {
-      const [p1, p2] = P, c = med(p1, p2), r = lon(res(p2, p1)) / 2, a0 = angDe(res(p1, c));
-      const arc = arco(c, r, a0, a0 + Math.PI, 30);
-      L(arc);
-      for (let i = 1; i < 10; i++) { const q = arc[i * 3]; const v = uni(res(q, c)); L([q, sum(q, mul(v, r * 0.18))]); } // rayas hacia fuera
-      T(sum(c, mul(uni(res(arc[15], c)), r * 1.32)), s, { fondo: true });
-      break;
-    }
-    case 'controlar': case 'asegurar': case 'ocupar': case 'aislar': {
-      const [p1, p2] = P, r = lon(res(p2, p1)) || 1, a0 = angDe(res(p2, p1));
-      const arc = arco(p1, r, a0, a0 + (330 * Math.PI) / 180, 44);
-      L(arc);
-      const fin = arc.at(-1), tg = uni(res(fin, arc.at(-2)));
-      if (m.id === 'ocupar') { const d = r * 0.14; L([sum(fin, [-d, -d]), sum(fin, [d, d])]); L([sum(fin, [-d, d]), sum(fin, [d, -d])]); }
-      else if (m.id === 'asegurar') { const t = r * 0.2; const b = sum(fin, mul(tg, -t)); L([sum(b, mul(perp(tg), t * 0.6)), fin]); }
-      else L(punta(fin, tg, r * 0.18));
-      if (m.id === 'aislar') {
-        for (let i = 4; i < 40; i += 6) {
-          const q = arc[i], q2 = arc[i + 2], v = uni(res(p1, q));
-          L([q, sum(med(q, q2), mul(v, r * 0.2)), q2]);
-        }
-      }
-      T(arc[Math.round(arc.length * 0.25)], s, { fondo: true });
-      break;
-    }
-    case 'tomar': {
-      const [p1, p2, p3] = P, r = lon(res(p2, p1)) || 1;
-      L(arco(p1, r, 0, 2 * Math.PI, 48));
-      const inicio = sum(p1, mul(uni(res(p3, p1)), r));
-      const cuerda = res(p3, inicio), ctrl = sum(med(inicio, p3), mul(uni(perp(cuerda)), lon(cuerda) * 0.3));
-      const curva = []; for (let i = 0; i <= 20; i++) { const t = i / 20; curva.push(sum(sum(mul(inicio, (1 - t) ** 2), mul(ctrl, 2 * t * (1 - t))), mul(p3, t * t))); }
-      L(curva); L(punta(p3, uni(res(p3, curva.at(-2))), lon(cuerda) * 0.1));
-      T(curva[10], s, { fondo: true });
-      break;
-    }
-    case 'destruir': case 'neutralizar': case 'suprimir': {
-      const [p1, p2] = P, d = lon(res(p2, p1)) || 1, hueco = d * 0.28;
-      for (const v of [[1, 1], [1, -1], [-1, 1], [-1, -1]]) {
-        const u = uni(v);
-        const disc = m.id === 'suprimir' || (m.id === 'neutralizar' && v[0] * v[1] < 0);
-        L([sum(p1, mul(u, hueco)), sum(p1, mul(u, d))], { discontinua: disc });
-      }
-      T(p1, s, { fondo: true });
-      break;
-    }
-    case 'fijar': {
-      const [p1, p2] = P, v = res(p1, p2), u = uni(v), n = perp(u), Ltot = lon(v);
-      const pts = [p2, sum(p2, mul(u, Ltot * 0.18))];
-      const nz = 8, a0 = Ltot * 0.18, a1 = Ltot * 0.85, amp = Ltot * 0.06;
-      for (let i = 1; i <= nz; i++) pts.push(sum(sum(p2, mul(u, a0 + ((a1 - a0) * (i - 0.5)) / nz)), mul(n, i % 2 ? amp : -amp)));
-      pts.push(sum(p2, mul(u, a1)), p1);
-      L(pts); L(punta(p1, u, Ltot * 0.1));
-      T(sum(p2, mul(u, Ltot * 0.08)), s, { fondo: true });
-      break;
-    }
-    case 'retardar': case 'retirarse': case 'retirarse-presion': case 'ruptura': case 'demostracion': {
-      const [p1, p2, p3] = P, u = uni(res(p1, p2)), n = perp(u);
-      const lado = Math.sign((p3[0] - p2[0]) * n[0] + (p3[1] - p2[1]) * n[1]) || 1;
-      const diam = Math.abs((p3[0] - p2[0]) * n[0] + (p3[1] - p2[1]) * n[1]) || lon(res(p1, p2)) * 0.3;
-      const c = sum(p2, mul(n, (lado * diam) / 2));
-      const a0 = angDe(res(p2, c));
-      const arc = arco(c, diam / 2, a0, a0 - lado * Math.PI, 24);
-      L([p1, p2]); L(arc);
-      if (m.id === 'demostracion') { const q = arc.at(-1); L([q, sum(q, mul(u, -lon(res(p1, p2)) * 0.6))]); }
-      L(punta(p1, u, lon(res(p1, p2)) * 0.1));
-      T(med(p1, p2), s, { fondo: true });
-      break;
-    }
-    case 'desorganizar': {
-      const [p1, p2, p3] = P, base = res(p2, p1), n = uni(perp(base));
-      const largo = (p3[0] - p1[0]) * n[0] + (p3[1] - p1[1]) * n[1];
-      L([p1, p2]);
-      const flechas = [[0.08, 0.45], [0.5, 0.3], [0.92, 1]];
-      const t = Math.abs(largo) * 0.1;
-      for (const [k, f] of flechas) {
-        const o = sum(p1, mul(base, k)), tip = sum(o, mul(n, largo * f));
-        L([o, tip]); L(punta(tip, mul(n, Math.sign(largo) || 1), t));
-        if (k === 0.5) T(sum(o, mul(n, largo * f * 0.5)), s, { fondo: true });
-      }
-      const c = med(p1, p2); L([c, sum(c, mul(n, -largo * 0.25))]);
-      break;
-    }
-    case 'interdiccion': {
-      const [p1, p2] = P, v = res(p2, p1), d = lon(v) || 1, u = uni(v);
-      const a = sum(p1, mul(u, -d)), b = sum(p1, mul(u, d));
-      L([a, b]); L(punta(b, u, d * 0.18));
-      const u2 = rot(u, Math.PI / 4), a2 = sum(p1, mul(u2, -d)), b2 = sum(p1, mul(u2, d));
-      L([a2, b2]); L(punta(b2, u2, d * 0.18));
-      T(p1, s, { fondo: true });
-      break;
-    }
-    case 'envolver': {
-      const [p1, p2, p3] = P, d = res(p3, p2), c = med(p2, p3), r = lon(d) / 2;
-      const a0 = angDe(res(p2, c));
-      const arc = arco(c, r, a0, a0 - Math.PI, 24);
-      L([p1, p2]); L(arc); L(punta(arc.at(-1), uni(res(arc.at(-1), arc.at(-2))), r * 0.35));
-      T(med(p1, p2), s, { fondo: true });
-      break;
-    }
-    case 'emboscada': {
-      const [p1, p2, p3] = P, c = med(p2, p3), dir = uni(res(p1, c)), r = lon(res(p3, p2)) / 2;
-      // base curva (abierta hacia la flecha) con rayas hacia atrás
-      const ctrl = sum(c, mul(dir, -r * 0.5));
-      const curva = []; for (let i = 0; i <= 16; i++) { const t = i / 16; curva.push(sum(sum(mul(p2, (1 - t) ** 2), mul(ctrl, 2 * t * (1 - t))), mul(p3, t * t))); }
-      L(curva);
-      for (let i = 1; i < 16; i += 2) L([curva[i], sum(curva[i], mul(dir, r * 0.2))]);
-      const ini = curva[8]; L([ini, p1]); L(punta(p1, dir, r * 0.25));
-      break;
-    }
-    case 'cubrir': case 'vigilar': case 'observar': {
-      const [p1, p2, p3] = P;
-      for (const q of [p2, p3]) {
-        const v = res(q, p1), u = uni(v), n = perp(u), d = lon(v);
-        const a0 = sum(p1, mul(u, d * 0.18)), z0 = sum(p1, mul(u, d * 0.55)), z1 = sum(p1, mul(u, d * 0.62));
-        L([a0, z0, sum(med(z0, z1), mul(n, d * 0.06)), z1, q]);
-        L(punta(q, u, d * 0.08));
-        T(sum(p1, mul(u, d * 0.3)), s, { fondo: true });
-      }
-      break;
-    }
-    default: L(P);
-  }
-  return out;
-}
-
-const longitud = (P) => P.slice(1).reduce((t, p, i) => t + lon(res(p, P[i])), 0);
-function centroide(P) {
+export function centroide(P) {
   let a = 0, cx = 0, cy = 0;
   for (let i = 0; i < P.length; i++) {
     const [x0, y0] = P[i], [x1, y1] = P[(i + 1) % P.length], f = x0 * y1 - x1 * y0;
@@ -367,13 +55,52 @@ function centroide(P) {
   if (Math.abs(a) < 1e-9) return mul(P.reduce((s, p) => sum(s, p), [0, 0]), 1 / P.length);
   return [cx / (3 * a), cy / (3 * a)];
 }
+const areaFirmada = (P) => P.reduce((t, p, i) => { const q = P[(i + 1) % P.length]; return t + p[0] * q[1] - q[0] * p[1]; }, 0) / 2;
+
+/** Recorre una polilínea cada `paso` metros: [{p, t (tangente), n (normal izquierda), d}] */
+function muestrear(P, paso, desde = paso / 2) {
+  const out = [];
+  let acum = 0, sig = desde;
+  for (let i = 0; i < P.length - 1; i++) {
+    const v = res(P[i + 1], P[i]), l = lon(v); if (!l) continue;
+    const t = uni(v);
+    while (sig <= acum + l) { const p = sum(P[i], mul(t, sig - acum)); out.push({ p, t, n: perp(t), d: sig }); sig += paso; }
+    acum += l;
+  }
+  return out;
+}
+
+/** Corta la recta a→b con un polígono: tramos interiores. */
+function recortar(poly, a, b) {
+  const v = res(b, a), ts = [];
+  for (let i = 0; i < poly.length; i++) {
+    const p = poly[i], q = poly[(i + 1) % poly.length], w = res(q, p);
+    const den = v[0] * w[1] - v[1] * w[0]; if (Math.abs(den) < 1e-12) continue;
+    const ap = res(p, a), t = (ap[0] * w[1] - ap[1] * w[0]) / den, u = (ap[0] * v[1] - ap[1] * v[0]) / den;
+    if (u >= 0 && u < 1) ts.push(t);
+  }
+  ts.sort((x, y) => x - y);
+  const out = [];
+  for (let i = 0; i + 1 < ts.length; i += 2) out.push([sum(a, mul(v, ts[i])), sum(a, mul(v, ts[i + 1]))]);
+  return out;
+}
+/** Rayado de un polígono (líneas paralelas a `ang` cada `sep` metros). */
+function rayado(poly, sep, ang) {
+  const c = centroide(poly), u = [Math.cos(ang), Math.sin(ang)], n = perp(u);
+  const R0 = Math.max(...poly.map((p) => lon(res(p, c)))) + sep;
+  const out = [];
+  for (let s = -R0; s <= R0; s += sep) {
+    const o = sum(c, mul(n, s));
+    out.push(...recortar(poly, sum(o, mul(u, -R0)), sum(o, mul(u, R0))));
+  }
+  return out;
+}
 
 /** Flecha ancha a lo largo de un eje (ataques). Devuelve polilíneas. */
 function flechaAncha(P, ancho, doble) {
   const h = ancho / 2;
   const izq = [], der = [];
   const n = P.length;
-  // Normales suavizadas en los vértices
   for (let i = 0; i < n - 1; i++) {
     const dPrev = i > 0 ? uni(res(P[i], P[i - 1])) : null, dNext = uni(res(P[i + 1], P[i]));
     const dir = dPrev ? uni(sum(dPrev, dNext)) : dNext;
@@ -385,21 +112,635 @@ function flechaAncha(P, ancho, doble) {
   const base = sum(fin, mul(dFin, -largoPunta));
   izq.push(sum(base, mul(nFin, h))); der.push(sum(base, mul(nFin, -h)));
   const alas = [sum(base, mul(nFin, h * 1.6)), fin, sum(base, mul(nFin, -h * 1.6))];
+  const cuerpo = { izq, der, alas, base, fin, dFin, nFin, largoPunta, h };
   const lineas = [[...izq, alas[0], alas[1], alas[2], ...der.slice().reverse()]];
   if (doble) {
-    // Ataque principal: segunda punta dentro de la cabeza, paralela a la exterior
     const atras = mul(dFin, -largoPunta * 0.32);
     lineas.push([sum(sum(base, atras), mul(nFin, h * 1.25)), sum(fin, atras), sum(sum(base, atras), mul(nFin, -h * 1.25))]);
   }
-  return lineas;
+  return { lineas, cuerpo };
 }
 
-/** SVG de un punto de control (chincheta con su sigla) — APP-6(E) 8.3. */
-export function svgPunto(m, color, nombre = '') {
-  const s = m.sigla ?? '';
-  if (m.id === 'op') {
-    return `<svg xmlns="http://www.w3.org/2000/svg" width="34" height="32" viewBox="0 0 34 32"><path d="M17,3 L31,29 L3,29 Z" fill="#fff" stroke="${color}" stroke-width="2.5"/><circle cx="17" cy="21" r="3" fill="${color}"/></svg>`;
+/**
+ * Gráfico de una medida.
+ * @param {object} m definición (MEDIDAS)
+ * @param {Array<{lat,lon}>} anclas puntos de anclaje
+ * @param {object} props {nombre, ancho (m), escalonMarca, izq, der, mpp (m/px), tam (m, símbolos estáticos), giro (°)}
+ * @returns {{lineas, rellenos, textos, rotulos, glifos}}
+ *   lineas   [{pts:[[lat,lon]], discontinua?, grosor? (×), color?}]
+ *   rellenos [{pts, color?, opacidad?}]
+ *   textos   [{pos, texto, rumbo?, tam?, fondo?, negrita?}]      fijos (zonas, cometidos)
+ *   rotulos  [{pts, texto, lados?:{izq,der}}]                    flotantes sobre la línea (los coloca el mapa según el zoom)
+ *   glifos   [{pos, g? | zona?, giro?}]                           iconos (puntos, minas…)
+ */
+export function geometria(m, anclas, props = {}) {
+  const out = { lineas: [], rellenos: [], textos: [], rotulos: [], glifos: [] };
+  if (!m || !anclas.length) return out;
+  const { a, g } = plano(anclas[0]);
+  let P = anclas.map(a);
+  const mpp = props.mpp > 0 ? props.mpp : Math.max(0.5, (longitud(P) || 300) / 160);
+  const px = (k) => k * mpp;
+  const L = (pts, opc = {}) => { if (pts.length >= 2) out.lineas.push({ pts: pts.map(g), ...opc }); };
+  const F = (pts, opc = {}) => out.rellenos.push({ pts: pts.map(g), ...opc });
+  const T = (p, texto, opc = {}) => { if (texto) out.textos.push({ pos: g(p), texto, ...opc }); };
+  const RT = (pts, texto, opc = {}) => { if (texto || opc.lados) out.rotulos.push({ pts: pts.map(g), texto, ...opc }); };
+  const G = (p, gl, opc = {}) => out.glifos.push({ pos: g(p), ...gl, ...opc });
+  const nombre = props.nombre ?? '';
+  const etiqueta = [m.sigla, nombre].filter(Boolean).join(' ');
+  const color = m.color ?? props.color;
+  const disc = Boolean(m.discontinua);
+
+  switch (m.forma) {
+    case 'punto':
+      G(P[0], { g: m.glifo }, { giro: props.giro ?? 0 });
+      return out;
+    case 'linea':
+      lineaConPatron(P);
+      if (m.rotulo === 'limite') RT(P, props.escalonMarca || '', { lados: { izq: props.izq, der: props.der }, escalon: true });
+      else if (m.rotulo !== false) RT(P, etiqueta);
+      if (m.estrellas) for (const q of [P[0], P.at(-1)]) G(q, { g: { tipo: 'estrella' } });
+      if (m.trafico) trafico(P);
+      return out;
+    case 'area': zona(P); return out;
+    case 'rect': {
+      if (P.length < 2) return out;
+      const [p1, p2] = P, v = res(p2, p1), n = uni(perp(v)), w = props.ancho > 0 ? props.ancho : lon(v) * 0.5;
+      zona([sum(p1, mul(n, w / 2)), sum(p2, mul(n, w / 2)), sum(p2, mul(n, -w / 2)), sum(p1, mul(n, -w / 2))]);
+      return out;
+    }
+    case 'circulo': {
+      if (P.length < 2) return out;
+      const r = lon(res(P[1], P[0])) || 1;
+      zona(arco(P[0], r, 0, 2 * Math.PI, 90).slice(0, -1), { centro: P[0] });
+      return out;
+    }
+    case 'corredor': {
+      if (P.length < 2) return out;
+      const w = props.ancho > 0 ? props.ancho : px(36);
+      L(paralela(P, w / 2), { discontinua: disc }); L(paralela(P, -w / 2), { discontinua: disc });
+      RT(P, etiqueta, { sinLinea: true });
+      return out;
+    }
+    case 'eje': eje(P); return out;
+    case 'dir': direccion(P); return out;
+    default: especial(); return out;
   }
-  const w = Math.max(34, s.length * 9 + 14);
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="44" viewBox="0 0 ${w} 44"><path d="M3,3 L${w - 3},3 L${w - 3},26 L${w / 2 + 7},26 L${w / 2},41 L${w / 2 - 7},26 L3,26 Z" fill="#fff" stroke="${color}" stroke-width="2.5" stroke-linejoin="round"/><text x="${w / 2}" y="19.5" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="bold" font-size="12" fill="${color}">${s}</text></svg>${nombre ? '' : ''}`;
+
+  // ---------------------------------------------------------- líneas y sus motivos
+  function paralela(Q, d) {
+    return Q.map((p, i) => {
+      const dPrev = i > 0 ? uni(res(p, Q[i - 1])) : null, dNext = i < Q.length - 1 ? uni(res(Q[i + 1], p)) : null;
+      const dir = uni(sum(dPrev ?? dNext, dNext ?? dPrev));
+      return sum(p, mul(perp(dir), d));
+    });
+  }
+  function lineaConPatron(Q, patron = m.patron, cerrada = false) {
+    const s = 1;
+    switch (patron) {
+      case 'flot': {
+        const r = px(7) * s;
+        const pts = [];
+        for (const q of muestrear(Q, 2 * r, r)) { const c = q.p, a0 = angDe(mul(q.t, -1)); pts.push(...arco(c, r, a0, a0 - Math.PI, 8)); }
+        L(pts);
+        return;
+      }
+      case 'almenas': {
+        // onda cuadrada tramo a tramo, con un número entero de almenas en cada lado
+        const QQ = cerrada ? [...Q, Q[0]] : Q, alto = px(8), pts = [];
+        for (let i = 0; i < QQ.length - 1; i++) {
+          const a0 = QQ[i], v = res(QQ[i + 1], a0), l = lon(v); if (!l) continue;
+          const t = uni(v), n = perp(t), k = Math.max(1, Math.round(l / px(18))), w = l / k;
+          for (let j = 0; j < k; j++) {
+            const b = sum(a0, mul(t, j * w));
+            pts.push(b, sum(b, mul(t, w * 0.25)), sum(sum(b, mul(t, w * 0.25)), mul(n, alto)), sum(sum(b, mul(t, w * 0.75)), mul(n, alto)), sum(b, mul(t, w * 0.75)));
+          }
+        }
+        pts.push(QQ.at(-1));
+        L(pts, { discontinua: disc });
+        return;
+      }
+      default: break;
+    }
+    if (!m.sinLinea) L(cerrada ? [...Q, Q[0]] : Q, { discontinua: disc });
+    if (!patron) return;
+    const ms = (paso, desde) => muestrear(cerrada ? [...Q, Q[0]] : Q, paso, desde);
+    switch (patron) {
+      case 'dientes': for (const q of ms(px(16))) L([sum(q.p, mul(q.t, -px(5))), sum(q.p, mul(q.n, px(9))), sum(q.p, mul(q.t, px(5)))]); break;
+      case 'puas': for (const q of ms(px(9))) L([q.p, sum(q.p, mul(q.n, px(8)))]); break;
+      case 'zanja': case 'zanja-llena': case 'zanja-minas': {
+        for (const q of ms(px(20))) {
+          const tri = [sum(q.p, mul(q.t, -px(7))), sum(q.p, mul(q.n, px(12))), sum(q.p, mul(q.t, px(7)))];
+          if (patron === 'zanja') L(tri); else F(tri, { opacidad: 1 });
+          if (patron === 'zanja-minas') G(sum(sum(q.p, mul(q.t, px(10))), mul(q.n, px(5))), { g: { tipo: 'mina', variante: 'cc' }, escala: 0.35 });
+        }
+        break;
+      }
+      case 'x': case 'xx': case 'x-denso': {
+        const paso = patron === 'x-denso' ? px(11) : px(22), r = px(4.5);
+        for (const q of ms(paso)) {
+          for (const dx of patron === 'xx' ? [-r * 1.1, r * 1.1] : [0]) {
+            const c = sum(q.p, mul(q.t, dx));
+            L([sum(c, sum(mul(q.t, -r), mul(q.n, -r))), sum(c, sum(mul(q.t, r), mul(q.n, r)))]);
+            L([sum(c, sum(mul(q.t, -r), mul(q.n, r))), sum(c, sum(mul(q.t, r), mul(q.n, -r)))]);
+          }
+        }
+        break;
+      }
+      case 'x-baja': case 'x-alta': {
+        const r = px(4), h = px(patron === 'x-alta' ? 10 : 8);
+        if (patron === 'x-alta') L(paralela(Q, h));
+        for (const q of ms(px(10))) {
+          const c = sum(q.p, mul(q.n, h / 2));
+          L([sum(c, sum(mul(q.t, -r), mul(q.n, -h / 2))), sum(c, sum(mul(q.t, r), mul(q.n, h / 2)))]);
+          L([sum(c, sum(mul(q.t, -r), mul(q.n, h / 2))), sum(c, sum(mul(q.t, r), mul(q.n, -h / 2)))]);
+        }
+        break;
+      }
+      case 'concertina': case 'concertina-2': case 'concertina-3': {
+        const r = px(5);
+        if (patron === 'concertina-3') L(paralela(Q, r * 2));
+        for (const q of ms(px(12))) { const c = sum(q.p, mul(q.n, r)); L(arco(c, r, 0, 2 * Math.PI, 14)); }
+        break;
+      }
+      case 'valla': for (const q of ms(px(26))) { const c = sum(q.p, mul(q.n, px(-6))), r = px(3.5); L([sum(c, [-r, -r]), sum(c, [r, r])]); L([sum(c, [-r, r]), sum(c, [r, -r])]); } break;
+      case 'mina': { const ms2 = muestrear(Q, longitud(Q) / 2, longitud(Q) / 2); if (ms2[0]) G(ms2[0].p, { g: { tipo: 'campo-minas' } }); break; }
+      default: break;
+    }
+  }
+  function trafico(Q) {
+    const ms2 = muestrear(Q, longitud(Q) / 2, longitud(Q) / 2)[0]; if (!ms2) return;
+    const l = px(34), o = px(16), c = sum(ms2.p, mul(ms2.n, o));
+    const ini = sum(c, mul(ms2.t, -l / 2)), fin = sum(c, mul(ms2.t, l / 2));
+    if (m.trafico === 'uno') { L([ini, fin]); L(punta(fin, ms2.t, px(6))); }
+    if (m.trafico === 'dos') {
+      L([ini, fin]); L(punta(fin, ms2.t, px(6)));
+      const c2 = sum(c, mul(ms2.n, px(7))), i2 = sum(c2, mul(ms2.t, l / 2)), f2 = sum(c2, mul(ms2.t, -l / 2));
+      L([i2, f2]); L(punta(f2, mul(ms2.t, -1), px(6)));
+    }
+    if (m.trafico === 'alt') {
+      L([ini, sum(c, mul(ms2.t, -px(10)))]); L(punta(ini, mul(ms2.t, -1), px(6)));
+      L([sum(c, mul(ms2.t, px(10))), fin]); L(punta(fin, ms2.t, px(6)));
+      T(c, 'ALT', { rumbo: angulo(ms2.t) - 90, tam: 11, negrita: true });
+    }
+  }
+
+  // ---------------------------------------------------------- zonas
+  function zona(Q, { centro } = {}) {
+    if (Q.length < 3) { L(Q, { discontinua: disc, color }); return; }
+    const ccw = areaFirmada(Q) > 0; // en sentido antihorario la normal izquierda mira hacia dentro
+    const fuera = ccw ? Q.slice().reverse() : Q; // así la normal izquierda mira hacia fuera
+    if (m.borde === 'almenas') lineaConPatron(fuera, 'almenas', true);
+    else {
+      L([...Q, Q[0]], { discontinua: disc, color });
+      if (m.borde) lineaConPatron(fuera, m.borde, true);
+    }
+    const c = centro ?? centroide(Q);
+    if (m.relleno === 'gris') F(Q, { color: '#7a7a7a', opacidad: 0.35 });
+    if (m.relleno === 'amarillo') F(Q, { color: '#FFE34D', opacidad: 0.35 });
+    if (m.relleno === 'rayado' || m.relleno === 'amarillo') for (const [p, q] of rayado(Q, px(m.relleno === 'amarillo' ? 7 : 10), Math.PI / 4)) L([p, q], { grosor: 0.45, color });
+    if (m.relleno === 'cuadriculado') for (const ang of [Math.PI / 4, -Math.PI / 4]) for (const [p, q] of rayado(Q, px(10), ang)) L([p, q], { grosor: 0.45, color });
+    if (m.glifo) G(c, { zona: m });
+    const texto = m.glifo === 'nbq' ? nombre : m.rotuloAbajo ? nombre : etiqueta;
+    if (texto) T(m.glifo ? sum(c, [0, -px(m.glifo === 'nbq' ? 34 : 24)]) : c, texto, { tam: 14, negrita: true, fondo: Boolean(m.relleno), color });
+    if (m.rotuloAbajo) { const y0 = Math.min(...Q.map((p) => p[1])); const pAbajo = Q.find((p) => p[1] === y0); T(sum(pAbajo, [0, -px(10)]), m.sigla, { tam: 11, negrita: true, color }); }
+    if (m.bordes) {
+      const lados = Q.map((p, i) => [p, Q[(i + 1) % Q.length]]).sort((x, y) => lon(res(y[1], y[0])) - lon(res(x[1], x[0]))).slice(0, centro ? 0 : 4);
+      if (centro) { const r = lon(res(Q[0], centro)); for (const ang of [0, 90, 180, 270]) { const v = [Math.sin((ang * Math.PI) / 180), Math.cos((ang * Math.PI) / 180)]; T(sum(centro, mul(v, r - px(9))), m.bordes, { rumbo: ang + 90, tam: 10, negrita: true, color }); } }
+      for (const [p, q] of lados) { const v = res(q, p), n = uni(perp(v)), dentro = ccw ? n : mul(n, -1); T(sum(med(p, q), mul(dentro, px(9))), m.bordes, { rumbo: angulo(v) - 90, tam: 10, negrita: true, color }); }
+    }
+    if (m.escalonBorde && props.escalonMarca) {
+      const i = Q.reduce((b, p, k) => (med(p, Q[(k + 1) % Q.length])[1] < med(Q[b], Q[(b + 1) % Q.length])[1] ? k : b), 0); // el lado más al sur
+      const p = Q[i], q = Q[(i + 1) % Q.length];
+      T(med(p, q), props.escalonMarca, { rumbo: angulo(res(q, p)) - 90, tam: 13, negrita: true, fondo: true, color });
+    }
+  }
+
+  // ---------------------------------------------------------- ejes de avance
+  function eje(Q) {
+    if (Q.length < 2) return;
+    const ancho = props.ancho > 0 ? props.ancho : Math.max(px(26), longitud(Q) * 0.14);
+    const v = m.variante;
+    const { lineas, cuerpo } = flechaAncha(Q, ancho, v === 'principal');
+    const dashed = v === 'contraataque' || v === 'contraataque-fuego';
+    if (v === 'finta') {
+      const [contorno] = lineas;
+      const k = cuerpo.izq.length;
+      L(contorno.slice(0, k)); L(contorno.slice(k + 3), {});
+      L([cuerpo.alas[0], cuerpo.alas[1], cuerpo.alas[2]], { discontinua: true });
+    } else for (const l of lineas) L(l, { discontinua: dashed || disc });
+    const i = Math.max(0, Q.length - 2), cMed = med(Q[i], Q[i + 1]), dir = uni(res(Q[i + 1], Q[i]));
+    if (v === 'helicoptero') {
+      const c = med(cuerpo.base, Q[i]), n = perp(dir), w = ancho * 0.35;
+      L([sum(c, mul(n, w)), sum(c, mul(n, -w))]);
+      L([sum(sum(c, mul(dir, -w * 0.6)), mul(n, w * 0.6)), sum(sum(c, mul(dir, w * 0.6)), mul(n, -w * 0.6)), sum(sum(c, mul(dir, w * 0.6)), mul(n, w * 0.6)), sum(sum(c, mul(dir, -w * 0.6)), mul(n, -w * 0.6)), sum(sum(c, mul(dir, -w * 0.6)), mul(n, w * 0.6))]);
+    }
+    if (v === 'frontal') { const n = cuerpo.nFin, f = sum(cuerpo.fin, mul(cuerpo.dFin, px(4))); L([sum(f, mul(n, ancho)), sum(f, mul(n, -ancho))]); }
+    if (v === 'envolvente') { const c = Q[0], d0 = uni(res(Q[1], Q[0])), n0 = perp(d0), w = ancho; const cc = sum(c, mul(d0, w)); L([sum(cc, sum(mul(d0, -w * 0.8), mul(n0, w))), sum(cc, sum(mul(d0, w * 0.8), mul(n0, -w)))]); L([sum(cc, sum(mul(d0, -w * 0.8), mul(n0, -w))), sum(cc, sum(mul(d0, w * 0.8), mul(n0, w)))]); }
+    if (v === 'contraataque-fuego') { const f = cuerpo.fin, d = cuerpo.dFin, l = ancho * 0.9; L([f, sum(f, mul(d, l))]); L(punta(sum(f, mul(d, l)), d, ancho * 0.3)); }
+    const txt = [m.sigla, nombre].filter(Boolean).join(' ');
+    T(cMed, txt, { rumbo: angulo(dir) - 90, negrita: true, tam: 13 });
+  }
+  function direccion(Q) {
+    if (Q.length < 2) return;
+    const v = m.variante, t = Math.max(px(12), Math.min(longitud(Q) * 0.08, px(26)));
+    const dir = uni(res(Q.at(-1), Q.at(-2)));
+    L(Q, { discontinua: disc });
+    L(punta(Q.at(-1), dir, t), { discontinua: v === 'finta' });
+    if (v === 'principal') L(punta(sum(Q.at(-1), mul(dir, -t * 0.5)), dir, t));
+    if (v === 'aviacion') {
+      const ms = muestrear(Q, longitud(Q) / 2, longitud(Q) / 2)[0];
+      if (ms) { const c = ms.p, w = px(8); L([sum(c, sum(mul(ms.t, -w), mul(ms.n, w))), sum(c, sum(mul(ms.t, w), mul(ms.n, -w))), sum(c, sum(mul(ms.t, w), mul(ms.n, w))), sum(c, sum(mul(ms.t, -w), mul(ms.n, -w))), sum(c, sum(mul(ms.t, -w), mul(ms.n, w)))]); }
+    }
+    RT(Q, nombre, { arriba: true });
+  }
+
+  // ---------------------------------------------------------- símbolos con puntos fijos
+  function especial() {
+    const s = m.sigla ?? '';
+    const n = puntosNecesarios(m);
+    // Rellenar puntos que falten (planes antiguos o vista previa) con valores razonables
+    if (P.length < n) {
+      const base = P[0] ?? [0, 0], l = P[1] ? lon(res(P[1], P[0])) : px(60);
+      while (P.length < n) P.push(sum(base, rot([l, 0], (P.length * Math.PI) / 2)));
+    }
+    const tam = props.tam > 0 ? props.tam : px(70);
+    const giro = ((props.giro ?? 0) * Math.PI) / 180;
+    const E = (v) => sum(P[0], rot(v, -giro)); // para los estáticos de un punto
+    const etq = (p, t = s, o = {}) => T(p, t, { fondo: true, negrita: true, ...o });
+    switch (m.id) {
+      case 'bloquear': case 'penetrar': case 'efecto-bloqueo': {
+        const [p1, p2, p3] = P, c = med(p1, p2);
+        L([p1, p2]); L([p3, c]);
+        if (m.id === 'penetrar') L(punta(c, uni(res(c, p3)), lon(res(p2, p1)) * 0.18));
+        if (m.id !== 'efecto-bloqueo') etq(med(c, p3));
+        break;
+      }
+      case 'brecha': case 'desbordar': case 'canalizar': case 'rodeo-facil': case 'rodeo-dificil': case 'rodeo-imposible': {
+        const [p1, p2, p3] = P, ab = res(p2, p1), nn = uni(perp(ab));
+        const prof = dot(res(p3, p1), nn), atras = mul(nn, prof);
+        const q1 = sum(p1, atras), q2 = sum(p2, atras);
+        const t = lon(ab) * 0.12, fuera = uni(ab), delante = mul(nn, -Math.sign(prof) || 1);
+        if (m.id === 'rodeo-dificil') {
+          const zz = [q1]; const k = 8; for (let i = 1; i < k; i++) zz.push(sum(sum(q1, mul(res(q2, q1), i / k)), mul(delante, (i % 2 ? 1 : -1) * t * 0.5))); zz.push(q2);
+          L([p1, q1]); L(zz); L([q2, p2]);
+        } else if (m.id === 'rodeo-imposible') {
+          const c = med(q1, q2), h = lon(ab) * 0.08;
+          L([p1, q1, sum(c, mul(fuera, -h))]); L([sum(c, mul(fuera, h)), q2, p2]);
+          L([sum(sum(c, mul(fuera, -h)), mul(delante, t * 0.5)), sum(sum(c, mul(fuera, -h)), mul(delante, -t * 0.5))]);
+          L([sum(sum(c, mul(fuera, h)), mul(delante, t * 0.5)), sum(sum(c, mul(fuera, h)), mul(delante, -t * 0.5))]);
+        } else L([p1, q1, q2, p2]);
+        if (m.id === 'desbordar' || m.id.startsWith('rodeo')) { L(punta(p1, delante, t)); L(punta(p2, delante, t)); }
+        else {
+          const sg = m.id === 'brecha' ? -1 : 1;
+          L([sum(p1, sum(mul(fuera, sg * t * 0.7), mul(delante, t * 0.7))), sum(p1, sum(mul(fuera, -sg * t * 0.7), mul(delante, -t * 0.7)))]);
+          L([sum(p2, sum(mul(fuera, -sg * t * 0.7), mul(delante, t * 0.7))), sum(p2, sum(mul(fuera, sg * t * 0.7), mul(delante, -t * 0.7)))]);
+        }
+        if (s) etq(med(q1, q2));
+        break;
+      }
+      case 'limpiar': {
+        const [p1, p2, p3] = P, ab = res(p2, p1), nn = uni(perp(ab));
+        const prof = dot(res(p3, p1), nn);
+        L([p1, p2]);
+        const t = lon(ab) * 0.1, dir = mul(nn, -Math.sign(prof) || 1);
+        for (const k of [0.2, 0.5, 0.8]) {
+          const tip = sum(p1, mul(ab, k)), cola = sum(tip, mul(nn, prof));
+          L([cola, tip]); L(punta(tip, dir, t));
+          if (k === 0.5) etq(med(cola, tip));
+        }
+        break;
+      }
+      case 'contener': {
+        const [p1, p2] = P, c = med(p1, p2), r = lon(res(p2, p1)) / 2, a0 = angDe(res(p1, c));
+        const arc = arco(c, r, a0, a0 + Math.PI, 30);
+        L(arc);
+        for (let i = 1; i < 10; i++) { const q = arc[i * 3]; L([q, sum(q, mul(uni(res(q, c)), r * 0.18))]); }
+        etq(sum(c, mul(uni(res(arc[15], c)), r * 1.32)));
+        break;
+      }
+      case 'controlar': case 'asegurar': case 'ocupar': case 'aislar': case 'negar': case 'localizar':
+      case 'cerco-llamada': case 'cerco-registro': case 'retener': case 'defensa-zona': {
+        const [p1, p2] = P, r = lon(res(p2, p1)) || 1, a0 = angDe(res(p2, p1));
+        const arc = arco(p1, r, a0, a0 + (330 * Math.PI) / 180, 44);
+        L(arc);
+        const fin = arc.at(-1), tg = uni(res(fin, arc.at(-2)));
+        if (m.id === 'ocupar') { const d = r * 0.14; L([sum(fin, [-d, -d]), sum(fin, [d, d])]); L([sum(fin, [-d, d]), sum(fin, [d, -d])]); }
+        else if (m.id === 'asegurar') { const t = r * 0.2; const b = sum(fin, mul(tg, -t)); L([sum(b, mul(perp(tg), t * 0.6)), fin]); }
+        else if (m.id === 'defensa-zona') { for (let i = 4; i <= 44; i += 8) { const q = arc[i], v = uni(res(q, p1)), t2 = uni(res(arc[i], arc[i - 1])); F([sum(q, mul(t2, -r * 0.08)), sum(q, mul(v, r * 0.2)), sum(q, mul(t2, r * 0.08))], { opacidad: 1 }); } L(punta(fin, tg, r * 0.18)); }
+        else L(punta(fin, tg, r * 0.18));
+        if (['aislar', 'cerco-llamada', 'cerco-registro'].includes(m.id)) for (let i = 4; i < 40; i += 6) { const q = arc[i], q2 = arc[i + 2]; L([q, sum(med(q, q2), mul(uni(res(p1, q)), r * 0.2)), q2]); }
+        if (m.id === 'negar') for (let i = 4; i < 40; i += 6) { const q = arc[i], q2 = arc[i + 2]; L([q, sum(med(q, q2), mul(uni(res(q, p1)), r * 0.2)), q2]); }
+        if (m.id === 'retener') for (let i = 2; i < 42; i += 2) { const q = arc[i]; L([q, sum(q, mul(uni(res(q, p1)), r * 0.12))]); }
+        etq(arc[Math.round(arc.length * 0.25)]);
+        break;
+      }
+      case 'tomar': case 'capturar': case 'evacuar': case 'recuperar': {
+        const [p1, p2, p3, p4] = P, r = lon(res(p2, p1)) || 1;
+        L(arco(p1, r, 0, 2 * Math.PI, 48));
+        const ini = sum(p1, mul(uni(res(p3, p1)), r));
+        const ctrl = sum(mul(p3, 2), mul(sum(ini, p4), -0.5)); // la curva pasa por el punto 3
+        const curva = bezier(ini, ctrl, p4);
+        L(curva); L(punta(p4, uni(res(p4, curva.at(-2))), lon(res(p4, ini)) * 0.1), { discontinua: false });
+        etq(curva[10]);
+        break;
+      }
+      case 'destruir': case 'neutralizar': case 'suprimir': {
+        const d = tam / 2, hueco = d * 0.28;
+        for (const v of [[1, 1], [1, -1], [-1, 1], [-1, -1]]) {
+          const u = uni(v);
+          const dd = m.id === 'suprimir' || (m.id === 'neutralizar' && v[0] * v[1] < 0);
+          L([E(mul(u, hueco)), E(mul(u, d))], { discontinua: dd });
+        }
+        etq(P[0]);
+        break;
+      }
+      case 'interdiccion': {
+        const d = tam / 2;
+        for (const ang of [0, Math.PI / 4]) {
+          const u = rot([1, 0], ang), a1 = E(mul(u, -d)), b1 = E(mul(u, d));
+          L([a1, b1]); L(punta(b1, uni(res(b1, a1)), d * 0.25));
+        }
+        etq(P[0]);
+        break;
+      }
+      case 'derrotar': {
+        const d = tam / 2;
+        for (const v of [[1, 1], [1, -1], [-1, 1], [-1, -1]]) {
+          const u = uni(v), a1 = E(mul(u, d)), b1 = E(mul(u, d * 0.35));
+          L([a1, b1], { grosor: 2 }); L(punta(b1, uni(res(b1, a1)), d * 0.18), { grosor: 2 });
+        }
+        etq(P[0]);
+        break;
+      }
+      case 'fijar': case 'efecto-fijar': {
+        const [p1, p2] = P, v = res(p1, p2), u = uni(v), nn = perp(u), Lt = lon(v);
+        const pts = [p2, sum(p2, mul(u, Lt * 0.18))];
+        const nz = 8, a0 = Lt * 0.18, a1 = Lt * 0.85, amp = Lt * 0.06;
+        for (let i = 1; i <= nz; i++) pts.push(sum(sum(p2, mul(u, a0 + ((a1 - a0) * (i - 0.5)) / nz)), mul(nn, i % 2 ? amp : -amp)));
+        pts.push(sum(p2, mul(u, a1)), p1);
+        L(pts); L(punta(p1, u, Lt * 0.1));
+        if (s) etq(sum(p2, mul(u, Lt * 0.08)));
+        break;
+      }
+      case 'retardar': case 'retirada': case 'replegarse': case 'replegarse-presion': case 'ruptura': case 'paso-adelante': case 'paso-atras': case 'defensa-movil': {
+        const [p1, p2, p3] = P, u = uni(res(p1, p2)), nn = perp(u);
+        const lado = Math.sign(dot(res(p3, p2), nn)) || 1;
+        const diam = Math.abs(dot(res(p3, p2), nn)) || lon(res(p1, p2)) * 0.3;
+        const c = sum(p2, mul(nn, (lado * diam) / 2));
+        const a0 = angDe(res(p2, c));
+        const arc = arco(c, diam / 2, a0, a0 - lado * Math.PI, 24);
+        L([p1, p2]); L(arc);
+        L(punta(p1, u, lon(res(p1, p2)) * 0.1));
+        if (m.id === 'defensa-movil') {
+          const q = arc.at(-1), q2 = sum(q, mul(u, lon(res(p1, p2))));
+          L([q, q2]); L(punta(q2, u, lon(res(p1, p2)) * 0.1));
+          for (const k of [0.35, 0.7]) for (const [aa, bb, sg] of [[p2, p1, 1], [q, q2, -1]]) { const b = sum(aa, mul(res(bb, aa), k)), t2 = lon(res(p1, p2)) * 0.05; F([sum(b, mul(u, -t2)), sum(b, mul(nn, -lado * sg * t2 * 1.6)), sum(b, mul(u, t2))], { opacidad: 1 }); }
+        }
+        etq(med(p1, p2));
+        break;
+      }
+      case 'perseguir': {
+        const [p1, p2, p3] = P, u = uni(res(p2, p1)), nn = perp(u);
+        const lado = Math.sign(dot(res(p3, p2), nn)) || 1, diam = Math.abs(dot(res(p3, p2), nn)) || lon(res(p2, p1)) * 0.3;
+        const c = sum(p2, mul(nn, (lado * diam) / 2)), a0 = angDe(res(p2, c));
+        const arc = arco(c, diam / 2, a0, a0 + lado * Math.PI, 24);
+        L([p1, p2]); L(arc); L(punta(arc.at(-1), uni(res(arc.at(-1), arc.at(-2))), diam * 0.3));
+        etq(med(p1, p2));
+        break;
+      }
+      case 'desorganizar': case 'efecto-desorganizar': {
+        const [p1, p2, p3] = P, base = res(p2, p1), nn = uni(perp(base));
+        const largo = dot(res(p3, p1), nn);
+        L([p1, p2]);
+        const t = Math.abs(largo) * 0.1;
+        for (const [k, f] of [[0.08, 0.45], [0.5, 0.3], [0.92, 1]]) {
+          const o = sum(p1, mul(base, k)), tip = sum(o, mul(nn, largo * f));
+          L([o, tip]); L(punta(tip, mul(nn, Math.sign(largo) || 1), t));
+          if (k === 0.5 && s) etq(sum(o, mul(nn, largo * f * 0.5)));
+        }
+        const c = med(p1, p2); L([c, sum(c, mul(nn, -largo * 0.25))]);
+        break;
+      }
+      case 'envolver': {
+        const [p1, p2, p3, p4] = P, u = uni(res(p2, p1)), nn = perp(u);
+        const diam = Math.abs(dot(res(p3, p2), u)) || lon(res(p2, p1)) * 0.4;
+        const lado = Math.sign(dot(res(p4, p2), nn)) || 1;
+        const c = sum(p2, mul(nn, (lado * diam) / 2)), a0 = angDe(res(p2, c));
+        const arc = arco(c, diam / 2, a0, a0 + lado * Math.PI, 24);
+        L([p1, p2]); L(arc); L(punta(arc.at(-1), uni(res(arc.at(-1), arc.at(-2))), diam * 0.35));
+        etq(med(p1, p2));
+        break;
+      }
+      case 'emboscada': {
+        const [p1, p2, p3] = P, c = med(p2, p3), dir = uni(res(p1, c)), r = lon(res(p3, p2)) / 2;
+        const curva = bezier(p2, sum(c, mul(dir, -r * 0.5)), p3, 16);
+        L(curva);
+        for (let i = 1; i < 16; i += 2) L([curva[i], sum(curva[i], mul(dir, r * 0.2))]);
+        L([curva[8], p1]); L(punta(p1, dir, r * 0.25));
+        break;
+      }
+      case 'cubrir': case 'vigilar': case 'observar': {
+        let [p1, p2, p3, p4] = P;
+        if (anclas.length === 3) { const c = P[0]; p1 = P[1]; p2 = c; p3 = c; p4 = P[2]; } // planes antiguos (3 puntos)
+        const flecha = (tip, cola) => {
+          const v = res(tip, cola), u = uni(v), nn = perp(u), d = lon(v);
+          const z0 = sum(cola, mul(u, d * 0.55)), z1 = sum(cola, mul(u, d * 0.62));
+          L([cola, z0, sum(med(z0, z1), mul(nn, d * 0.06)), z1, tip]);
+          L(punta(tip, u, d * 0.08));
+        };
+        flecha(p1, sum(p2, mul(uni(res(p1, p2)), lon(res(p1, p2)) * 0.12)));
+        flecha(p4, sum(p3, mul(uni(res(p4, p3)), lon(res(p4, p3)) * 0.12)));
+        etq(sum(p2, mul(uni(res(p1, p2)), lon(res(p1, p2)) * 0.06))); etq(sum(p3, mul(uni(res(p4, p3)), lon(res(p4, p3)) * 0.06)));
+        break;
+      }
+      case 'relevo': case 'demostracion': {
+        const [p1, p2, p3, p4] = P;
+        const u1 = uni(res(p1, p2)), u2 = uni(res(p3, p4));
+        const d = lon(res(p3, p2));
+        const c1 = sum(p2, mul(u1, -d * 0.6)), c2 = sum(p3, mul(m.id === 'relevo' ? u2 : mul(u2, -1), -d * 0.6));
+        const curva = Array.from({ length: 21 }, (_, i) => { const t = i / 20; return sum(sum(sum(mul(p2, (1 - t) ** 3), mul(c1, 3 * t * (1 - t) ** 2)), mul(c2, 3 * t * t * (1 - t))), mul(p3, t ** 3)); });
+        L([p1, p2]); L(curva); L([p3, p4]);
+        L(punta(p1, u1, lon(res(p1, p2)) * 0.12));
+        if (m.id === 'relevo') L(punta(p3, uni(res(p3, p4)), lon(res(p3, p4)) * 0.12));
+        etq(curva[10]);
+        break;
+      }
+      case 'seguir-asumir': case 'seguir-apoyar': {
+        const [p1, p2] = P, v = res(p1, p2), u = uni(v), nn = perp(u), d = lon(v), h = d * 0.08, b = d * 0.18;
+        L([sum(p2, mul(nn, h)), sum(sum(p2, mul(u, b)), mul(nn, h)), sum(p2, mul(u, b + h)), sum(sum(p2, mul(u, b)), mul(nn, -h)), sum(p2, mul(nn, -h)), sum(p2, mul(nn, h))]);
+        const ini = sum(p2, mul(u, b + h));
+        if (m.id === 'seguir-asumir') { L([ini, sum(p1, mul(u, -d * 0.08))], { discontinua: true }); L(punta(p1, u, d * 0.12)); L(punta(sum(p1, mul(u, -d * 0.07)), u, d * 0.12), { discontinua: true }); }
+        else { L([ini, sum(p1, mul(u, -d * 0.1))]); F([sum(sum(p1, mul(u, -d * 0.12)), mul(nn, d * 0.06)), p1, sum(sum(p1, mul(u, -d * 0.12)), mul(nn, -d * 0.06))], { opacidad: 1 }); }
+        break;
+      }
+      case 'explotar': {
+        const [p1, p2, p3] = P, u = uni(res(p1, p2)), l = lon(res(p3, p2)) || lon(res(p1, p2)) * 0.2;
+        L([p1, p2]);
+        L(punta(p1, u, l, Math.PI / 4));
+        L(punta(sum(p2, mul(u, l * 0.7)), u, l, Math.PI / 4), { discontinua: true });
+        break;
+      }
+      case 'escoltar': {
+        const [p1, p2, p3] = P, v = res(p3, p2), u = uni(v), nn = perp(u), h = lon(v) * 0.1;
+        const arriba = Math.sign(dot(res(p1, p2), nn)) >= 0 ? nn : mul(nn, -1);
+        const q2 = sum(p2, mul(arriba, h * 2)), q3 = sum(p3, mul(arriba, h * 2));
+        L([p2, q2, q3, p3]);
+        etq(sum(med(p2, q2), mul(u, h * 1.4))); etq(sum(med(p3, q3), mul(u, -h * 1.4)));
+        break;
+      }
+      case 'exfiltrar': case 'infiltrar': {
+        const [p1, p2, p3] = P, v = res(p3, p1), u = uni(v), nn = perp(u);
+        const r = Math.abs(dot(res(p2, p1), nn)) || lon(v) * 0.1;
+        const k = dot(res(p2, p1), u), lado = Math.sign(dot(res(p2, p1), nn)) || 1;
+        const a1 = sum(p1, mul(u, k - r)), c1 = sum(a1, mul(nn, lado * r)), a2c = sum(p1, sum(mul(u, k + r), mul(nn, lado * r)));
+        const arc1 = arco(c1, r, angDe(res(a1, c1)), angDe(res(a1, c1)) + lado * Math.PI / 2, 10);
+        const fin1 = arc1.at(-1);
+        const arc2 = arco(a2c, r, angDe(res(fin1, a2c)), angDe(res(fin1, a2c)) - lado * Math.PI / 2, 10);
+        const q3 = sum(arc2.at(-1), mul(u, lon(res(p3, p1)) - k - r));
+        L([p1, a1, ...arc1, ...arc2, q3]); L(punta(q3, u, lon(v) * 0.08));
+        etq(med(p1, a1));
+        break;
+      }
+      case 'desviar': case 'efecto-desviar': {
+        const [p1, p2, p3] = P;
+        const ctrl = sum(mul(p3, 2), mul(sum(p2, p1), -0.5));
+        const curva = bezier(p2, ctrl, p1);
+        const d = lon(res(p1, p2));
+        L(curva.slice(0, -2));
+        const u = uni(res(p1, curva.at(-3)));
+        F([sum(curva.at(-3), mul(perp(u), d * 0.06)), p1, sum(curva.at(-3), mul(perp(u), -d * 0.06))], { opacidad: 1 });
+        if (s) etq(curva[10]);
+        break;
+      }
+      case 'sbf': {
+        const [p1, p2, p3, p4] = P, base = res(p2, p1), t = lon(base) * 0.18;
+        const nn = uni(perp(base)), haciaDelante = Math.sign(dot(res(p3, p1), nn)) || 1, atras = mul(nn, -haciaDelante * t);
+        L([sum(p1, sum(atras, mul(uni(base), -t * 0.6))), p1, p2, sum(p2, sum(atras, mul(uni(base), t * 0.6)))]);
+        L([p1, p3]); L(punta(p3, uni(res(p3, p1)), t * 0.5));
+        L([p2, p4]); L(punta(p4, uni(res(p4, p2)), t * 0.5));
+        etq(med(p1, p2), nombre || '');
+        break;
+      }
+      case 'abf': {
+        const [p1, p2, p3] = P, base = res(p3, p2), nn = uni(perp(base)), t = lon(base) * 0.18;
+        const haciaFuera = mul(nn, Math.sign(dot(res(p1, p2), nn)) || 1);
+        L([sum(p2, sum(mul(haciaFuera, -t), mul(uni(base), -t * 0.6))), p2, p3, sum(p3, sum(mul(haciaFuera, -t), mul(uni(base), t * 0.6)))]);
+        const c = med(p2, p3); L([c, p1]); L(punta(p1, uni(res(p1, c)), t * 0.5));
+        etq(c, nombre || '');
+        break;
+      }
+      case 'campo-tiro': {
+        const [p1, p2, p3] = P;
+        for (const q of [p2, p3]) { L([p1, q]); L(punta(q, uni(res(q, p1)), lon(res(q, p1)) * 0.1)); }
+        break;
+      }
+      case 'zona-busqueda': {
+        const [p1, p2, p3] = P;
+        for (const q of [p2, p3]) {
+          const v = res(q, p1), u = uni(v), nn = perp(u), d = lon(v);
+          const a1 = sum(p1, sum(mul(u, d * 0.45), mul(nn, d * 0.08))), b1 = sum(p1, sum(mul(u, d * 0.55), mul(nn, -d * 0.08)));
+          L([p1, a1, b1, q]); L(punta(q, uni(res(q, b1)), d * 0.1));
+        }
+        break;
+      }
+      case 'objetivo-lineal': case 'humo-lineal': case 'fpf': {
+        L(P);
+        const h = px(10);
+        for (const [q, o] of [[P[0], P[1]], [P.at(-1), P.at(-2)]]) { const nn = uni(perp(res(o, q))); L([sum(q, mul(nn, h)), sum(q, mul(nn, -h))]); }
+        RT(P, [s, nombre].filter(Boolean).join(' '));
+        break;
+      }
+      case 'abanico-circ': {
+        const [p1, p2] = P, r = lon(res(p2, p1)) || 1;
+        for (const k of [1 / 3, 2 / 3, 1]) L(arco(p1, r * k, 0, 2 * Math.PI, 72));
+        G(p1, { g: { tipo: 'cruz' }, escala: 0.4 });
+        break;
+      }
+      case 'abanico-sector': {
+        const [p1, p2, p3] = P, r = lon(res(p2, p1)) || 1;
+        let a0 = angDe(res(p2, p1)), a1 = angDe(res(p3, p1));
+        if (a1 > a0) a1 -= 2 * Math.PI; // sentido horario de 2 a 3
+        if (a0 - a1 > 2 * Math.PI) a1 += 2 * Math.PI;
+        for (const k of [1 / 3, 2 / 3, 1]) L(arco(p1, r * k, a0, a1, 40));
+        L([p1, sum(p1, [r * Math.cos(a0), r * Math.sin(a0)])]); L([p1, sum(p1, [r * Math.cos(a1), r * Math.sin(a1)])]);
+        break;
+      }
+      case 'distancia-seguridad': {
+        const [p1, p2] = P, r = lon(res(p2, p1)) || 1;
+        L(arco(p1, r, 0, 2 * Math.PI, 72)); L(arco(p1, r * 0.55, 0, 2 * Math.PI, 72));
+        T(sum(p1, [r * 0.55, 0]), '1', { tam: 11 }); T(sum(p1, [r, 0]), '2', { tam: 11 });
+        break;
+      }
+      case 'abatis': {
+        L(P);
+        const u = uni(res(P[1], P[0])), nn = perp(u), d = px(10);
+        L([P[0], sum(sum(P[0], mul(u, d * 0.6)), mul(nn, d * 1.6)), sum(P[0], mul(u, d * 1.2))]);
+        break;
+      }
+      case 'cable-trampa': {
+        const [p1, p2] = P, u = uni(res(p2, p1)), nn = perp(u), d = lon(res(p2, p1));
+        L([p1, p2]);
+        L([sum(p1, mul(nn, d * 0.25)), sum(p1, mul(nn, -d * 0.25))]);
+        L(arco(sum(p2, mul(nn, -d * 0.2)), d * 0.2, angDe(nn), angDe(nn) - Math.PI / 2, 10));
+        break;
+      }
+      case 'racimo-minas': {
+        const [p1, p2] = P, c = med(p1, p2), r = lon(res(p2, p1)) / 2, a0 = angDe(res(p1, c));
+        L([p1, p2], { discontinua: true }); L(arco(c, r, a0, a0 - Math.PI, 30), { discontinua: true });
+        break;
+      }
+      case 'cable-aereo': {
+        L(P);
+        for (const q of [P[0], P.at(-1)]) G(q, { g: { tipo: 'torre' }, escala: 0.5 });
+        break;
+      }
+      case 'puente': case 'cruce-asalto': case 'vado-facil': case 'vado-dificil': case 'corte-previsto': case 'corte-sr1': case 'corte-sr2': case 'corte-ejecutado': {
+        const [p1, p2, p3] = P, v = res(p2, p1), nn = uni(perp(v)), w = dot(res(p3, p1), nn) || lon(v) * 0.3;
+        const q1 = sum(p1, mul(nn, w)), q2 = sum(p2, mul(nn, w)), u = uni(v), f = lon(v) * 0.12;
+        if (m.id === 'puente' || m.id === 'cruce-asalto') {
+          const sg = Math.sign(w) || 1;
+          L([sum(sum(p1, mul(u, -f)), mul(nn, -sg * f)), p1, p2, sum(sum(p2, mul(u, f)), mul(nn, -sg * f))]);
+          L([sum(sum(q1, mul(u, -f)), mul(nn, sg * f)), q1, q2, sum(sum(q2, mul(u, f)), mul(nn, sg * f))]);
+        } else if (m.id.startsWith('vado')) {
+          L([p1, p2], { discontinua: true }); L([q1, q2], { discontinua: true });
+          if (m.id === 'vado-dificil') { const c = med(p1, p2), zz = []; for (let i = 0; i <= 6; i++) zz.push(sum(sum(c, mul(nn, (w * i) / 6)), mul(u, (i % 2 ? 1 : -1) * f * 0.4))); L(zz); }
+        } else if (m.id === 'corte-ejecutado') { L([p1, q2]); L([q1, p2]); L([sum(p1, mul(u, f * 0.4)), sum(q2, mul(u, f * 0.4))]); L([sum(q1, mul(u, f * 0.4)), sum(p2, mul(u, f * 0.4))]); }
+        else { L([p1, p2], { discontinua: m.id !== 'corte-sr2' }); L([q1, q2], { discontinua: m.id === 'corte-previsto' }); }
+        break;
+      }
+      case 'transbordador': { const [p1, p2] = P, u = uni(res(p2, p1)), d = lon(res(p2, p1)); L([p1, p2]); L(punta(p2, u, d * 0.1)); L(punta(p1, mul(u, -1), d * 0.1)); break; }
+      case 'balsas': case 'paso-seguro': case 'corredor-movilidad': {
+        const Q = P; L(Q);
+        for (const [q, o] of [[Q[0], Q[1]], [Q.at(-1), Q.at(-2)]]) {
+          const u = uni(res(q, o)), nn = perp(u), d = px(12);
+          L([sum(sum(q, mul(u, d)), mul(nn, d)), q, sum(sum(q, mul(u, d)), mul(nn, -d))]);
+        }
+        if (m.id === 'corredor-movilidad') RT(Q, props.escalonMarca || '', { escalon: true });
+        break;
+      }
+      case 'posicion-fortificada': {
+        const [p1, p2] = P, v = res(p2, p1), nn = uni(perp(v)), d = lon(v) * 0.25;
+        L([p1, sum(p1, mul(nn, d)), sum(p2, mul(nn, d)), p2]);
+        break;
+      }
+      case 'convoy': case 'convoy-detenido': {
+        const [p1, p2] = P, v = res(p1, p2), u = uni(v), nn = perp(u), d = lon(v), h = d * 0.12;
+        const b = sum(p2, mul(u, d * 0.78));
+        if (m.id === 'convoy') L([sum(p2, mul(nn, h)), sum(b, mul(nn, h)), sum(b, mul(nn, h * 1.8)), p1, sum(b, mul(nn, -h * 1.8)), sum(b, mul(nn, -h)), sum(p2, mul(nn, -h)), sum(p2, mul(nn, h))]);
+        else L([sum(p2, mul(nn, h)), sum(p1, mul(nn, h)), sum(b, [0, 0]), sum(p1, mul(nn, -h)), sum(p2, mul(nn, -h)), sum(p2, mul(nn, h))]);
+        if (nombre) T(med(p1, p2), nombre, { rumbo: angulo(u) - 90, tam: 12, negrita: true });
+        break;
+      }
+      case 'senuelo': case 'finta': {
+        const [p1, p2, p3] = P;
+        L([p2, p1, p3], { discontinua: true });
+        if (m.id === 'senuelo' && nombre) T(med(p2, p3), nombre, { negrita: true });
+        break;
+      }
+      default: L(P);
+    }
+  }
 }
+
+/** Número de puntos fijos (0 si es libre). */
+export const puntosFijosDe = (m) => m?.n ?? 0;

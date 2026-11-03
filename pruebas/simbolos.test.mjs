@@ -60,21 +60,46 @@ test('Medidas y cometidos: geometría válida y anclas exactas', () => {
   const desde = (dx, dy) => ({ lat: base.lat + dy / 111000, lon: base.lon + dx / (111000 * Math.cos((base.lat * Math.PI) / 180)) });
   const ej = [desde(0, 0), desde(800, 50), desde(400, 600), desde(-300, 400), desde(100, -300)];
   for (const m of MEDIDAS) {
-    const n = m.n ?? Math.max(puntosNecesarios(m), m.tipo === 'area' ? 4 : 2);
-    const g = geometria(m, ej.slice(0, n), { nombre: 'ROJA', escalonMarca: 'II' });
-    const todos = [...g.lineas.flatMap((l) => l.pts), ...g.textos.map((t) => t.pos)];
+    const n = m.n ?? Math.max(puntosNecesarios(m), m.forma === 'area' ? 4 : 2);
+    const g = geometria(m, ej.slice(0, n), { nombre: 'ROJA', escalonMarca: 'II', mpp: 4 });
+    const todos = [...g.lineas.flatMap((l) => l.pts), ...g.textos.map((t) => t.pos), ...g.glifos.map((q) => q.pos), ...g.rotulos.flatMap((r) => r.pts)];
     for (const p of todos) assert.ok(Number.isFinite(p[0]) && Number.isFinite(p[1]), `${m.id}: coordenadas finitas`);
-    if (m.tipo !== 'punto') assert.ok(g.lineas.length > 0, `${m.id}: dibuja algo`);
+    if (m.forma === 'punto') assert.equal(g.glifos.length, 1, `${m.id}: un icono`);
+    else assert.ok(g.lineas.length > 0, `${m.id}: dibuja algo`);
     // Todo el gráfico cerca de sus anclas (< 3 km para anclas de < 1 km)
     for (const p of todos) assert.ok(medir(base, { lat: p[0], lon: p[1] }).distancia < 3000, `${m.id}: dentro de su zona`);
   }
-  // Las líneas (PL, LD…) pasan exactamente por sus puntos
-  const pl = geometria(MEDIDAS.find((m) => m.id === 'pl'), ej.slice(0, 3), { nombre: 'ROJA' });
+  // Las líneas (PL, LD…) pasan exactamente por sus puntos y llevan su nombre flotante
+  const pl = geometria(MEDIDAS.find((m) => m.id === 'pl'), ej.slice(0, 3), { nombre: 'ROJA', mpp: 4 });
   pl.lineas[0].pts.forEach((p, i) => { assert.ok(Math.abs(p[0] - ej[i].lat) < 1e-12 && Math.abs(p[1] - ej[i].lon) < 1e-12); });
-  assert.deepEqual(pl.textos.map((t) => t.texto), ['PL ROJA', 'PL ROJA']);
-  // Destruir: X centrada en el punto 1 con la D en el centro
-  const d = geometria(MEDIDAS.find((m) => m.id === 'destruir'), [ej[0], desde(200, 200)], {});
+  assert.deepEqual(pl.rotulos.map((t) => t.texto), ['PL ROJA']);
+  // Límite: el escalón y las unidades a cada lado van como rótulo flotante
+  const li = geometria(MEDIDAS.find((m) => m.id === 'limite'), ej.slice(0, 3), { escalonMarca: 'II', izq: '1/II', der: '2/II', mpp: 4 });
+  assert.equal(li.rotulos[0].texto, 'II'); assert.deepEqual(li.rotulos[0].lados, { izq: '1/II', der: '2/II' });
+  // Destruir: X centrada en el punto, con la D en el centro; girarla no mueve el centro
+  const d = geometria(MEDIDAS.find((m) => m.id === 'destruir'), [ej[0]], { tam: 400, giro: 30 });
   assert.equal(d.lineas.length, 4);
   assert.equal(d.textos[0].texto, 'D');
   assert.ok(medir(base, { lat: d.textos[0].pos[0], lon: d.textos[0].pos[1] }).distancia < 0.01);
+});
+
+test('Catálogo APP-6(E): cantidades y códigos', () => {
+  const codigos = new Set(MEDIDAS.map((m) => m.codigo));
+  for (const c of ['110100', '140300', '151403', '340100', '344700', '290307', '271700', '321705', '170200', '242200']) assert.ok(codigos.has(c), `falta ${c}`);
+  assert.ok(MEDIDAS.filter((m) => m.grupo === 'cometidos').length >= 47);
+  assert.ok(MEDIDAS.length > 400);
+  assert.ok(Object.keys(ENTIDADES).length > 180);
+});
+
+test('Material, instalaciones y civiles: marcos y SIDC', () => {
+  const carro = svgUnidad({ conjunto: '15', identidad: 'amigo', icono: '120200', movilidad: 'cadenas' });
+  assert.match(carro.svg, /A54,54/); // círculo del material amigo
+  assert.equal(carro.sidc.slice(4, 6), '15');
+  assert.equal(carro.sidc.slice(8, 10), '33'); // movilidad: cadenas (tabla A-8)
+  const inst = svgUnidad({ conjunto: '20', identidad: 'hostil', icono: '111500' });
+  assert.equal(inst.sidc.slice(4, 6), '20');
+  assert.match(svgUnidad({ conjunto: '11', identidad: 'neutral', icono: '110400' }).svg, /rgb\(255,161,255\)/);
+  // Infantería enemiga: la X va de la mitad de un lado del rombo a la del opuesto
+  const inf = svgUnidad({ identidad: 'hostil', icono: '121100' }).svg;
+  assert.match(inf, /clip-path/);
 });

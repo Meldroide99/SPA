@@ -369,27 +369,45 @@ im=Image.open(sys.argv[1]); a=im.getchannel('A'); print(im.mode, im.size[0]%256,
   await pag.mouse.move(80, 70); await pag.waitForTimeout(200);
   await pag.click('[data-simbolos="unidades"]');
   ok(await pag.locator('#panel-simbolos').isVisible(), 'Paleta de símbolos abierta desde la barra');
+  const anchoPal = await motor(() => { const e = document.querySelector('#panel-simbolos .sim-cuerpo'); return [e.scrollWidth, e.clientWidth]; });
+  ok(anchoPal[0] <= anchoPal[1] + 1, `La paleta cabe a lo ancho (sin cortes: ${anchoPal})`);
   await pag.click('#panel-simbolos [data-arma="infanteria"]');
   await pag.click('#panel-simbolos [data-tipo="paracaidista"]');
   await pag.click('#panel-simbolos [data-escalon="seccion"]');
   await pag.fill('[data-campo-u="T"]', '1'); await pag.fill('[data-campo-u="M"]', 'II/RI4');
   ok(/Sección de infantería paracaidista/.test(await pag.textContent('.sim-vista')), 'Constructor guiado: «Sección de infantería paracaidista»');
-  await pag.click('[data-s="colocar"]');
+  // Con la unidad elegida, un clic en el mapa la pone (y otro clic, otra)
   await pag.mouse.click(cx + 60, cy + 40); await pag.waitForTimeout(300);
   const u1 = await motor(() => window.__spa.dibujo.plan().elementos.at(-1));
-  ok(u1.simbolo?.clase === 'unidad' && u1.simbolo.icono === '121100' && u1.simbolo.mod2 === 'c100' && u1.simbolo.escalon === 'seccion' && u1.simbolo.T === '1', 'Unidad colocada con su símbolo');
+  ok(u1.simbolo?.clase === 'unidad' && u1.simbolo.icono === '121100' && u1.simbolo.mod2 === 'c100' && u1.simbolo.escalon === 'seccion' && u1.simbolo.T === '1' && u1.simbolo.zoom === 14, 'Clic en el mapa: unidad puesta con su símbolo (y su zoom de referencia)');
   ok(await pag.locator('.leaflet-elementos-pane .simbolo-unidad svg').count() >= 1, 'Símbolo dibujado en el mapa');
   ok(/SIDC 160310001412110000000100000000/.test(await pag.textContent('#panel-elemento')), 'Ficha con el SIDC APP-6(E) de 30 dígitos');
+  await pag.mouse.click(cx + 160, cy + 40); await pag.waitForTimeout(300);
+  ok((await motor(() => window.__spa.dibujo.plan().elementos.length)) === n0 + 2, 'Segundo clic: segunda unidad (rápido para repetir)');
   // Cambiar el escalón con el desplegable visual
   await pag.click('#panel-elemento [data-abrir-sel="escalon"]');
   await pag.click('#panel-elemento [data-sel="escalon"] [data-elegir="compania"]'); await pag.waitForTimeout(200);
   ok((await motor(() => window.__spa.dibujo.plan().elementos.at(-1).simbolo.escalon)) === 'compania', 'Escalón cambiado desde la ficha (desplegable con miniaturas)');
-  // Recientes: repetir la unidad con un clic
-  ok(await pag.locator('#panel-simbolos .sim-chip').count() >= 1, 'La unidad queda en «Recientes»');
-  await pag.click('#panel-simbolos [data-reciente="0"]');
-  await pag.mouse.click(cx + 160, cy + 40); await pag.waitForTimeout(300);
-  ok((await motor(() => window.__spa.dibujo.plan().elementos.length)) === n0 + 2, 'Repetida desde «Recientes»');
-  // Cometido con puntos fijos (bloquear: 3)
+  // Material: carro de combate de cadenas
+  await pag.click('#panel-simbolos [data-conjunto="15"]'); await pag.waitForTimeout(200);
+  ok(await pag.locator('#panel-simbolos .sim-grupo-det').count() > 5, 'Material: árbol completo de la APP-6(E)');
+  // Arrastrar la unidad desde la vista previa hasta el mapa (encima de la zona que tapa la paleta)
+  const v = await pag.locator('#panel-simbolos .sim-vista').boundingBox();
+  await pag.mouse.move(v.x + 30, v.y + 30); await pag.mouse.down(); await pag.mouse.move(v.x + 60, v.y + 50, { steps: 3 });
+  const opac = Number(await motor(() => getComputedStyle(document.querySelector('#panel-simbolos')).opacity));
+  await pag.mouse.move(cx - 250, cy + 100, { steps: 6 }); await pag.mouse.up(); await pag.waitForTimeout(300);
+  ok(opac < 0.5, `Al arrastrar, la paleta se difumina y deja ver el mapa (opacidad ${opac.toFixed(2)})`);
+  ok((await motor(() => window.__spa.dibujo.plan().elementos.at(-1).simbolo.conjunto)) === '15', 'Arrastrar y soltar: material colocado');
+  await pag.click('#panel-simbolos [data-conjunto="10"]');
+  // Recientes
+  ok(await pag.locator('#panel-simbolos .sim-chip').count() >= 2, 'Lo puesto queda en «Recientes»');
+  // Tamaño con el zoom: tope al acercar
+  const ancho = async () => motor(() => document.querySelector('.leaflet-elementos-pane .simbolo-unidad svg').getBoundingClientRect().width);
+  const a14 = await ancho(); await vista(40.80, -4.02, 17); await pag.waitForTimeout(400); const a17 = await ancho();
+  await vista(40.80, -4.02, 12); await pag.waitForTimeout(400); const a12 = await ancho();
+  ok(a17 <= a14 * 1.4 && a17 > a14 * 1.2 && a12 < a14 * 0.4, `Tamaño: crece al acercar solo hasta el tope y encoge al alejar (${a12.toFixed(0)} · ${a14.toFixed(0)} · ${a17.toFixed(0)} px)`);
+  await vista(40.80, -4.02, 14); await pag.waitForTimeout(300);
+  // Cometido con puntos fijos (bloquear: 3) y giro
   await pag.click('#panel-simbolos [data-pestana="cometidos"]');
   await pag.click('#panel-simbolos [data-medida="bloquear"]');
   for (const [dx, dy] of [[250, -60], [250, 60], [120, 0]]) { await pag.mouse.click(cx + dx, cy + dy); await pag.waitForTimeout(80); }
@@ -397,26 +415,33 @@ im=Image.open(sys.argv[1]); a=im.getchannel('A'); print(im.mode, im.size[0]%256,
   const b = await motor(() => window.__spa.dibujo.plan().elementos.at(-1));
   ok(b.simbolo?.id === 'bloquear' && b.geometria.coordinates.length === 3, 'Cometido «Bloquear» con sus 3 puntos de anclaje');
   ok(await pag.locator('.asa-media').count() === 0 && await pag.locator('.asa-vert').count() === 3, 'Puntos fijos: se arrastran, no se añaden ni se quitan');
-  // Línea de fase con nombre
+  ok(await pag.locator('.asa-giro').count() === 1 && await pag.locator('.asa-mover').count() === 1, 'Asas para girar y mover el cometido entero');
+  await pag.click('#panel-elemento [data-girar="45"]'); await pag.waitForTimeout(200);
+  const b2 = await motor(() => window.__spa.dibujo.plan().elementos.at(-1).geometria.coordinates);
+  ok(JSON.stringify(b2) !== JSON.stringify(b.geometria.coordinates), 'Girar 45° desde la ficha');
+  // Línea de fase con nombre flotante; límite con escalón en cada tramo al acercar
   await pag.click('#panel-simbolos [data-pestana="medidas"]');
   await pag.click('#panel-simbolos [data-medida="pl"]');
   await pag.mouse.click(cx - 0, cy + 150); await pag.mouse.dblclick(cx + 260, cy + 140); await pag.waitForTimeout(300);
   await pag.fill('#el-nombre', 'ROJA'); await pag.press('#el-nombre', 'Tab'); await pag.waitForTimeout(300);
-  ok((await pag.locator('.etq-cm', { hasText: 'PL ROJA' }).count()) === 2, 'Línea de fase rotulada «PL ROJA» en los dos extremos');
+  ok((await pag.locator('.etq-linea', { hasText: 'PL ROJA' }).count()) >= 1, 'Línea de fase rotulada «PL ROJA» sobre la línea');
+  await pag.click('#panel-simbolos [data-medida="limite"]');
+  for (const [dx, dy] of [[-150, -200], [-50, -120], [60, -210], [160, -110]]) { await pag.mouse.click(cx + dx, cy + dy); await pag.waitForTimeout(80); }
+  await pag.mouse.dblclick(cx + 260, cy - 200); await pag.waitForTimeout(300);
+  await pag.click('#panel-elemento [data-abrir-sel="escalon"]'); await pag.click('#panel-elemento [data-sel="escalon"] [data-elegir="batallon"]'); await pag.waitForTimeout(300);
+  const nCerca = async () => pag.locator('.etq-limite').count();
+  await vista(40.80, -4.02, 16); await pag.waitForTimeout(400); const c16 = await nCerca();
+  await vista(40.80, -4.02, 12); await pag.waitForTimeout(400); const c12 = await nCerca();
+  ok(c16 > c12 && c12 >= 1, `Límite: escalón en varios tramos al acercar y menos al alejar (${c16} → ${c12})`);
+  await vista(40.80, -4.02, 14); await pag.waitForTimeout(300);
   // Deshacer
   await pag.keyboard.press('Escape'); await pag.keyboard.press('Control+z'); await pag.waitForTimeout(200);
-  ok((await motor(() => window.__spa.dibujo.plan().elementos.at(-1).propiedades.nombre)) === '', 'Ctrl+Z deshace el último cambio');
+  ok((await motor(() => window.__spa.dibujo.plan().elementos.at(-1).simbolo.escalon ?? '')) === '', 'Ctrl+Z deshace el último cambio');
   // Buscador universal: «bloquear» → empieza a dibujar el cometido
   await pag.click('#panel-simbolos [data-s="cerrar"]');
   await pag.fill('#buscar-txt', 'bloquear'); await pag.waitForTimeout(200); await pag.keyboard.press('Enter'); await pag.waitForTimeout(200);
   ok(await motor(() => window.__spa.dibujo.dibujando), 'Buscar «bloquear» y pulsar Intro: listo para dibujarlo');
   await pag.keyboard.press('Escape');
-  // Tamaño a escala: crece al acercar
-  await motor(() => { window.__spa.estado.simTam = { modo: 'escala', px: 34, metros: 400 }; window.__spa.dibujo.refrescar(); });
-  const ancho = async () => motor(() => document.querySelector('.leaflet-elementos-pane .simbolo-unidad svg').getBoundingClientRect().width);
-  const a14 = await ancho(); await vista(40.80, -4.02, 15); await pag.waitForTimeout(400); const a15 = await ancho();
-  ok(a15 > a14 * 1.7, `A escala: el símbolo crece al acercar (${a14.toFixed(0)} → ${a15.toFixed(0)} px)`);
-  await motor(() => { window.__spa.estado.simTam = { modo: 'fijo', px: 34, metros: 400 }; window.__spa.dibujo.refrescar(); });
 }
 
 if (CAPTURAS) {

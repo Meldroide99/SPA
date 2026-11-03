@@ -88,8 +88,10 @@ export function iniciarDibujo({ L, mapa, herramienta, elegirHerramienta, fmt, al
       seleccionar(el.id);
     });
     if (sel && el.tipo === 'punto') {
+      principal.on('dragstart', () => document.body.classList.add('arrastrando'));
       principal.on('drag', () => { const ll = principal.getLatLng(); pintarPanel([{ lat: ll.lat, lon: ll.lng }]); });
       principal.on('dragend', () => {
+        document.body.classList.remove('arrastrando');
         const q = iman(principal.getLatLng(), { excluir: el.id });
         cambio('Mover punto', () => moverPuntos(el, [q]));
       });
@@ -135,7 +137,9 @@ export function iniciarDibujo({ L, mapa, herramienta, elegirHerramienta, fmt, al
   function pintarAsas() {
     capaAsas.clearLayers();
     const el = seleccion && buscar(seleccion);
-    if (!el || el.tipo === 'punto') return;
+    if (!el) return;
+    if (simbolos?.girable(el)) asasGiro(el);
+    if (el.tipo === 'punto') return;
     const pts = puntosDe(el);
     if (el.tipo === 'circulo') {
       const centro = L.marker([pts[0].lat, pts[0].lon], { icon: asa('asa-centro'), draggable: true, title: 'Arrastra para mover el círculo' });
@@ -155,8 +159,9 @@ export function iniciarDibujo({ L, mapa, herramienta, elegirHerramienta, fmt, al
     const actuales = pts.slice();
     pts.forEach((p, i) => {
       const m = L.marker([p.lat, p.lon], { icon: asa('asa-vert'), draggable: true, title: 'Arrastra para mover · clic derecho para quitar' });
+      m.on('dragstart', () => document.body.classList.add('arrastrando'));
       m.on('drag', () => { const ll = m.getLatLng(); actuales[i] = { lat: ll.lat, lon: ll.lng }; pintarElemento(el, actuales); mostrarIman(actuales[i], { excluir: el.id }); });
-      m.on('dragend', () => { actuales[i] = iman(m.getLatLng(), { excluir: el.id }); capaIman.clearLayers(); cambio('Mover vértice', () => moverPuntos(el, actuales)); });
+      m.on('dragend', () => { document.body.classList.remove('arrastrando'); actuales[i] = iman(m.getLatLng(), { excluir: el.id }); capaIman.clearLayers(); cambio('Mover vértice', () => moverPuntos(el, actuales)); });
       m.on('contextmenu', (e) => { L.DomEvent.preventDefault(e.originalEvent); quitarVertice(el, i); });
       capaAsas.addLayer(m);
     });
@@ -169,6 +174,41 @@ export function iniciarDibujo({ L, mapa, herramienta, elegirHerramienta, fmt, al
       m.on('click', () => insertar(mid));
       m.on('dragend', () => insertar(iman(m.getLatLng(), { excluir: el.id })));
       capaAsas.addLayer(m);
+    }
+  }
+
+  /** Asas para mover entero (✥, en el centro) y girar (↻, encima) un símbolo de medida. */
+  function asasGiro(el) {
+    const pts = puntosDe(el);
+    const centro = { lat: pts.reduce((s, p) => s + p.lat, 0) / pts.length, lon: pts.reduce((s, p) => s + p.lon, 0) / pts.length };
+    const cpx = px(centro);
+    const arriba = pts.length > 1 ? Math.min(...pts.map((p) => px(p).y)) : cpx.y;
+    const pGiro = mapa.containerPointToLatLng([cpx.x, Math.min(arriba, cpx.y) - 46]);
+    const ang = (q) => (Math.atan2(q.x - cpx.x, -(q.y - cpx.y)) * 180) / Math.PI;
+    const giro = L.marker(pGiro, { icon: L.divIcon({ className: 'asa asa-giro', html: '↻', iconSize: [24, 24] }), draggable: true, title: 'Arrastra para girar' });
+    const guia = L.polyline([[centro.lat, centro.lon], pGiro], { pane: 'borrador', color: '#E0B252', weight: 1.5, dashArray: '3 4', interactive: false });
+    let a0 = 0, giro0 = 0;
+    giro.on('dragstart', () => { document.body.classList.add('arrastrando'); a0 = ang(px({ lat: pGiro.lat, lon: pGiro.lng })); giro0 = el.simbolo.giro ?? 0; });
+    const nuevo = () => { const ll = giro.getLatLng(); const d = ang(px({ lat: ll.lat, lon: ll.lng })) - a0; return Math.round(d); };
+    giro.on('drag', () => {
+      const d = nuevo(); guia.setLatLngs([[centro.lat, centro.lon], giro.getLatLng()]);
+      if (pts.length === 1) { el.simbolo.giro = giro0 + d; pintarElemento(el); el.simbolo.giro = giro0; } else pintarElemento(el, simbolos.girarPuntos(pts, d, centro));
+      avisoBreve(`Girando ${((d % 360) + 360) % 360}°`);
+    });
+    giro.on('dragend', () => {
+      document.body.classList.remove('arrastrando');
+      const d = nuevo(); if (!d) { pintarAsas(); return; }
+      if (pts.length === 1) cambio('Girar', () => { el.simbolo.giro = (((giro0 + d) % 360) + 360) % 360; tocar(el); });
+      else cambio('Girar', () => moverPuntos(el, simbolos.girarPuntos(pts, d, centro)));
+    });
+    capaAsas.addLayer(guia).addLayer(giro);
+    if (pts.length > 1) {
+      const mover = L.marker([centro.lat, centro.lon], { icon: L.divIcon({ className: 'asa asa-mover', html: '✥', iconSize: [24, 24] }), draggable: true, title: 'Arrastra para mover el símbolo entero' });
+      const desplazar = () => { const ll = mover.getLatLng(); const dlat = ll.lat - centro.lat, dlon = ll.lng - centro.lon; return pts.map((p) => ({ lat: p.lat + dlat, lon: p.lon + dlon })); };
+      mover.on('dragstart', () => document.body.classList.add('arrastrando'));
+      mover.on('drag', () => pintarElemento(el, desplazar()));
+      mover.on('dragend', () => { document.body.classList.remove('arrastrando'); cambio('Mover', () => moverPuntos(el, desplazar())); });
+      capaAsas.addLayer(mover);
     }
   }
 
@@ -255,6 +295,18 @@ export function iniciarDibujo({ L, mapa, herramienta, elegirHerramienta, fmt, al
     borrador = null; capaBorrador.clearLayers(); capaBorradorPuntos.clearLayers(); capaIman.clearLayers();
     elegirHerramienta('consultar');
     seleccionar(el.id);
+  }
+
+  /** Crea un elemento con símbolo ya colocado (clic con unidad elegida o arrastrar y soltar). */
+  function crearConSimbolo(simbolo, pts, tipo, nombre = 'símbolo') {
+    if (borrador) cancelarBorrador();
+    const el = cambio(`Colocar ${nombre}`, (p) => {
+      const e = nuevoElemento(tipo, pts.slice(), { bando: preferencias.bando, estado: preferencias.estado });
+      e.simbolo = JSON.parse(JSON.stringify(simbolo)); simbolos?.alCrear(e);
+      p.elementos.push(e); return e;
+    });
+    seleccionar(el.id);
+    return el;
   }
 
   function moverCursor(p) {
@@ -574,6 +626,7 @@ export function iniciarDibujo({ L, mapa, herramienta, elegirHerramienta, fmt, al
   });
 
   pintarTodo(); pintarLista(); pintarBotones();
+  const arrastrandoAlgo = () => document.body.classList.contains('arrastrando');
 
   return {
     plan: () => plan, historial,
@@ -591,6 +644,10 @@ export function iniciarDibujo({ L, mapa, herramienta, elegirHerramienta, fmt, al
       return cambio(desc, (p) => { for (const e of elementos) p.elementos.push(e); return elementos; });
     },
     refrescar() { pintarTodo(); pintarPanel(); pintarLista(); },
+    /** Vuelve a pintar el mapa (al cambiar el zoom: tamaños y rótulos). */
+    repintar() { if (!arrastrandoAlgo()) pintarTodo(); },
+    crearConSimbolo, puntosDe,
+    moverTodo(el, pts, desc = 'Mover') { cambio(desc, () => moverPuntos(el, pts)); },
     get dibujando() { return Boolean(borrador); },
     get seleccion() { return seleccion; },
   };

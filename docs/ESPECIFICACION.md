@@ -119,34 +119,45 @@ docs/                    esta especificación e informe de precisión
 - Norma: **APP-6(E) Ed. E v2 (octubre 2025)**. Nombres en castellano y
   escalones según la **PD0-002** (anexo A: • escuadra, •• pelotón,
   ••• sección).
+- **Catálogo completo** (salvo lo marítimo, aéreo y espacial):
+  - Iconos sacados del propio PDF y vectorizados (`herramientas/app6/`):
+    unidades terrestres (183), material (174), instalaciones (78),
+    combatientes a pie (43), actividades y sucesos (81), organizaciones
+    civiles (11), con todos sus modificadores de sector 1 y 2 y los comunes
+    (tablas 1-3 y 1-4).
+  - Marcos por conjunto (tabla 1-14): material amigo en círculo, combatiente a
+    pie en hexágono, instalación con barra, actividad con esquinas, civil en
+    morado. Los iconos «de marco completo» se adaptan a cada marco.
+  - Movilidad del material (tabla 1-10), CG, agrupación táctica, finta,
+    refuerzo y campos de texto.
 - **SIDC de 30 dígitos** (anexo A): versión `16`, contexto, identidad,
-  conjunto `10` (unidad terrestre), estado, CG/FT/finta, escalón (2),
-  entidad (6), modificador 1 (2), modificador 2 (2), modificador común
-  (dígitos 21–22) y ceros. Se guarda en cada elemento y se muestra en la ficha.
-- Dibujo propio (sin librerías): marcos de la tabla 1-15 (amigo, hostil,
-  neutral, desconocido y sus variantes dudosas), sectores 1 y 2, mástil de
-  CG (el ancla es su extremo, 1.2.6), corchete de FT, finta, refuerzo
-  (+ − ±), campos T (izquierda) y M/H (derecha). ≈60 iconos de unidad
-  terrestre.
-- **Medidas de coordinación**: límite, PL, LD, LD/LC, LOA, FCL, PLD, LC,
-  FEBA; ejes de ataque; zonas (AA, OBJ, ATK, ASLT, EA, BP, DZ, LZ, PZ, SBF,
-  ABF); puntos (CKP, COP, punto de coordinación, RLY, SP, RP, PP, PD, OP).
-- **Cometidos tácticos** (28): bloquear, brecha, desbordar, canalizar,
-  limpiar, contener, controlar, asegurar, ocupar, aislar, tomar, destruir,
-  neutralizar, suprimir, fijar, retardar, retirarse (con y sin presión),
-  ruptura, demostración, desorganizar, interdicción, penetrar, envolver,
-  emboscada, cubrir, vigilar, observar. Cada uno pide un número fijo de
-  puntos y la ayuda dice qué es cada punto.
+  conjunto, estado, CG/FT/finta, escalón o movilidad (tabla A-8), entidad,
+  modificadores y modificador común.
+- **Medidas de coordinación y cometidos** (cap. 8 y su apéndice A): 440
+  símbolos — líneas, zonas, puntos, ejes y direcciones, defensa, espacio
+  aéreo, fuegos y objetivos, obstáculos y fortificación, NBQR,
+  sostenimiento, engaño e inteligencia, y los 47 verbos de cometido táctico (el contraataque va con los ejes). Cada uno
+  con sus puntos de anclaje según las reglas de dibujo de la norma.
 - Las geometrías se calculan en un plano métrico local alrededor de las
   anclas y se pasan a lat/lon; las líneas pasan exactamente por los
-  puntos tocados (prueba automática).
-- Interfaz: paleta con buscador («sección paracaidista», «bloquear»),
-  constructor guiado bando → arma → tipo → escalón → designación,
-  «Recientes» (últimas 10), ficha con desplegables de miniaturas, Duplicar.
-- Tamaño: fijo en pantalla (px) o a escala del mapa (metros), en Ajustes.
-- Pendiente: exportar con SIDC (fase 5), material/equipos, cometidos que
-  faltan (relevo, seguir y apoyar, capturar, negar, explotación,
-  persecución, escoltar).
+  puntos tocados (prueba automática). Los motivos repetidos (alambradas,
+  dientes, rayados) se miden en píxeles para verse igual a cualquier zoom.
+- Interfaz:
+  - Paleta con buscador, constructor guiado (bando → arma → tipo → escalón)
+    y el árbol completo de la APP-6(E) por conjunto.
+  - Con la paleta de unidades abierta, **cada clic en el mapa pone la unidad
+    elegida**; también se puede **arrastrar y soltar** cualquier símbolo
+    (las medidas se sueltan ya hechas, con un tamaño de ~170 px).
+  - Al arrastrar, los paneles se difuminan y dejan pasar el ratón; con una
+    unidad elegida la paleta se vuelve translúcida al salir al mapa.
+  - Fichas con desplegables de miniaturas; Duplicar; girar (asa ↻ y botones
+    de 15°/45°) y mover entero (asa ✥) los cometidos y medidas.
+- **Tamaño**: el de Ajustes es el del momento de ponerlos; al alejar encogen
+  con el mapa (mínimo 28 %) y al acercar crecen solo hasta un 35 % más.
+- **Rótulos** sobre las líneas (PL, LD, FSCL, MSR…) y en los límites
+  (escalón y unidades a cada lado): uno en cada tramo al acercar, menos al
+  alejar, siempre al menos uno.
+- Pendiente: exportar con SIDC (fase 5).
 
 ## 7. Mapa (fase 2)
 

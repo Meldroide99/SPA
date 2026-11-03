@@ -24,7 +24,7 @@ const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&l
 const CLAVE = 'spa.mapa.estado';
 const estado = {
   angulo: 'grados', coordenadas: 'mgrs', fondo: 'mtn', imagen: 'google', rotulos: true,
-  fondoAuto: false, mtnDetalle: false, intensidadCuadricula: 35, simTam: { modo: 'fijo', px: 34, metros: 400 },
+  fondoAuto: false, mtnDetalle: false, intensidadCuadricula: 35, simTam: { px: 34 },
   superpuestas: { cuadricula: true, piloto: true }, secciones: { fondo: true }, ajustesAbiertos: { coordenadas: true }, vista: null,
 };
 try { Object.assign(estado, JSON.parse(localStorage.getItem(CLAVE) || '{}')); } catch { /* sin almacenamiento */ }
@@ -99,7 +99,7 @@ let fondoActual = null;
 let alCambiarFondo = () => {}; // la cuadrícula se pinta en blanco sobre el híbrido
 // eslint-disable-next-line prefer-const
 let importar = null;
-const VERSION = '0.7.0';
+const VERSION = '0.8.0';
 function ponerFondo(id, { automatico = false } = {}) {
   if (!capasFondo[id]) id = 'mtn';
   if (fondoActual) mapa.removeLayer(fondoActual);
@@ -230,6 +230,7 @@ const fmt = { metros, coord };
 const simbolos = iniciarSimbolos({
   L, mapa,
   elegirHerramienta: (h) => elegirHerramienta(h),
+  herramienta: () => herramienta,
   tamano: () => estado.simTam,
 });
 const dibujo = iniciarDibujo({
@@ -249,20 +250,14 @@ function abrirSimbolos(pestana) {
 }
 document.querySelectorAll('[data-simbolos]').forEach((b) => b.addEventListener('click', () => abrirSimbolos(b.dataset.simbolos)));
 new MutationObserver(() => { document.body.classList.toggle('simbolos-abierto', !$('panel-simbolos').hidden); recolocarEtiquetas(); }).observe($('panel-simbolos'), { attributes: true, attributeFilter: ['hidden'] });
-// Tamaño de los símbolos (Ajustes)
-for (const b of document.querySelectorAll('[data-sim-modo]')) {
-  b.setAttribute('aria-pressed', String(b.dataset.simModo === estado.simTam.modo));
-  b.addEventListener('click', () => { estado.simTam.modo = b.dataset.simModo; guardar(); document.querySelectorAll('[data-sim-modo]').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); ponerTamSim(); dibujo.refrescar(); });
-}
+// Tamaño de los símbolos (Ajustes): al ponerlos; crecen al acercar hasta un tope y encogen al alejar
 function ponerTamSim() {
-  const esc = estado.simTam.modo === 'escala';
-  $('sim-tam').min = esc ? 100 : 20; $('sim-tam').max = esc ? 2000 : 70; $('sim-tam').step = esc ? 50 : 2;
-  $('sim-tam').value = esc ? estado.simTam.metros : estado.simTam.px;
-  $('sim-tam-v').textContent = esc ? `${estado.simTam.metros} m` : `${estado.simTam.px} px`;
+  $('sim-tam').min = 20; $('sim-tam').max = 70; $('sim-tam').step = 2;
+  $('sim-tam').value = estado.simTam.px;
+  $('sim-tam-v').textContent = `${estado.simTam.px} px`;
 }
 $('sim-tam').addEventListener('input', (ev) => {
-  const v = Number(ev.target.value);
-  if (estado.simTam.modo === 'escala') estado.simTam.metros = v; else estado.simTam.px = v;
+  estado.simTam.px = Number(ev.target.value);
   guardar(); ponerTamSim(); dibujo.refrescar();
 });
 ponerTamSim();
@@ -300,6 +295,7 @@ function elegirHerramienta(h) {
   pintarMedida();
   dibujo.herramientaCambiada(h);
   creador?.herramientaCambiada(h);
+  simbolos.actualizarAviso();
   recolocarEtiquetas();
 }
 document.querySelectorAll('[data-herr]').forEach((b) => b.addEventListener('click', () => elegirHerramienta(b.dataset.herr)));
@@ -370,6 +366,7 @@ mapa.on('click', (e) => {
   if (herramienta === 'medir') { medida.push(p); pintarMedida(); return; }
   if (herramienta === 'zona-mapa') { creador.clic(p); return; }
   if (HERRAMIENTAS_DIBUJO.includes(herramienta)) { dibujo.clic(p); return; }
+  if (simbolos.colocarEn(e.latlng)) return; // paleta de unidades abierta: cada clic pone la unidad elegida
   if (!dibujo.quitarSeleccion()) importar.cerrarFicha();
 });
 mapa.on('dblclick', () => { if (HERRAMIENTAS_DIBUJO.includes(herramienta)) dibujo.dobleClic(); else if (herramienta === 'zona-mapa') creador.dobleClic(); });
@@ -482,7 +479,7 @@ const ACCIONES = [
   { texto: 'Símbolos de unidad', extra: 'app-6 app6 unidad símbolo paleta constructor', detalle: 'Abrir la paleta', accion: () => abrirSimbolos('unidades') },
   { texto: 'Medidas de coordinación', extra: 'app-6 líneas zonas puntos paleta', detalle: 'Abrir la paleta', accion: () => abrirSimbolos('medidas') },
   { texto: 'Cometidos tácticos', extra: 'verbos app-6 paleta', detalle: 'Abrir la paleta', accion: () => abrirSimbolos('cometidos') },
-  { texto: 'Tamaño de los símbolos', extra: 'escala fijo ajustes', detalle: 'Ajustes', accion: () => abrirAjustes(true, 'simbolos') },
+  { texto: 'Tamaño de los símbolos', extra: 'tamaño unidades ajustes', detalle: 'Ajustes', accion: () => abrirAjustes(true, 'simbolos') },
   { texto: 'Crear mapa', extra: 'creador de mapas descargar zona teselas atak sqlite mbtiles geotiff offline sin conexión', detalle: 'Descargar una zona en ATAK, MBTiles, ZIP o GeoTIFF', accion: abrirCreador },
   { texto: 'Buscar en mis mapas', extra: 'carpeta catálogo', detalle: 'Mapas de tu carpeta', accion: () => importar.abrirBuscador() },
 ].map((a) => ({ grupo: 'Ajustes y acciones', ...a }));

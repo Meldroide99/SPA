@@ -1,6 +1,11 @@
 // Catálogo de unidades del ET para el constructor guiado: arma → tipo →
 // especialidad, con los nombres de la PD0-002 (anexo C) y los iconos y
 // modificadores de la APP-6(E). Ordenado de lo más usado a lo menos.
+// Además, el árbol completo de la APP-6(E) (unidades, material, instalaciones
+// y organizaciones civiles) para buscar cualquier símbolo.
+
+import { ICONOS } from './datos/iconos.js';
+import { CONJUNTOS, ESCALONES } from './app6.js';
 
 /** Especialidad: {id, nombre, icono, mod1?, mod2?, claves?} */
 export const ARMAS = [
@@ -115,7 +120,7 @@ export const ARMAS = [
 ];
 
 /** Escalones habituales primero (los del batallón hacia abajo y arriba). */
-export const ORDEN_ESCALONES = ['equipo', 'escuadra', 'peloton', 'seccion', 'compania', 'batallon', 'regimiento', 'brigada', 'division', 'cuerpo', 'ejercito', 'mando', ''];
+export const ORDEN_ESCALONES = ['equipo', 'escuadra', 'peloton', 'seccion', 'compania', 'batallon', 'regimiento', 'brigada', 'division', 'cuerpo', 'ejercito', 'grupoEjercitos', 'teatro', 'mando', ''];
 
 /** Nombre corto de un escalón según el arma (PD0-002 anexo A). */
 export function nombreEscalon(escalon, arma) {
@@ -124,12 +129,13 @@ export function nombreEscalon(escalon, arma) {
   if (escalon === 'batallon') return art || cab ? 'Grupo' : 'Batallón';
   return {
     equipo: 'Equipo', escuadra: 'Escuadra', peloton: 'Pelotón', seccion: 'Sección', regimiento: 'Regimiento',
-    brigada: 'Brigada', division: 'División', cuerpo: 'Cuerpo de ejército', ejercito: 'Ejército', mando: 'Mando', '': 'Sin escalón',
+    brigada: 'Brigada', division: 'División', cuerpo: 'Cuerpo de ejército', ejercito: 'Ejército', grupoEjercitos: 'Grupo de ejércitos', teatro: 'Teatro', mando: 'Mando', '': 'Sin escalón',
   }[escalon] ?? escalon;
 }
 
 /** Busca la especialidad de un símbolo (para el nombre y para editar). */
 export function especialidadDe(s) {
+  if (String(s.conjunto ?? '10') !== '10') return null;
   for (const a of ARMAS) for (const t of a.tipos) {
     if (t.icono === s.icono && (t.mod1 ?? '') === (s.mod1 ?? '') && (t.mod2 ?? '') === (s.mod2 ?? '')) return { arma: a, tipo: t };
   }
@@ -139,7 +145,13 @@ export function especialidadDe(s) {
 
 /** «Sección de infantería paracaidista», «Compañía de carros»… */
 export function nombreUnidad(s) {
+  const conj = String(s.conjunto ?? '10');
+  if (conj !== '10') return ICONOS[conj]?.[s.icono]?.[0] ?? CONJUNTOS[conj]?.nombre ?? 'Símbolo';
   const e = especialidadDe(s);
+  if (!e) {
+    const n = ICONOS['10']?.[s.icono]?.[0];
+    if (n) { const esc = s.escalon ? nombreEscalon(s.escalon, '') : ''; return esc && esc !== 'Sin escalón' ? `${esc} · ${n}` : n; }
+  }
   const esc = s.escalon ? nombreEscalon(s.escalon, e?.arma.id) : '';
   if (!e) return esc || 'Unidad';
   const t = e.tipo.nombre.toLowerCase();
@@ -148,11 +160,54 @@ export function nombreUnidad(s) {
   return esc && esc !== 'Sin escalón' ? `${esc} ${arma}` : e.tipo.nombre;
 }
 
-/** Candidatos para el buscador (cada especialidad × escalones típicos). */
+/** Candidatos para el buscador: especialidades del ET y todos los iconos de la APP-6(E). */
 export function candidatosUnidad() {
   const out = [];
+  const vistos = new Set();
   for (const a of ARMAS) for (const t of a.tipos) {
-    out.push({ arma: a.id, tipo: t, texto: a.id === 'infanteria' ? `Infantería ${t.nombre.toLowerCase()}` : t.nombre, extra: `${a.nombre} ${t.claves ?? ''}` });
+    out.push({ arma: a.id, tipo: { ...t, conjunto: '10' }, texto: a.id === 'infanteria' ? `Infantería ${t.nombre.toLowerCase()}` : t.nombre, extra: `${a.nombre} ${t.claves ?? ''}` });
+    if (!t.mod1 && !t.mod2) vistos.add(`10/${t.icono}`);
+  }
+  for (const [conj, tabla] of Object.entries(ICONOS)) {
+    for (const [codigo, [nombre, otan]] of Object.entries(tabla)) {
+      if (vistos.has(`${conj}/${codigo}`)) continue;
+      out.push({ arma: conj === '10' ? 'todos' : conj, tipo: { id: codigo, nombre, icono: codigo, conjunto: conj }, texto: nombre, extra: `${otan} ${CONJUNTOS[conj].nombre} ${padreDe(conj, codigo)?.[0] ?? ''}` });
+    }
   }
   return out;
 }
+
+/** Entidad / tipo de entidad del que cuelga un icono (para agrupar). */
+export function padreDe(conj, codigo) {
+  const t = ICONOS[conj] ?? {};
+  if (codigo.slice(4) !== '00') return t[codigo.slice(0, 4) + '00'] ?? t[codigo.slice(0, 2) + '0000'];
+  if (codigo.slice(2) !== '0000') return t[codigo.slice(0, 2) + '0000'];
+  return null;
+}
+
+/**
+ * Árbol completo de un conjunto: [{codigo, nombre, otan, nivel (0 entidad, 1 tipo, 2 subtipo), grupo}]
+ * en el orden de la norma.
+ */
+const GRUPOS_SIN_ICONO = {
+  10: { 11: 'Mando y control', 12: 'Movimiento y maniobra', 13: 'Fuegos', 14: 'Protección', 15: 'Inteligencia', 16: 'Sostenimiento', 17: 'Naval', 18: 'Cuarteles generales con nombre', 19: 'Operación de emergencia', 20: 'Fuerzas del orden', 21: 'Ciberespacio' },
+  11: { 11: 'Civil' },
+  15: { 11: 'Armas / sistemas de armas', 12: 'Vehículos', 13: 'Vehículos y equipos de ingenieros', 14: 'Vehículos de servicio', 15: 'Tren', 16: 'Vehículo civil', 17: 'Fuerzas del orden', 18: 'Animales de carga', 19: 'Apoyo a misiles', 20: 'Otro material', 21: 'Minas terrestres', 22: 'Sensores', 23: 'Operación de emergencia', 24: 'Pista manual', 25: 'Ala rotatoria' },
+  20: { 11: 'Instalaciones', 12: 'Infraestructura' },
+  27: { 11: 'Militar', 12: 'Civil' },
+  40: { 11: 'Incidentes', 12: 'Alteraciones del orden', 13: 'Operaciones', 15: 'Materiales peligrosos', 16: 'Accidentes de transporte', 17: 'Sucesos naturales', 18: 'Individuos' },
+};
+export function arbol(conj = '10') {
+  const t = ICONOS[conj] ?? {};
+  const grupos = GRUPOS_SIN_ICONO[conj] ?? {};
+  return Object.keys(t).sort().map((codigo) => {
+    const [nombre, otan] = t[codigo];
+    const nivel = codigo.slice(2) === '0000' ? 0 : codigo.slice(4) === '00' ? 1 : 2;
+    const ent = t[codigo.slice(0, 2) + '0000'];
+    const g = grupos[codigo.slice(0, 2)] ?? ent?.[0] ?? 'Otros';
+    return { codigo, nombre, otan, nivel, grupo: g };
+  });
+}
+
+/** Escalones con sentido para un conjunto (el material y las instalaciones no llevan). */
+export const escalonesDe = (conj) => (String(conj ?? '10') === '10' || String(conj) === '11' ? ORDEN_ESCALONES.filter((k) => ESCALONES[k]) : ['']);
