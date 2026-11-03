@@ -49,7 +49,7 @@ export function iniciarPanelOperaciones({ dibujo, exportar, verEnObjetos, alCamb
     let html = `<div class="op-nodo${activo ? ' activo' : ''}${solo ? ' solo' : ''}${oculto(o.id) ? ' oculto' : ''}" data-op="${o.id}" draggable="true" style="--niv:${niv}">
       <button type="button" class="op-flecha" data-acc="abrir" aria-expanded="${abierto}" ${hs.length || propios.length ? '' : 'style="visibility:hidden"'} aria-label="Abrir">${FLECHA}</button>
       <button type="button" class="op-ojo" data-acc="ojo" aria-pressed="${!oculto(o.id)}" title="${oculto(o.id) ? 'Mostrar' : 'Ocultar'}">${oculto(o.id) ? OJO_NO : OJO}</button>
-      <button type="button" class="op-nom" data-acc="activar" title="Clic: pintar aquí · Doble clic: cambiar el nombre"><b>${esc(o.nombre)}</b>${sub ? `<small>${esc(sub)}</small>` : ''}</button>
+      <button type="button" class="op-nom" data-acc="activar" title="${esc(o.nombre)}"><b>${esc(o.nombre)}</b>${sub ? `<small>${esc(sub)}</small>` : ''}</button>
       <span class="op-cuenta" title="Objetos (con los de sus fases)">${total}</span>
       <button type="button" class="op-mas" data-acc="menu" aria-label="Más opciones">⋯</button></div>`;
     if (abierto) {
@@ -70,16 +70,16 @@ export function iniciarPanelOperaciones({ dibujo, exportar, verEnObjetos, alCamb
     const activo = dibujo.activo ? nombreRuta(plan(), dibujo.activo) : '';
     const scroll = cuerpo.scrollTop;
     cuerpo.innerHTML = `<div class="seg op-pestanas">${Object.entries(ESTADOS_OP).map(([k, e]) => `<button type="button" data-pestana="${k}" aria-pressed="${ui.pestana === k}">${e.nombre}${n(k) ? `<small>${n(k)}</small>` : ''}</button>`).join('')}</div>
-      <form class="op-nueva" id="op-nueva"><input id="op-nueva-nombre" placeholder="${ui.pestana === 'curso' ? 'Nueva operación (ej.: OP NORTE)' : `Nueva operación ${ESTADOS_OP[ui.pestana].corto.toLowerCase()}`}" maxlength="60" autocomplete="off"><button type="submit" class="v-boton primario">Crear</button></form>
-      <div class="op-arbol" id="op-arbol">${lista.map((o) => nodo(o, 0)).join('') || `<p class="op-vacio">${ui.pestana === 'curso' ? 'Crea una operación: lo que pintes después entrará en ella. Dentro puedes crear fases, saltos o lo que quieras.' : `No hay operaciones ${ESTADOS_OP[ui.pestana].nombre.toLowerCase()}.`}</p>`}</div>
+      <form class="op-nueva" id="op-nueva"><input id="op-nueva-nombre" placeholder="Nueva operación" maxlength="60" autocomplete="off"><button type="submit" class="v-boton primario">Crear</button></form>
+      <div class="op-arbol" id="op-arbol">${lista.map((o) => nodo(o, 0)).join('') || `<p class="op-vacio">Ninguna</p>`}</div>
       <div class="op-sueltos"><div class="op-nodo${vista().sueltosOcultos ? ' oculto' : ''}" data-op="" style="--niv:0">
         <button type="button" class="op-flecha" data-acc="abrir" aria-expanded="${Boolean(ui.abiertos.__sueltos)}" ${sueltos.length ? '' : 'style="visibility:hidden"'}>${FLECHA}</button>
         <button type="button" class="op-ojo" data-acc="ojo" aria-pressed="${!vista().sueltosOcultos}" title="Mostrar u ocultar lo que no está en ninguna operación">${vista().sueltosOcultos ? OJO_NO : OJO}</button>
-        <button type="button" class="op-nom" data-acc="activar" title="Pintar sin operación"><b>Sin operación</b><small>${dibujo.activo ? 'Clic para pintar sin operación' : '● pintando aquí'}</small></button>
+        <button type="button" class="op-nom" data-acc="activar" title="Pintar sin operación"><b>Sin operación</b>${dibujo.activo ? '' : '<small>● pintando aquí</small>'}</button>
         <span class="op-cuenta">${sueltos.length}</span><span></span></div>
         ${ui.abiertos.__sueltos && sueltos.length ? `<div class="op-objetos" style="--niv:0">${sueltos.map(filaObjeto).join('')}</div>` : ''}</div>
       <div class="pm-acciones"><button type="button" data-acc="ver-todo">Ver todo</button><button type="button" data-acc="ocultar-todo" title="El mapa sin símbolos">Ocultar todo</button></div>
-      <p class="op-ayuda">${activo ? `Lo que pintes entra en <b>${esc(activo)}</b>. ` : ''}Arrastra objetos entre operaciones y fases, o una fase dentro de otra. Lo que ves u ocultas es solo tuyo.</p>`;
+`;
     cuerpo.scrollTop = scroll;
   }
 
@@ -90,7 +90,7 @@ export function iniciarPanelOperaciones({ dibujo, exportar, verEnObjetos, alCamb
     if (padre) ui.abiertos[padre] = true;
     guardarUi();
     dibujo.ponerActivo(o.id);
-    dibujo.avisoBreve(`«${nombreRuta(plan(), o.id)}» creada. Lo que pintes entra en ella.`);
+    dibujo.avisoBreve(`«${nombreRuta(plan(), o.id)}» creada`);
     return o;
   }
   function conmutarOjo(id) {
@@ -115,7 +115,7 @@ export function iniciarPanelOperaciones({ dibujo, exportar, verEnObjetos, alCamb
     });
     if (!v) return;
     cambio(`Borrar «${o.nombre}»`, (p) => borrarPaquete(p, o.id, { conObjetos: v === 'todo' }));
-    dibujo.avisoBreve(`«${o.nombre}» borrada. Ctrl+Z para recuperarla.`);
+    dibujo.avisoBreve(`«${o.nombre}» borrada`, { deshacer: true });
   }
   function menu(boton, o) {
     const raiz = !o.padre;
@@ -139,11 +139,11 @@ export function iniciarPanelOperaciones({ dibujo, exportar, verEnObjetos, alCamb
       if (v === 'encuadrar') dibujo.encuadrar(objetosDe(plan(), o.id).map((e) => e.id));
       if (v === 'objetos') verEnObjetos(o.id);
       if (v === 'fase') {
-        const r = await preguntar({ titulo: `Nueva dentro de «${o.nombre}»`, texto: 'Ponle el nombre que quieras: Fase 1, Salto 2, Reserva…', campo: { ayuda: 'Nombre' }, opciones: [{ v: 'crear', texto: 'Crear', clase: 'primario' }, { v: 'cancelar', texto: 'Cancelar' }] });
+        const r = await preguntar({ titulo: `Nueva dentro de «${o.nombre}»`, campo: { valor: `Fase ${hijos(plan(), o.id).length + 1}`, ayuda: 'Nombre' }, opciones: [{ v: 'crear', texto: 'Crear', clase: 'primario' }, { v: 'cancelar', texto: 'Cancelar' }] });
         if (r) crear(r.texto || `Fase ${hijos(plan(), o.id).length + 1}`, { padre: o.id });
       }
       if (v === 'renombrar') renombrar(o);
-      if (v?.startsWith('estado:')) { const k = v.slice(7); cambio(`Pasar a ${ESTADOS_OP[k].nombre.toLowerCase()}`, () => { o.estado = k; tocarPaquete(o); }); dibujo.avisoBreve(`«${o.nombre}» está ahora en ${ESTADOS_OP[k].nombre}.`); }
+      if (v?.startsWith('estado:')) { const k = v.slice(7); cambio(`Pasar a ${ESTADOS_OP[k].nombre.toLowerCase()}`, () => { o.estado = k; tocarPaquete(o); }); dibujo.avisoBreve(`«${o.nombre}» → ${ESTADOS_OP[k].nombre}`); }
       if (v === 'subir') cambio('Sacar al primer nivel', (p) => moverPaquete(p, o.id, null));
       if (v === 'duplicar') cambio(`Duplicar «${o.nombre}»`, (p) => duplicarPaquete(p, o.id));
       if (v === 'exportar') exportar(objetosDe(plan(), o.id).map((e) => e.id), o.nombre);
@@ -160,12 +160,12 @@ export function iniciarPanelOperaciones({ dibujo, exportar, verEnObjetos, alCamb
     if (fila) { dibujo.seleccionar(fila.dataset.el, { centrar: true }); return; }
     const acc = t.closest('[data-acc]')?.dataset.acc; if (!acc) return;
     if (acc === 'ver-todo') { dibujo.ponerVista({ ocultos: [], solo: null, sueltosOcultos: false }); return; }
-    if (acc === 'ocultar-todo') { dibujo.ponerVista({ ocultos: hijos(plan(), null).map((o) => o.id), solo: null, sueltosOcultos: true }); dibujo.avisoBreve('Mapa sin símbolos. «Ver todo» los vuelve a mostrar.'); return; }
+    if (acc === 'ocultar-todo') { dibujo.ponerVista({ ocultos: hijos(plan(), null).map((o) => o.id), solo: null, sueltosOcultos: true });  return; }
     const n = t.closest('.op-nodo'); if (!n) return;
     const id = n.dataset.op || null, o = id ? buscarPaquete(plan(), id) : null;
     if (acc === 'abrir') { const k = id ?? '__sueltos'; ui.abiertos[k] = !ui.abiertos[k]; guardarUi(); pintar(); }
     if (acc === 'ojo') conmutarOjo(id);
-    if (acc === 'activar') { dibujo.ponerActivo(id); if (id) { ui.abiertos[id] = true; guardarUi(); } dibujo.avisoBreve(id ? `Pintando en «${nombreRuta(plan(), id)}».` : 'Pintando sin operación.'); }
+    if (acc === 'activar') { dibujo.ponerActivo(id); if (id) { ui.abiertos[id] = true; guardarUi(); }  }
     if (acc === 'menu' && o) menu(t.closest('button'), o);
   });
   cuerpo.addEventListener('dblclick', (ev) => { const n = ev.target.closest('.op-nom'); const id = n?.closest('.op-nodo')?.dataset.op; if (id) renombrar(buscarPaquete(plan(), id)); });

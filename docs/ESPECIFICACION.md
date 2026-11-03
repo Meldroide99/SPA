@@ -402,6 +402,28 @@ y 180°) y asa ↻ en el mapa que se arrastra alrededor del centro, de 5 en 5°
   altitud, recolocar ventanas y valores de fábrica. Todo por usuario.
 - Sin zona piloto (la primera vez el mapa se abre en Guadarrama).
 
+### v0.9.1 (correcciones de Balú)
+- **Mapas de la carpeta de ATAK**: fondos Esri Topo, Google Relieve, OpenTopoMap y
+  MTBMap; imágenes del híbrido Esri Clarity y Bing con sus rótulos. También en el
+  creador de mapas. Se quedan los IGN en PNG (más nítidos que el JPEG de la carpeta).
+- Cabecera y barra de herramientas se esconden sin uso; Capas se recoge a su icono.
+- **Todo se va despacio**: las ventanas se desvanecen y encogen (≈1,5 s); al
+  cerrarlas, se desvanecen (0,55 s).
+- **Tamaño de las ventanas** desde cualquier borde o esquina, agarrando justo por
+  fuera (no choca con la barra de desplazamiento).
+- **Símbolos**: todos del mismo tamaño en pantalla, los pusieras al zoom que fuera
+  (referencia: zoom 14; crecen hasta +35 % al acercar y encogen al alejar).
+- Sin SIDC, sin brújula ni grados en la ficha, sin explicaciones de uso y sin
+  desplegables automáticos. «Recientes» recogido. Arma **UAS (drones)** con sus
+  variantes (ala fija, rotatoria, VTOL, rotor basculante, ISR, ataque, GE, recuperación).
+- **Nombres de las líneas** en su propia capa por encima de las líneas, con fondo
+  de vidrio: la línea pasa difuminada por detrás.
+- **Lazo a mano** (además del círculo) y exportación **ZIP** (paquete de datos de
+  ATAK: MANIFEST/manifest.xml + KML).
+- Cuadrados de 100 km de la cuadrícula: en una etiqueta en la esquina de abajo a la
+  izquierda, solo con la cuadrícula MGRS activada (ya no en medio del mapa).
+- Valores de fábrica: transparencia 60 %, desenfoque 6 px, tamaño 95 %.
+
 ## 13. Pendiente
 
 - Rumbo magnético (modelo WMM).

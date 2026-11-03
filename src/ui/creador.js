@@ -28,11 +28,13 @@ export function iniciarCreador({ L, mapa, estado, dibujo, importar, elegirHerram
   const $ = (id) => document.getElementById(id);
   const panel = $('panel-creador');
   const conf = {
-    capas: Object.fromEntries(CAPAS_CREADOR.map((c) => [c.id, { on: c.id === 'mtn' || c.id === 'hibrido', zMin: { mtn: 13, hibrido: 17, base: 12, relieve: 11 }[c.id], zMax: { mtn: 16, hibrido: 18, base: 16, relieve: 15 }[c.id] }])),
+    capas: Object.fromEntries(CAPAS_CREADOR.map((c) => [c.id, { on: c.id === 'mtn' || c.id === 'hibrido', zMin: { mtn: 13, hibrido: 17, base: 12, relieve: 11 }[c.id] ?? 12, zMax: { mtn: 16, hibrido: 18, base: 16, relieve: 15 }[c.id] ?? Math.min(16, c.zMax) }])),
     orden: CAPAS_CREADOR.map((c) => c.id),
     formato: 'atak', modo: 'junto', calidad: 'alta', nombre: 'Mapa SPA', abrir: true,
   };
   try { const g = JSON.parse(localStorage.getItem(CLAVE) || '{}'); Object.assign(conf, g, { capas: { ...conf.capas, ...g.capas } }); } catch { /* nada */ }
+  // Capas nuevas que no estaban en lo guardado
+  conf.orden = [...conf.orden.filter((id) => CAPAS_CREADOR.some((c) => c.id === id)), ...CAPAS_CREADOR.map((c) => c.id).filter((id) => !conf.orden.includes(id))];
   const guardarConf = () => { try { localStorage.setItem(CLAVE, JSON.stringify(conf)); } catch { /* nada */ } };
 
   // ---------------------------------------------------------- zona
@@ -119,7 +121,6 @@ export function iniciarCreador({ L, mapa, estado, dibujo, importar, elegirHerram
         ${conf.formato !== 'geotiff' && varias ? `<div class="seg cr-modo"><button type="button" data-modo="junto" aria-pressed="${conf.modo === 'junto'}">Un solo archivo</button><button type="button" data-modo="separado" aria-pressed="${conf.modo === 'separado'}">Un archivo por capa</button></div>` : ''}
         ${p.modo === 'junto' && p.archivos[0] ? `<p class="cr-nota">En el archivo: ${esc(textoReparto(p.archivos[0].zooms, nombres))}</p>` : ''}
         ${p.solapes.length ? `<p class="cr-nota cr-aviso">Zoom ${[...new Set(p.solapes.map((s) => s.z))].join(', ')}: lo piden dos capas; se usa la de más arriba.</p>` : ''}
-        <p class="cr-nota">El híbrido usa la imagen y los nombres elegidos en Ajustes.</p>
       </fieldset>
       <fieldset class="cr-paso" ${ocupado ? 'disabled' : ''}><legend>3 · Archivo</legend>
         <div class="aj-opc cr-formatos">${Object.entries(FORMATOS).map(([k, f]) => `<button type="button" data-formato="${k}" aria-pressed="${conf.formato === k}">${f.nombre}<small>${f.detalle}</small></button>`).join('')}</div>
@@ -206,12 +207,12 @@ export function iniciarCreador({ L, mapa, estado, dibujo, importar, elegirHerram
 
   /** Tesela de una capa → { datos: Blob, ext } o null si el servicio no tiene nada ahí. */
   async function teselaDe(capa, z, x, y, señal, q) {
-    if (capa === 'mtn' || capa === 'base') {
+    if (capa !== 'hibrido' && capa !== 'relieve') {
       const b = await pedir(urlTesela(FONDOS.find((f) => f.id === capa), z, x, y), señal);
       return b && { datos: b, ext: extDe(b) };
     }
     if (capa === 'hibrido') {
-      const [img, rot] = await Promise.all([pedir(urlTesela(IMAGENES[estado.imagen], z, x, y), señal), estado.rotulos ? pedir(urlTesela(ROTULOS, z, x, y), señal).catch(() => null) : null]);
+      const [img, rot] = await Promise.all([pedir(urlTesela(IMAGENES[estado.imagen], z, x, y), señal), estado.rotulos && !IMAGENES[estado.imagen].conRotulos ? pedir(urlTesela(ROTULOS, z, x, y), señal).catch(() => null) : null]);
       if (!img) return null;
       if (!rot) return { datos: img, ext: extDe(img) };
       const c = lienzo(), ctx = c.getContext('2d');

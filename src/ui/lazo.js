@@ -7,7 +7,7 @@
 
 import { medir } from '../geo/index.js';
 import { puntosCirculo, estiloDe, nuevoElemento } from '../plan/plan.js';
-import { objetosEnCirculo, enCirculo, buscarPaquete, nombreRuta, ruta, CATEGORIAS, categoriaDe, crearPaqueteSpa, asignar, nuevoPaquete, hijos } from '../plan/operaciones.js';
+import { objetosEnCirculo, enCirculo, objetosEnPoligono, enPoligono, buscarPaquete, nombreRuta, ruta, CATEGORIAS, categoriaDe, crearPaqueteSpa, asignar, nuevoPaquete, hijos } from '../plan/operaciones.js';
 import { FORMATOS_EXPORTAR, crearArchivo } from '../datos/exportar.js';
 import { preguntar } from './dialogo.js';
 import { abrirMenu } from './objetos.js';
@@ -31,12 +31,12 @@ export function iniciarLazo({ L, mapa, dibujo, simbolos, importar, fmt, herramie
   const panel = $('panel-lazo'), cuerpo = $('lazo-cuerpo');
   const capa = L.layerGroup().addTo(mapa);
   const plan = () => dibujo.plan();
-  let pref = { formato: 'kmz', modo: 'toca' };
+  let pref = { formato: 'kmz', modo: 'toca', forma: 'circulo' }; // forma: 'circulo' | 'mano'
   try { Object.assign(pref, JSON.parse(localStorage.getItem(CLAVE) || '{}')); } catch { /* nada */ }
   const guardarPref = () => { try { localStorage.setItem(CLAVE, JSON.stringify(pref)); } catch { /* nada */ } };
 
   // Estado: círculo y lo encontrado
-  let circulo = null;        // { centro, radio }
+  let circulo = null;        // { centro, radio } o { poligono: [{lat,lon}] } (a mano)
   let trazo = null;          // pintando: { centro, arrastre, x0, y0 }
   let resultado = null;      // { titulo, items: [{ clave, grupo, nombre, ico, como, obj, plan:id? }] }
   const marcados = new Set();
@@ -57,30 +57,51 @@ export function iniciarLazo({ L, mapa, dibujo, simbolos, importar, fmt, herramie
   // ---------------------------------------------------------- gesto en el mapa
   const cont = mapa.getContainer();
   const latlon = (e) => { const ll = mapa.mouseEventToLatLng(e); return { lat: ll.lat, lon: ll.lng }; };
+  // A mano: se pinta mientras se mantiene pulsado y se cierra al soltar
+  function pintarMano(pts, { fijo = false } = {}) {
+    capa.clearLayers();
+    if (pts.length < 2) return;
+    const ll = pts.map((p) => [p.lat, p.lon]);
+    if (fijo) L.polygon(ll, { color: '#0C5FA8', weight: 2, dashArray: '6 6', fillColor: '#3E82CF', fillOpacity: 0.06, interactive: false }).addTo(capa);
+    else L.polyline(ll, { color: '#0C5FA8', weight: 2.5, opacity: 0.9, interactive: false, lineJoin: 'round' }).addTo(capa);
+  }
   cont.addEventListener('pointerdown', (e) => {
     if (herramienta() !== 'lazo' || e.button !== 0 || e.target.closest('.leaflet-control')) return;
     e.preventDefault();
+    if (pref.forma === 'mano') { cont.setPointerCapture?.(e.pointerId); trazo = { mano: [latlon(e)], x: e.clientX, y: e.clientY, pulsado: true }; return; }
     if (trazo && !trazo.arrastre && trazo.esperandoBorde) { terminar(latlon(e)); return; }
     trazo = { centro: latlon(e), x0: e.clientX, y0: e.clientY, arrastre: false, pulsado: true };
     pintarCirculo(trazo.centro, 0);
-    ayuda('Arrastra hasta el borde (o suelta y haz clic en el borde).');
   });
   cont.addEventListener('pointermove', (e) => {
     if (herramienta() !== 'lazo' || !trazo) return;
+    if (trazo.mano) {
+      if (!trazo.pulsado || Math.hypot(e.clientX - trazo.x, e.clientY - trazo.y) < 4) return;
+      trazo.x = e.clientX; trazo.y = e.clientY; trazo.mano.push(latlon(e)); pintarMano(trazo.mano); return;
+    }
     if (trazo.pulsado && !trazo.arrastre && Math.hypot(e.clientX - trazo.x0, e.clientY - trazo.y0) > 6) trazo.arrastre = true;
     if (trazo.arrastre || trazo.esperandoBorde) {
       const r = medir(trazo.centro, latlon(e)).distancia;
       pintarCirculo(trazo.centro, r);
-      ayuda(`Radio ${fmt.metros(r)}`);
     }
   });
   cont.addEventListener('pointerup', (e) => {
     if (herramienta() !== 'lazo' || !trazo?.pulsado) return;
     trazo.pulsado = false;
+    if (trazo.mano) { terminarMano(); return; }
     if (trazo.arrastre) terminar(latlon(e));
-    else { trazo.esperandoBorde = true; ayuda('Centro puesto. Haz clic en el borde del círculo.'); }
+    else trazo.esperandoBorde = true;
   });
   let finLazo = 0;
+  function terminarMano() {
+    finLazo = performance.now();
+    const pts = trazo.mano; trazo = null;
+    if (pts.length < 3) { pintarMano([]); return; }
+    circulo = { poligono: pts };
+    pintarMano(pts, { fijo: true });
+    elegirHerramienta('consultar');
+    buscarEnCirculo();
+  }
   function terminar(borde) {
     finLazo = performance.now();
     const r = medir(trazo.centro, borde).distancia;
@@ -91,7 +112,6 @@ export function iniciarLazo({ L, mapa, dibujo, simbolos, importar, fmt, herramie
     elegirHerramienta('consultar');
     buscarEnCirculo();
   }
-  function ayuda(t) { if (!panel.hidden && $('lazo-ayuda')) $('lazo-ayuda').textContent = t; else dibujo.avisoBreve(t); }
 
   // ---------------------------------------------------------- qué hay dentro
   const medidaDe = (id) => simbolos?.medidaDe?.(id);
@@ -100,12 +120,13 @@ export function iniciarLazo({ L, mapa, dibujo, simbolos, importar, fmt, herramie
     return { clave: `p:${el.id}`, grupo: raiz ? `op:${raiz.id}` : 'op:', grupoNombre: raiz ? raiz.nombre : 'Sin operación', nombre: dibujo.titulo(el), sub: el.paquete && raiz && el.paquete !== raiz.id ? nombreRuta(plan(), el.paquete).split(' › ').slice(1).join(' › ') : '', ico: dibujo.iconoDe(el), como, plan: el.id };
   }
   function buscarEnCirculo() {
-    const { centro, radio } = circulo;
-    const items = objetosEnCirculo(plan(), centro, radio, { visible: dibujo.visible }).map(({ el, como }) => itemPlan(el, como));
+    const { centro, radio, poligono } = circulo;
+    const dentroDe = (forma) => (poligono ? enPoligono(forma, poligono) : enCirculo(forma, centro, radio));
+    const items = (poligono ? objetosEnPoligono(plan(), poligono, { visible: dibujo.visible }) : objetosEnCirculo(plan(), centro, radio, { visible: dibujo.visible })).map(({ el, como }) => itemPlan(el, como));
     for (const g of importar()?.grupos ?? []) {
       if (!g.visible) continue;
       g.elementos.forEach((e, i) => {
-        const como = enCirculo({ tipo: e.tipo, puntos: e.puntos, radio: e.radio }, centro, radio);
+        const como = dentroDe({ tipo: e.tipo, puntos: e.puntos, radio: e.radio });
         if (como) items.push({ clave: `i:${g.id}:${i}`, grupo: `imp:${g.id}`, grupoNombre: `Archivo · ${g.nombre}`, nombre: e.nombre || '(sin nombre)', sub: '', ico: '', como, imp: { g, e } });
       });
     }
@@ -126,8 +147,7 @@ export function iniciarLazo({ L, mapa, dibujo, simbolos, importar, fmt, herramie
     if (panel.hidden) return;
     if (!resultado) {
       $('lazo-sub').textContent = '';
-      cuerpo.innerHTML = `<p class="lazo-ayuda" id="lazo-ayuda">${herramienta() === 'lazo' ? 'Pulsa en el centro y arrastra hasta el borde. También: clic en el centro y clic en el borde.' : 'Elige el Lazo en la barra para pintar un círculo.'}</p>
-        <div class="pm-acciones"><button type="button" data-a="otra">Pintar un lazo</button></div>`;
+      cuerpo.innerHTML = `${htmlForma()}${herramienta() === 'lazo' ? '' : '<div class="pm-acciones"><button type="button" data-a="otra">Pintar un lazo</button></div>'}`;
       return;
     }
     const items = resultado.items;
@@ -136,9 +156,9 @@ export function iniciarLazo({ L, mapa, dibujo, simbolos, importar, fmt, herramie
     const n = marcados.size, tocan = items.filter((it) => it.como === 'toca').length;
     $('lazo-sub').textContent = `${n} de ${items.length}`;
     const scroll = cuerpo.scrollTop;
-    cuerpo.innerHTML = `${resultado.circulo ? `<div class="lazo-resumen"><span class="grande">${items.length}</span><small>objeto${items.length === 1 ? '' : 's'} · radio ${esc(fmt.metros(circulo.radio))}<br>centro ${esc(fmt.coord(circulo.centro))}</small></div>
+    const datoLazo = circulo?.poligono ? 'lazo a mano' : circulo ? `radio ${esc(fmt.metros(circulo.radio))}<br>centro ${esc(fmt.coord(circulo.centro))}` : '';
+    cuerpo.innerHTML = `${resultado.circulo ? `<div class="lazo-resumen"><span class="grande">${items.length}</span><small>objeto${items.length === 1 ? '' : 's'} · ${datoLazo}</small></div>
       ${tocan ? `<div class="seg lazo-modo"><button type="button" data-modo="dentro" aria-pressed="${pref.modo === 'dentro'}">Solo los de dentro</button><button type="button" data-modo="toca" aria-pressed="${pref.modo === 'toca'}">También los que tocan el borde (${tocan})</button></div>` : ''}` : `<div class="lazo-resumen"><span class="grande">${items.length}</span><small>objeto${items.length === 1 ? '' : 's'} elegido${items.length === 1 ? '' : 's'}</small></div>`}
-      <p class="lazo-ayuda" id="lazo-ayuda" hidden></p>
       ${items.length ? [...grupos].map(([k, g]) => {
         const nm = g.items.filter((it) => marcados.has(it.clave)).length;
         return `<div class="lazo-grupo"><label><input type="checkbox" data-grupo="${esc(k)}" ${nm === g.items.length ? 'checked' : ''} ${nm && nm < g.items.length ? 'data-medio="1"' : ''}>${esc(g.nombre)}<small>${nm}/${g.items.length}</small></label>
@@ -157,6 +177,8 @@ export function iniciarLazo({ L, mapa, dibujo, simbolos, importar, fmt, herramie
     cuerpo.querySelectorAll('[data-medio]').forEach((c) => { c.indeterminate = true; });
     cuerpo.scrollTop = scroll;
   }
+  /** Círculo o a mano. */
+  const htmlForma = () => `<div class="seg lazo-modo"><button type="button" data-forma="circulo" aria-pressed="${pref.forma !== 'mano'}">Círculo</button><button type="button" data-forma="mano" aria-pressed="${pref.forma === 'mano'}">A mano</button></div>`;
   const plMarcados = () => (resultado?.items ?? []).filter((it) => it.plan && marcados.has(it.clave)).map((it) => it.plan);
 
   // Objetos exportables (formato común de exportar.js)
@@ -218,6 +240,8 @@ export function iniciarLazo({ L, mapa, dibujo, simbolos, importar, fmt, herramie
   cuerpo.addEventListener('click', async (ev) => {
     const t = ev.target;
     const fm = t.closest('[data-formato]'); if (fm) { pref.formato = fm.dataset.formato; guardarPref(); pintarPanel(); return; }
+    const fo = t.closest('[data-forma]');
+    if (fo) { pref.forma = fo.dataset.forma; guardarPref(); trazo = null; if (!resultado) pintarCirculo(null); if (herramienta() !== 'lazo') elegirHerramienta('lazo'); pintarPanel(); return; }
     const md = t.closest('[data-modo]');
     if (md) { pref.modo = md.dataset.modo; guardarPref(); for (const it of resultado.items) if (it.como === 'toca') { if (pref.modo === 'toca') marcados.add(it.clave); else marcados.delete(it.clave); } pintarPanel(); resaltar(); return; }
     const a = t.closest('[data-a]')?.dataset.a; if (!a) return;
@@ -255,8 +279,7 @@ export function iniciarLazo({ L, mapa, dibujo, simbolos, importar, fmt, herramie
       if (h === 'lazo') {
         mapa.dragging.disable(); cont.classList.add('cursor-lazo');
         trazo = null;
-        if (!resultado) { panel.hidden = false; pintarPanel(); alCambiarPaneles(); }
-        dibujo.avisoBreve('Lazo: pulsa en el centro y arrastra hasta el borde.');
+        panel.hidden = false; pintarPanel(); alCambiarPaneles();
       } else {
         mapa.dragging.enable(); cont.classList.remove('cursor-lazo');
         if (trazo) { trazo = null; if (!circulo) pintarCirculo(null); }

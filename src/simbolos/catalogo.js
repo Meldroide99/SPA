@@ -95,6 +95,20 @@ export const ARMAS = [
     ],
   },
   {
+    id: 'uas', nombre: 'UAS (drones)', icono: '121900', tipos: [
+      { id: 'uas', nombre: 'UAS', icono: '121900', claves: 'dron drones rpas uav no tripulado' },
+      { id: 'ala-fija', nombre: 'UAS de ala fija', icono: '121900', mod1: 'c102', claves: 'dron avión' },
+      { id: 'ala-rotatoria', nombre: 'UAS de ala rotatoria', icono: '121900', mod1: 'c103', claves: 'dron multirrotor cuadricóptero' },
+      { id: 'vtol', nombre: 'UAS VTOL', icono: '121900', mod1: 'c105', claves: 'dron despegue vertical' },
+      { id: 'rotor-basculante', nombre: 'UAS de rotor basculante', icono: '121900', mod1: 'c104', claves: 'dron tiltrotor' },
+      { id: 'isr', nombre: 'UAS de reconocimiento (ISR)', icono: '121900', mod1: 'c125', claves: 'dron vigilancia inteligencia' },
+      { id: 'ataque', nombre: 'UAS de ataque', icono: '121900', mod1: 'c106', claves: 'dron armado munición merodeadora' },
+      { id: 'ge', nombre: 'UAS de guerra electrónica', icono: '121900', mod1: 'c166', claves: 'dron perturbación' },
+      { id: 'recuperacion', nombre: 'Recuperación de UAS', icono: '121900', mod2: 'u37', claves: 'dron' },
+      { id: 'con-drones', nombre: 'Unidad con drones', icono: '121100', mod1: 'c100', claves: 'infantería dron equipada' },
+    ],
+  },
+  {
     id: 'proteccion', nombre: 'NBQ, policía y seguridad', icono: '140100', tipos: [
       { id: 'nbq', nombre: 'Defensa NBQ', icono: '140100' },
       { id: 'nbq-reco', nombre: 'Reconocimiento NBQ', icono: '140103' },

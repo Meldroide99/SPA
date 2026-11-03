@@ -60,6 +60,8 @@ const en = (fx, fy) => ({ x: caja.x + caja.width * fx, y: caja.y + caja.height *
 const clicEn = async (fx, fy, opc) => { const p = en(fx, fy); await pag.mouse.click(p.x, p.y, opc); await pag.waitForTimeout(60); };
 const plan = () => pag.evaluate(() => JSON.parse(JSON.stringify(window.__spa.dibujo.plan())));
 const motor = (codigo) => pag.evaluate(codigo);
+/** La cabecera se esconde sin uso: se acerca el ratón al borde de arriba. */
+const cabecera = async () => { await pag.mouse.move(700, 24); await pag.waitForTimeout(1250); };
 /** Las herramientas se esconden: se acerca el ratón arriba y luego se pulsa. */
 const herr = async (sel) => {
   await pag.mouse.move(caja.x + 60, 74); await pag.waitForTimeout(350);
@@ -78,13 +80,13 @@ await clicEn(0.5, 0.5);
 ok((await plan()).elementos.length === 0 && await pag.locator('.pto-elem').count() === 0, 'Con «Mover», pinchar el mapa no pone ningún punto');
 
 // ---------------------------------------------------------------- ajustes
-await pag.click('#btn-ajustes');
+(await cabecera(), await pag.click('#btn-ajustes'));
 ok(await pag.isVisible('#ajustes'), 'El icono de ajustes abre el panel');
 await pag.click('[data-pref="coordenadas"] [data-v="utm"]');
 await pag.mouse.move(en(0.5, 0.6).x, en(0.5, 0.6).y);
 ok(/^30N \d{6} E \d{7} N$/.test(await pag.textContent('#be-coord')), `Coordenada en UTM: ${await pag.textContent('#be-coord')}`);
 await pag.click('[data-pref="coordenadas"] [data-v="mgrs"]');
-await pag.click('#btn-ajustes');
+(await cabecera(), await pag.click('#btn-ajustes'));
 await pag.waitForTimeout(400);
 const alt = await pag.textContent('#be-alt');
 const cur = await motor(() => { const c = document.getElementById('be-coord').textContent; return c; });
@@ -217,10 +219,10 @@ await pag.click('.fondo[data-id="mtn"]');
 await vista(40.79, -4.03, 14); await pag.waitForTimeout(400);
 pedidas.length = 0;
 const abrirAjuste = async (sec) => {
-  if (await pag.locator('#ajustes').isHidden()) await pag.click('#btn-ajustes');
+  if (await pag.locator('#ajustes').isHidden()) (await cabecera(), await pag.click('#btn-ajustes'));
   await pag.evaluate((s) => { document.querySelector(`.aj-sec[data-aj="${s}"]`).open = true; }, sec);
 };
-const cerrarAjustes = async () => { if (!(await pag.locator('#ajustes').isHidden())) await pag.click('#btn-ajustes'); };
+const cerrarAjustes = async () => { if (!(await pag.locator('#ajustes').isHidden())) (await cabecera(), await pag.click('#btn-ajustes')); };
 ok(await motor(() => !document.querySelector('#panel-capas #imagen-fuente, #panel-capas #rotulos, #panel-capas #mtn-detalle, #panel-capas #fondo-auto, #panel-capas #cuad-intensidad')), 'Capas › Fondo solo con los fondos: las opciones están en Ajustes');
 ok((await pag.locator('#ajustes .aj-sec').count()) >= 4, 'Ajustes en apartados desplegables');
 await abrirAjuste('fondos');
@@ -278,7 +280,7 @@ await pag.setViewportSize({ width: 1366, height: 820 });
 
 // ---------------------------------------------------------------- buscador universal
 const buscarYElegir = async (texto, esperado) => {
-  await pag.fill('#buscar-txt', texto); await pag.waitForTimeout(200);
+  await cabecera(); await pag.fill('#buscar-txt', texto); await pag.waitForTimeout(200);
   const primero = await pag.locator('#buscar-res .br-item').first().textContent();
   ok(esperado.test(primero), `Buscar «${texto}» → ${primero?.trim()}`);
   await pag.keyboard.press('Enter'); await pag.waitForTimeout(300);
@@ -297,9 +299,9 @@ ok(Math.abs(c2.lat - 40.79) < 0.02 && Math.abs(c2.lng + 4.03) < 0.02, 'MGRS sin 
 if (GPX) await buscarYElegir('bariguetis', /Barriguetis/);
 await buscarYElegir('ENE 1', /ENE 1/);
 await buscarYElegir('pl asul', /PL AZUL/);
-await pag.fill('#buscar-txt', 'qwxzv'); await pag.waitForTimeout(200);
+await cabecera(); await pag.fill('#buscar-txt', 'qwxzv'); await pag.waitForTimeout(200);
 ok(/Nada encontrado/.test(await pag.textContent('#buscar-res')), 'Sin resultados: lo dice');
-await pag.fill('#buscar-txt', 'linea'); await pag.waitForTimeout(200);
+await cabecera(); await pag.fill('#buscar-txt', 'linea'); await pag.waitForTimeout(200);
 if (CAPTURAS) await pag.screenshot({ path: 'docs/capturas/v5-buscador.png' });
 await pag.keyboard.press('Escape');
 
@@ -387,7 +389,7 @@ im=Image.open(sys.argv[1]); a=im.getchannel('A'); print(im.mode, im.size[0]%256,
   const u1 = await motor(() => window.__spa.dibujo.plan().elementos.at(-1));
   ok(u1.simbolo?.clase === 'unidad' && u1.simbolo.icono === '121100' && u1.simbolo.mod2 === 'c100' && u1.simbolo.escalon === 'seccion' && u1.simbolo.T === '1' && u1.simbolo.zoom === 14, 'Clic en el mapa: unidad puesta con su símbolo (y su zoom de referencia)');
   ok(await pag.locator('.leaflet-elementos-pane .simbolo-unidad svg').count() >= 1, 'Símbolo dibujado en el mapa');
-  ok(/SIDC 160310001412110000000100000000/.test(await pag.textContent('#panel-elemento')), 'Ficha con el SIDC APP-6(E) de 30 dígitos');
+  ok(!/SIDC/.test(await pag.textContent('#panel-elemento')) && (await motor(() => window.__spa.dibujo.plan().elementos.at(-1).simbolo.icono)) === '121100', 'Ficha sin el código SIDC (no hace falta verlo)');
   await pag.mouse.click(cx + 160, cy + 40); await pag.waitForTimeout(300);
   ok((await motor(() => window.__spa.dibujo.plan().elementos.length)) === n0 + 2, 'Segundo clic: segunda unidad (rápido para repetir)');
   // Cambiar el escalón con el desplegable visual
@@ -405,8 +407,9 @@ im=Image.open(sys.argv[1]); a=im.getchannel('A'); print(im.mode, im.size[0]%256,
   ok(opac < 0.5, `Al arrastrar, la paleta se difumina y deja ver el mapa (opacidad ${opac.toFixed(2)})`);
   ok((await motor(() => window.__spa.dibujo.plan().elementos.at(-1).simbolo.conjunto)) === '15', 'Arrastrar y soltar: material colocado');
   await pag.click('#panel-simbolos [data-conjunto="10"]');
-  // Recientes
-  ok(await pag.locator('#panel-simbolos .sim-chip').count() >= 2, 'Lo puesto queda en «Recientes»');
+  // Recientes (recogidos por defecto) y UAS en «Arma»
+  ok(await pag.locator('#panel-simbolos details.sim-recientes:not([open]) .sim-chip').count() >= 2, 'Lo puesto queda en «Recientes» (recogido para que no ocupe)');
+  ok(await pag.locator('#panel-simbolos [data-arma="uas"]').count() === 1, 'Arma «UAS (drones)» con sus variantes');
   // Tamaño con el zoom: tope al acercar
   const ancho = async () => motor(() => document.querySelector('.leaflet-elementos-pane .simbolo-unidad svg').getBoundingClientRect().width);
   const a14 = await ancho(); await vista(40.80, -4.02, 17); await pag.waitForTimeout(400); const a17 = await ancho();
@@ -423,11 +426,7 @@ im=Image.open(sys.argv[1]); a=im.getchannel('A'); print(im.mode, im.size[0]%256,
   ok(await pag.locator('.asa-media').count() === 0 && await pag.locator('.asa-vert').count() === 3, 'Puntos fijos: se arrastran, no se añaden ni se quitan');
   ok(await pag.locator('.asa-giro').count() === 1 && await pag.locator('.asa-mover').count() === 1, 'Asas para girar y mover el cometido entero');
   const o0 = await motor(() => window.__spa.dibujo.orientacion(window.__spa.dibujo.plan().elementos.at(-1)));
-  await pag.click('#panel-elemento [data-girar="15"]'); await pag.waitForTimeout(200);
-  const o1 = await motor(() => window.__spa.dibujo.orientacion(window.__spa.dibujo.plan().elementos.at(-1)));
-  ok((o1 - o0 + 360) % 360 === 15, `Girar 15° desde la ficha (${o0}° → ${o1}°)`);
-  await pag.fill('#dial-grados', '90'); await pag.press('#dial-grados', 'Enter'); await pag.waitForTimeout(200);
-  ok((await motor(() => window.__spa.dibujo.orientacion(window.__spa.dibujo.plan().elementos.at(-1)))) === 90, 'Rumbo exacto escrito en la rueda: 90°');
+  ok(await pag.locator('#panel-elemento .dial, #panel-elemento [data-girar]').count() === 0 && !/Arrastra|Toca/.test(await pag.textContent('#panel-elemento')), 'Ficha sin brújula, sin grados y sin explicaciones');
   // Girar arrastrando el asa ↻ alrededor del centro: un cuarto de vuelta
   {
     const asa = await pag.locator('.asa-giro').boundingBox();
@@ -436,7 +435,7 @@ im=Image.open(sys.argv[1]); a=im.getchannel('A'); print(im.mode, im.size[0]%256,
     await pag.mouse.move(ax, ay); await pag.mouse.down();
     for (let k = 1; k <= 9; k++) { const a = a0 + (k * 10 * Math.PI) / 180; await pag.mouse.move(c.x + rr * Math.sin(a), c.y - rr * Math.cos(a)); }
     await pag.mouse.up(); await pag.waitForTimeout(250);
-    ok((await motor(() => window.__spa.dibujo.orientacion(window.__spa.dibujo.plan().elementos.at(-1)))) === 180, 'Girar con el asa ↻: 90° más (de 5 en 5)');
+    ok((await motor(() => window.__spa.dibujo.orientacion(window.__spa.dibujo.plan().elementos.at(-1)))) === (o0 + 90) % 360, 'Girar con el asa ↻: 90° más (de 5 en 5)');
   }
   // Línea de fase con nombre flotante; límite con escalón en cada tramo al acercar
   await pag.click('#panel-simbolos [data-pestana="medidas"]');
@@ -459,7 +458,7 @@ im=Image.open(sys.argv[1]); a=im.getchannel('A'); print(im.mode, im.size[0]%256,
   ok((await motor(() => window.__spa.dibujo.plan().elementos.at(-1).simbolo.escalon ?? '')) === '', 'Ctrl+Z deshace el último cambio');
   // Buscador universal: «bloquear» → empieza a dibujar el cometido
   await pag.click('#panel-simbolos [data-s="cerrar"]');
-  await pag.fill('#buscar-txt', 'bloquear'); await pag.waitForTimeout(200);
+  await cabecera(); await pag.fill('#buscar-txt', 'bloquear'); await pag.waitForTimeout(200);
   ok(await pag.locator('#buscar-res .br-item', { hasText: 'Bloquear' }).count() >= 2, 'Buscar «bloquear»: el cometido ya pintado (Objetos) y el símbolo para pintar otro');
   await pag.click('#buscar-res .br-item:has(small:text("Cometido · dibujar"))'); await pag.waitForTimeout(200);
   ok(await motor(() => window.__spa.dibujo.dibujando), 'Elegir el símbolo: listo para dibujarlo');
@@ -544,26 +543,66 @@ im=Image.open(sys.argv[1]); a=im.getchannel('A'); print(im.mode, im.size[0]%256,
   await pag.mouse.move(v0.x + 120, v0.y + 16); await pag.mouse.down(); await pag.mouse.move(v0.x + 320, v0.y + 96, { steps: 6 }); await pag.mouse.up();
   const v1 = await pag.locator('#panel-objetos').boundingBox();
   ok(Math.abs(v1.x - v0.x - 200) < 3 && Math.abs(v1.y - v0.y - 80) < 3, 'Ventana movida arrastrando su cabecera');
-  await pag.mouse.move(v1.x + v1.width - 6, v1.y + v1.height - 6); await pag.mouse.down(); await pag.mouse.move(v1.x + v1.width + 194, v1.y + v1.height + 54, { steps: 6 }); await pag.mouse.up();
+  await pag.mouse.move(v1.x + v1.width + 4, v1.y + v1.height + 4); await pag.mouse.down(); await pag.mouse.move(v1.x + v1.width + 204, v1.y + v1.height + 64, { steps: 6 }); await pag.mouse.up();
   const v2 = await pag.locator('#panel-objetos').boundingBox();
-  ok(Math.abs(v2.width - v1.width - 200) < 3, 'Ventana más ancha desde la esquina');
+  ok(Math.abs(v2.width - v1.width - 200) < 3, 'Ventana más ancha desde la esquina de abajo a la derecha (agarrando justo por fuera)');
+  await pag.mouse.move(v2.x - 4, v2.y + 60); await pag.mouse.down(); await pag.mouse.move(v2.x - 54, v2.y + 60, { steps: 4 }); await pag.mouse.up();
+  const v3 = await pag.locator('#panel-objetos').boundingBox();
+  ok(Math.abs(v3.width - v2.width - 50) < 3 && Math.abs(v3.x - (v2.x - 50)) < 3, 'Y desde el borde izquierdo');
+  await pag.mouse.move(v3.x - 4, v3.y - 4); await pag.mouse.down(); await pag.mouse.move(v3.x - 4, v3.y + 36, { steps: 4 }); await pag.mouse.up();
+  const v4 = await pag.locator('#panel-objetos').boundingBox();
+  ok(Math.abs(v4.height - v3.height + 40) < 3 && Math.abs(v4.y - v3.y - 40) < 3, 'Y desde la esquina de arriba a la izquierda');
   ok(await pag.locator('#obj-lista .obj-col-ancha').first().isVisible(), 'Más ancha, más información (columna de categoría)');
   await pag.dblclick('#panel-objetos .v-cab strong'); await pag.waitForTimeout(150);
   // Recogerse sin uso y abrirse al pasar el ratón
   await pag.evaluate(() => { const a = JSON.parse(localStorage.getItem('spa.apariencia')); a.reposo = 4; localStorage.setItem('spa.apariencia', JSON.stringify(a)); });
-  await pag.click('#btn-ajustes'); await pag.click('[data-ap="reposo"] [data-v="4"]'); await pag.click('#btn-ajustes');
-  await pag.mouse.move(cx, cy + 200); await pag.waitForTimeout(4800);
+  (await cabecera(), await pag.click('#btn-ajustes')); await pag.click('[data-ap="reposo"] [data-v="4"]'); (await cabecera(), await pag.click('#btn-ajustes'));
+  await pag.mouse.move(cx, cy + 200); await pag.waitForTimeout(6200);
   ok(await motor(() => document.getElementById('panel-objetos').classList.contains('v-recogida')), 'Sin usarla 4 s, la ventana se recoge y deja ver el mapa');
-  await pag.hover('#panel-objetos .v-cab'); await pag.waitForTimeout(400);
+  await pag.hover('#panel-objetos .v-cab'); await pag.waitForTimeout(700);
   ok(!(await motor(() => document.getElementById('panel-objetos').classList.contains('v-recogida'))), 'Al pasar el ratón, se vuelve a abrir');
-  await pag.click('#btn-ajustes'); await pag.click('[data-ap="reposo"] [data-v="0"]');
+  (await cabecera(), await pag.click('#btn-ajustes')); await pag.click('[data-ap="reposo"] [data-v="0"]');
   // Apartarse al poner objetos
-  await pag.click('#ap-apartar'); await pag.click('#btn-ajustes');
+  await pag.click('#ap-apartar'); (await cabecera(), await pag.click('#btn-ajustes'));
   await herr('[data-herr="punto"]');
-  await pag.mouse.move(cx, cy + 120, { steps: 3 }); await pag.waitForTimeout(150);
+  await pag.mouse.move(cx, cy + 120, { steps: 3 }); await pag.waitForTimeout(1100);
   const opa = Number(await motor(() => getComputedStyle(document.getElementById('panel-objetos')).opacity));
   ok(opa < 0.3 && await motor(() => getComputedStyle(document.getElementById('panel-objetos')).pointerEvents === 'none'), `Al poner un objeto, las ventanas se apartan y dejan pinchar el mapa (opacidad ${opa.toFixed(2)})`);
   await pag.keyboard.press('Escape'); await pag.waitForTimeout(100);
+  // v0.9.1: cabecera que se esconde, Capas que se queda en su icono, lazo a mano, ZIP, mismo tamaño, rótulos encima
+  await pag.mouse.move(cx, cy + 150); await pag.waitForTimeout(3600);
+  ok(await motor(() => document.body.classList.contains('sup-oculta')), 'Sin usarla, la cabecera se esconde hacia arriba');
+  await pag.mouse.move(700, 20); await pag.waitForTimeout(300);
+  ok(!(await motor(() => document.body.classList.contains('sup-oculta'))), 'Al acercar el ratón arriba, vuelve');
+  await motor(() => window.__spa.ventanas.recoger(document.getElementById('panel-capas'), true)); await pag.waitForTimeout(1800);
+  const capasW = (await pag.locator('#panel-capas').boundingBox()).width;
+  ok(capasW < 60, `Capas recogida: solo su icono (${capasW.toFixed(0)} px de ancho)`);
+  await motor(() => window.__spa.ventanas.recoger(document.getElementById('panel-capas'), false)); await pag.waitForTimeout(600);
+  // Lazo a mano alrededor de los tres puntos de OP NORTE
+  for (const id of ['objetos', 'operaciones']) if (await pag.isVisible(`#panel-${id}`)) await pag.click(`#${id}-cerrar`);
+  await pag.waitForTimeout(600);
+  await herr('[data-herr="lazo"]');
+  await pag.click('#lazo-cuerpo [data-forma="mano"]');
+  const pts = await motor((id) => window.__spa.dibujo.plan().elementos.filter((e) => e.paquete && (e.paquete === id || window.__spa.dibujo.plan().operaciones.find((o) => o.id === e.paquete)?.padre === id || window.__spa.dibujo.plan().operaciones.find((o) => o.id === window.__spa.dibujo.plan().operaciones.find((x) => x.id === e.paquete)?.padre)?.padre === id)).map((e) => { const p = window.__spa.dibujo.puntosDe(e)[0]; const q = window.__spa.mapa.latLngToContainerPoint([p.lat, p.lon]); const r = document.getElementById('mapa').getBoundingClientRect(); return [q.x + r.left, q.y + r.top]; }), op.id);
+  const xs = pts.map((q) => q[0]), ys = pts.map((q) => q[1]);
+  const [x0, x1, y0, y1] = [Math.min(...xs) - 40, Math.max(...xs) + 40, Math.min(...ys) - 40, Math.max(...ys) + 40];
+  await pag.mouse.move(x0, y0); await pag.mouse.down();
+  for (const [x, y] of [[x1, y0], [x1, y1], [x0, y1], [x0, y0 + 5]]) await pag.mouse.move(x, y, { steps: 8 });
+  await pag.mouse.up(); await pag.waitForTimeout(400);
+  ok((await pag.locator('#lazo-cuerpo [data-item]').count()) >= 3 && /a mano/.test(await pag.textContent('#lazo-cuerpo')), 'Lazo a mano: selecciona lo que queda dentro del dibujo');
+  await pag.click('#lazo-cuerpo [data-formato="zip"]');
+  const [dzip] = await Promise.all([pag.waitForEvent('download'), pag.click('#lazo-cuerpo [data-a="descargar"]')]);
+  const zipb = await (await import('node:fs/promises')).readFile(await dzip.path());
+  ok(dzip.suggestedFilename().endsWith('.zip') && zipb.includes(Buffer.from('MANIFEST/manifest.xml')) && zipb.includes(Buffer.from('<MissionPackageManifest')), 'Exportar ZIP: paquete de datos de ATAK (manifiesto + KML)');
+  await pag.click('#lazo-cerrar');
+  // Mismo tamaño para todos los símbolos, pusieras cada uno al zoom que fuera
+  await motor(() => { const d = window.__spa.dibujo; window.__spa.mapa.setZoom(13, { animate: false }); d.crearConSimbolo({ clase: 'unidad', conjunto: '10', identidad: 'amigo', icono: '121100', escalon: 'seccion', zoom: 13 }, [window.__spa.mapa.getCenter()].map((c) => ({ lat: c.lat, lon: c.lng })), 'punto', 'A'); });
+  await motor(() => { const d = window.__spa.dibujo; window.__spa.mapa.setZoom(16, { animate: false }); const c = window.__spa.mapa.getCenter(); d.crearConSimbolo({ clase: 'unidad', conjunto: '10', identidad: 'amigo', icono: '121100', escalon: 'seccion', zoom: 16 }, [{ lat: c.lat + 0.001, lon: c.lng }], 'punto', 'B'); });
+  await vista(40.83, -3.98, 15); await pag.waitForTimeout(400);
+  const anchos = await motor(() => [...document.querySelectorAll('.leaflet-elementos-pane .simbolo-unidad svg')].slice(-2).map((x) => Math.round(x.getBoundingClientRect().width)));
+  ok(anchos.length === 2 && anchos[0] === anchos[1], `Mismo tamaño aunque se pusieran a zooms distintos (${anchos.join(' = ')} px)`);
+  ok((await pag.locator('.leaflet-rotulos-pane .etq-linea').count()) >= 1 && (await pag.locator('.leaflet-elementos-pane .etq-linea').count()) === 0, 'Nombres de las líneas en su capa, por encima de las líneas (no tachados)');
+
   // Tema automático: oscuro sobre el híbrido
   await motor(() => document.querySelector('#panel-capas .fondo[data-id="hibrido"]').click()); await pag.waitForTimeout(150);
   ok(await motor(() => document.body.classList.contains('tema-oscuro')), 'Tema automático: cristal oscuro sobre el híbrido');

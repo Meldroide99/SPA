@@ -1,6 +1,6 @@
 {
   "name": "spa",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "private": true,
   "description": "Herramienta de planeamiento sobre mapa (S3 · Lauria)",
   "type": "module",

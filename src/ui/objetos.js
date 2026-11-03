@@ -35,7 +35,7 @@ export function iniciarObjetos({ dibujo, simbolos, exportar, alCambiarPaneles = 
   let ultimoMarcado = null;
 
   // Esqueleto (la parte de archivos importados está en mapa.html: la rellena importar.js)
-  cuerpo.innerHTML = `<input class="obj-buscar" id="obj-buscar" type="search" placeholder="Buscar por nombre u operación…" autocomplete="off">
+  cuerpo.innerHTML = `<input class="obj-buscar" id="obj-buscar" type="search" placeholder="Buscar" autocomplete="off">
     <div class="obj-chips" id="obj-cat" aria-label="Categoría"></div>
     <div class="obj-filtros-mas"><select id="obj-op" class="v-select" aria-label="Operación"></select><select id="obj-bando" class="v-select" aria-label="Bando"></select><select id="obj-estado" class="v-select" aria-label="Estado"></select></div>
     <div class="obj-cab"><label><input type="checkbox" id="obj-todos"><span id="obj-n"></span></label><button type="button" class="v-boton" id="obj-limpiar" hidden>Quitar filtros</button></div>
@@ -85,8 +85,8 @@ export function iniciarObjetos({ dibujo, simbolos, exportar, alCambiarPaneles = 
     $('obj-todos').indeterminate = nMarc > 0 && nMarc < vis.length;
     const sel = dibujo.seleccion;
     $('obj-lista').innerHTML = !todos.length
-      ? '<p class="obj-vacio">Aún no hay nada pintado. Usa Punto, Línea, Área, Círculo o APP-6.</p>'
-      : !vis.length ? '<p class="obj-vacio">Nada con estos filtros.</p>'
+      ? '<p class="obj-vacio">Nada pintado</p>'
+      : !vis.length ? '<p class="obj-vacio">Nada</p>'
         : vis.map((el) => {
           const ruta = el.paquete && buscarPaquete(plan(), el.paquete) ? nombreRuta(plan(), el.paquete) : '';
           const cat = CATEGORIAS[categoriaDe(el, medidaDe)].nombre;
@@ -139,7 +139,7 @@ export function iniciarObjetos({ dibujo, simbolos, exportar, alCambiarPaneles = 
     const fila = t.closest('.obj-fila');
     if (fila) {
       const el = plan().elementos.find((e) => e.id === fila.dataset.el);
-      if (el && !dibujo.visible(el)) { dibujo.avisoBreve('Está en una operación oculta. Muéstrala en Operaciones para verlo.'); return; }
+      if (el && !dibujo.visible(el)) { dibujo.avisoBreve('Oculto'); return; }
       dibujo.seleccionar(fila.dataset.el, { centrar: true }); return;
     }
     const a = t.closest('[data-a]')?.dataset.a; if (!a) return;
@@ -160,13 +160,13 @@ export function iniciarObjetos({ dibujo, simbolos, exportar, alCambiarPaneles = 
       ${ops.map(({ o, niv }) => `<button type="button" data-meter="${o.id}" style="padding-left:${9 + niv * 14}px">${niv ? '› ' : ''}${esc(o.nombre)}</button>`).join('') || '<div class="om-tit" style="text-transform:none;font-weight:400">Aún no hay operaciones</div>'}
       <div class="om-sep"></div><button type="button" data-meter="__nueva">+ Nueva operación con estos…</button><button type="button" data-meter="">Sacar de su operación</button>`, (v) => {
       if (v === '__nueva') {
-        preguntar({ titulo: 'Nueva operación', texto: `Con los ${ids.length} objetos marcados.`, campo: { ayuda: 'Nombre (ej.: OP NORTE)' }, opciones: [{ v: 'crear', texto: 'Crear', clase: 'primario' }, { v: 'cancelar', texto: 'Cancelar' }] })
+        preguntar({ titulo: 'Nueva operación', campo: { ayuda: 'Nombre' }, opciones: [{ v: 'crear', texto: 'Crear', clase: 'primario' }, { v: 'cancelar', texto: 'Cancelar' }] })
           .then((r) => { if (!r) return; dibujo.cambio(`Crear «${r.texto || 'Operación'}»`, (p) => { const o = nuevoPaquete(p, r.texto || 'Operación'); asignar(p, ids, o.id); }); });
         return;
       }
       const o = v ? buscarPaquete(plan(), v) : null;
       dibujo.cambio(o ? `Meter ${ids.length} en «${o.nombre}»` : `Sacar ${ids.length} de su operación`, (p) => asignar(p, ids, v || null));
-      dibujo.avisoBreve(o ? `${ids.length} objeto${ids.length > 1 ? 's' : ''} en «${nombreRuta(plan(), o.id)}».` : 'Fuera de su operación.');
+      dibujo.avisoBreve(o ? `${ids.length} en «${nombreRuta(plan(), o.id)}»` : 'Fuera de su operación', { deshacer: true });
     });
   }
 

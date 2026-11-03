@@ -10,10 +10,10 @@
 </head>
 <body class="app-mapa">
 <div id="app">
-  <header class="barra-sup vidrio">
+  <header class="barra-sup vidrio" id="barra-sup">
     <div class="marca"><span class="sello-spa">SPA</span><span class="marca-txt"><strong>Mapa</strong><small>Planeamiento · S3</small></span></div>
     <form class="buscar" id="buscar" autocomplete="off">
-      <input id="buscar-txt" spellcheck="false" placeholder="Buscar: coordenadas, archivos, puntos, mapas, ajustes…" aria-label="Buscar" aria-autocomplete="list" aria-controls="buscar-res">
+      <input id="buscar-txt" spellcheck="false" placeholder="Buscar" aria-label="Buscar" aria-autocomplete="list" aria-controls="buscar-res">
       <button type="submit">Ir</button>
       <div class="buscar-res" id="buscar-res" hidden role="listbox"></div>
     </form>
@@ -33,10 +33,9 @@
             <label class="intensidad aj-int">Tamaño <input type="range" id="ap-escala" min="80" max="125" step="5"><output id="ap-escala-v"></output></label>
             <div class="aj-tit">Ventanas sin usar</div>
             <div class="seg seg-ancho" data-ap="reposo"><button type="button" data-v="0">Nunca</button><button type="button" data-v="4">4 s</button><button type="button" data-v="8">8 s</button><button type="button" data-v="15">15 s</button><button type="button" data-v="30">30 s</button></div>
-            <p class="aj-nota">Pasado ese tiempo se recogen y dejan ver el mapa. Al pasar el ratón por encima se vuelven a abrir. La chincheta de cada ventana la deja fija.</p>
-            <label class="sup sup-auto"><input type="checkbox" id="ap-apartar"><span class="txt"><b>Apartar ventanas al poner objetos</b><small>Se vuelven casi transparentes y dejan pinchar el mapa. Para usarlas, deja el ratón quieto encima.</small></span></label>
-            <label class="sup sup-auto"><input type="checkbox" id="ap-barra"><span class="txt"><b>Barra de herramientas siempre visible</b><small>Si no, aparece al acercar el ratón arriba</small></span></label>
-            <label class="sup sup-auto"><input type="checkbox" id="ap-altitud"><span class="txt"><b>Altitud junto a las coordenadas</b><small>MDT05 del IGN, al metro</small></span></label>
+            <label class="sup sup-auto"><input type="checkbox" id="ap-apartar"><span class="txt"><b>Apartar ventanas al poner objetos</b></span></label>
+            <label class="sup sup-auto"><input type="checkbox" id="ap-barra"><span class="txt"><b>Barras siempre visibles</b></span></label>
+            <label class="sup sup-auto"><input type="checkbox" id="ap-altitud"><span class="txt"><b>Altitud junto a las coordenadas</b></span></label>
             <div class="pm-acciones"><button type="button" id="ap-recolocar">Recolocar ventanas</button><button type="button" id="ap-defecto">Valores de fábrica</button></div>
           </div>
         </details>
@@ -74,19 +73,16 @@
         <details class="aj-sec" data-aj="simbolos">
           <summary>Símbolos</summary>
           <div class="aj-cuerpo">
-            <div class="aj-tit">Tamaño de los símbolos al ponerlos</div>
+            <div class="aj-tit">Tamaño de los símbolos</div>
             <label class="intensidad aj-int">Tamaño <input type="range" id="sim-tam"><output id="sim-tam-v"></output></label>
-            <p class="aj-nota">Al alejar el mapa encogen con él. Al acercar crecen solo hasta un 35 % más que cuando los pusiste.</p>
           </div>
         </details>
         <details class="aj-sec" data-aj="cuadricula">
           <summary>Cuadrícula MGRS</summary>
           <div class="aj-cuerpo">
             <label class="intensidad aj-int" title="Intensidad de las líneas de la cuadrícula">Intensidad <input type="range" id="cuad-intensidad" min="10" max="100" step="5"><output id="cuad-intensidad-v"></output></label>
-            <p class="aj-nota">Sobre el híbrido las líneas se pintan en blanco; sobre los mapas, en azul oscuro.</p>
           </div>
         </details>
-        <p class="aj-nota">Altitudes siempre sobre el nivel del mar (MDT05 del IGN), redondeadas al metro.</p>
         <p class="aj-version" id="aj-version"></p>
       </div>
     </div>
@@ -200,7 +196,7 @@
       <div class="pm-acciones"><button type="button" id="pm-deshacer">Quitar último</button><button type="button" id="pm-nueva">Nueva medida</button></div>
     </section>
     <div class="pildoras" id="pildoras">
-      <button type="button" class="pildora pildora-op vidrio" id="pildora-op" hidden title="Lo que pintes entra en esta operación. Clic para gestionarla."></button>
+      <button type="button" class="pildora pildora-op vidrio" id="pildora-op" hidden title="Operación activa"></button>
       <div class="pildora pildora-coord vidrio" id="pildora-coord">
         <span class="be-et" id="be-et">Cursor</span>
         <span class="be-coord" id="be-coord">—</span>

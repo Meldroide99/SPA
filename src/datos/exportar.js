@@ -20,6 +20,7 @@ export const FORMATOS_EXPORTAR = Object.freeze({
   geojson: { nombre: 'GeoJSON', ext: 'geojson', tipo: 'application/geo+json', detalle: 'QGIS, ArcGIS y webs' },
   gpx: { nombre: 'GPX', ext: 'gpx', tipo: 'application/gpx+xml', detalle: 'GPS de mano (Garmin), apps de rutas' },
   csv: { nombre: 'CSV', ext: 'csv', tipo: 'text/csv', detalle: 'Excel: una fila por objeto, con MGRS' },
+  zip: { nombre: 'ZIP', ext: 'zip', tipo: 'application/zip', detalle: 'Paquete de datos de ATAK (con el KML dentro)' },
   spa: { nombre: 'Paquete SPA', ext: 'spa.json', tipo: 'application/json', detalle: 'Para otro usuario de SPA: se abre como operación editable' },
 });
 
@@ -140,6 +141,24 @@ export function escribirZip(archivos, tipo = 'application/zip') {
   return new Blob([...partes, ...central, fin], { type: tipo });
 }
 
+/** Paquete de datos de ATAK: MANIFEST/manifest.xml y el KML (con sus carpetas por operación). */
+export function aZipAtak(objetos, { nombre = 'SPA' } = {}) {
+  const base = (nombre || 'SPA').replace(/[\\/:*?"<>|]+/g, '_').trim() || 'SPA';
+  const uid = globalThis.crypto?.randomUUID?.() ?? `spa-${Date.now()}`;
+  const manifiesto = `<?xml version="1.0" encoding="UTF-8"?>
+<MissionPackageManifest version="2">
+  <Configuration>
+    <Parameter name="uid" value="${xml(uid)}"/>
+    <Parameter name="name" value="${xml(nombre)}"/>
+  </Configuration>
+  <Contents>
+    <Content ignore="false" zipEntry="${xml(base)}.kml"><Parameter name="name" value="${xml(nombre)}"/></Content>
+  </Contents>
+</MissionPackageManifest>
+`;
+  return escribirZip([{ nombre: 'MANIFEST/manifest.xml', datos: manifiesto }, { nombre: `${base}.kml`, datos: aKML(objetos, { nombre }) }]);
+}
+
 /** Archivo listo para descargar o compartir. `paquete`: el paquete SPA (solo para formato 'spa'). */
 export async function crearArchivo(formato, objetos, { nombre = 'SPA', paquete = null } = {}) {
   const f = FORMATOS_EXPORTAR[formato]; if (!f) throw new Error(`Formato desconocido: ${formato}`);
@@ -150,6 +169,7 @@ export async function crearArchivo(formato, objetos, { nombre = 'SPA', paquete =
   else if (formato === 'geojson') blob = new Blob([aGeoJSON(objetos, { nombre })], { type: f.tipo });
   else if (formato === 'gpx') blob = new Blob([aGPX(objetos, { nombre })], { type: f.tipo });
   else if (formato === 'csv') blob = new Blob([aCSV(objetos)], { type: f.tipo });
+  else if (formato === 'zip') blob = aZipAtak(objetos, { nombre });
   else blob = new Blob([JSON.stringify(paquete, null, 1)], { type: f.tipo });
   return { blob, nombre: `${base}.${f.ext}`, tipo: f.tipo };
 }

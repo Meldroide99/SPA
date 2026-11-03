@@ -198,6 +198,38 @@ export function enCirculo({ tipo, puntos, radio }, centro, r) {
   return null;
 }
 
+/** ¿Punto dentro de un polígono? (plano local: longitudes por el coseno de la latitud; de sobra para un lazo a mano) */
+function dentroPoligono(p, pol) {
+  const k = Math.cos((pol[0].lat * Math.PI) / 180);
+  let dentro = false;
+  for (let i = 0, j = pol.length - 1; i < pol.length; j = i++) {
+    const a = pol[i], b = pol[j];
+    if ((a.lat > p.lat) !== (b.lat > p.lat) && p.lon * k < ((b.lon - a.lon) * k * (p.lat - a.lat)) / (b.lat - a.lat) + a.lon * k) dentro = !dentro;
+  }
+  return dentro;
+}
+
+/** Como enCirculo, pero con un lazo pintado a mano (polígono de puntos {lat,lon}). */
+export function enPoligono({ tipo, puntos, radio }, pol) {
+  if (!pol || pol.length < 3) return null;
+  const m = puntosMuestra(tipo, puntos, radio);
+  const dentro = m.map((p) => dentroPoligono(p, pol));
+  if (dentro.every(Boolean)) return 'dentro';
+  if (dentro.some(Boolean)) return 'toca';
+  return null;
+}
+
+/** Objetos del plan dentro de un lazo a mano. */
+export function objetosEnPoligono(plan, pol, { visible = () => true } = {}) {
+  const out = [];
+  for (const el of plan.elementos) {
+    if (!visible(el)) continue;
+    const como = enPoligono({ tipo: el.tipo, puntos: puntosDe(el), radio: el.propiedades.radio }, pol);
+    if (como) out.push({ el, como });
+  }
+  return out;
+}
+
 /** Objetos del plan dentro del círculo: [{ el, como: 'dentro'|'toca' }]. */
 export function objetosEnCirculo(plan, centro, r, { visible = () => true } = {}) {
   const out = [];

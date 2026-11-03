@@ -198,7 +198,7 @@ export function iniciarDibujo({ L, mapa, herramienta, elegirHerramienta, fmt, al
     for (let i = 0; i < n; i++) {
       const a = pts[i], b = pts[(i + 1) % pts.length];
       const mid = puntosGeodesica(a, b, 2)[1];
-      const m = L.marker([mid.lat, mid.lon], { icon: asa('asa-media'), draggable: true, title: 'Clic o arrastra para añadir un vértice' });
+      const m = L.marker([mid.lat, mid.lon], { icon: asa('asa-media'), draggable: true, title: 'Añadir vértice' });
       const insertar = (q) => cambio('Añadir vértice', () => { const nuevos = pts.slice(); nuevos.splice(i + 1, 0, q); moverPuntos(el, nuevos); });
       m.on('click', () => insertar(mid));
       m.on('dragend', () => insertar(iman(m.getLatLng(), { excluir: el.id })));
@@ -245,7 +245,7 @@ export function iniciarDibujo({ L, mapa, herramienta, elegirHerramienta, fmt, al
     const arriba = pts.length > 1 ? Math.min(...pts.map((p) => px(p).y)) : cpx.y;
     const radioPx = Math.max(46, cpx.y - Math.min(arriba, cpx.y) + 40);
     const pGiro = mapa.containerPointToLatLng([cpx.x, cpx.y - radioPx]);
-    const giro = L.marker(pGiro, { icon: L.divIcon({ className: 'asa asa-giro', html: '↻', iconSize: [26, 26] }), keyboard: false, title: 'Arrastra alrededor para girar (Mayús: de 1 en 1)' });
+    const giro = L.marker(pGiro, { icon: L.divIcon({ className: 'asa asa-giro', html: '↻', iconSize: [26, 26] }), keyboard: false, title: 'Girar' });
     const guia = L.polyline([[centro.lat, centro.lon], pGiro], { pane: 'borrador', color: '#E0B252', weight: 1.5, dashArray: '3 4', interactive: false });
     const angulo = (x, y) => (Math.atan2(x - cpx.x, -(y - cpx.y)) * 180) / Math.PI;
     giro.on('add', () => {
@@ -287,40 +287,9 @@ export function iniciarDibujo({ L, mapa, herramienta, elegirHerramienta, fmt, al
     }
   }
 
-  // Rueda de giro de la ficha: se arrastra la aguja (o se escribe el rumbo)
-  panelGiro();
-  function panelGiro() {
-    const panelEl = document.getElementById('panel-elemento'); if (!panelEl) return;
-    panelEl.addEventListener('pointerdown', (e) => {
-      const dial = e.target.closest('.dial'); if (!dial || e.button !== 0) return;
-      const el = seleccion && buscar(seleccion); if (!el?.simbolo) return;
-      e.preventDefault(); dial.setPointerCapture(e.pointerId);
-      const pts = puntosDe(el), centro = centroDe(pts), o0 = orientacion(el);
-      const r = dial.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
-      const objetivo = (ev) => iman5((Math.atan2(ev.clientX - cx, -(ev.clientY - cy)) * 180) / Math.PI, ev.shiftKey);
-      let d = 0;
-      const mover = (ev) => {
-        const o = ((objetivo(ev) % 360) + 360) % 360; d = o - o0;
-        dial.style.setProperty('--a', String(o));
-        const inp = panelEl.querySelector('#dial-grados'); if (inp) inp.value = String(o);
-        verGirado(el, pts, d, centro);
-      };
-      const soltar = () => { dial.removeEventListener('pointermove', mover); dial.removeEventListener('pointerup', soltar); dial.removeEventListener('pointercancel', soltar); girarGuardar(el, pts, d, centro); };
-      dial.addEventListener('pointermove', mover); dial.addEventListener('pointerup', soltar); dial.addEventListener('pointercancel', soltar);
-      mover(e);
-    });
-    panelEl.addEventListener('change', (e) => {
-      if (e.target.id !== 'dial-grados') return;
-      const el = seleccion && buscar(seleccion); if (!el?.simbolo) return;
-      const v = Number(String(e.target.value).replace(',', '.')); if (!Number.isFinite(v)) return;
-      const pts = puntosDe(el);
-      girarGuardar(el, pts, (((v % 360) + 360) % 360) - orientacion(el), centroDe(pts));
-    });
-  }
-
   function quitarVertice(el, i) {
     const pts = puntosDe(el);
-    if (fijos(el)) { avisoBreve('Este símbolo tiene sus puntos fijos: arrástralos para ajustarlo'); return; }
+    if (fijos(el)) { avisoBreve('Puntos fijos'); return; }
     if (pts.length <= TIPOS[el.tipo].min) { avisoBreve(`Una ${TIPOS[el.tipo].nombre.toLowerCase()} necesita al menos ${TIPOS[el.tipo].min} vértices`); return; }
     pts.splice(i, 1);
     cambio('Quitar vértice', () => moverPuntos(el, pts));
@@ -496,7 +465,7 @@ export function iniciarDibujo({ L, mapa, herramienta, elegirHerramienta, fmt, al
     const m = document.createElement('div');
     m.className = 'menu-punto';
     m.style.left = `${q.x}px`; m.style.top = `${q.y}px`;
-    m.innerHTML = '<button type="button" data-menu="eliminar">Eliminar punto</button><button type="button" data-menu="cerrar">Cancelar</button><small>Para moverlo, arrástralo</small>';
+    m.innerHTML = '<button type="button" data-menu="eliminar">Eliminar punto</button><button type="button" data-menu="cerrar">Cancelar</button>';
     m.addEventListener('click', (ev) => {
       const a = ev.target.closest('[data-menu]')?.dataset.menu; if (!a) return;
       if (a === 'eliminar' && borrador) { borrador.puntos.splice(i, 1); pintarBorrador(); pintarPanel(); }
@@ -522,12 +491,6 @@ export function iniciarDibujo({ L, mapa, herramienta, elegirHerramienta, fmt, al
   function pintarPanel(soloMedidas) {
     if (borrador) {
       const b = borrador;
-      const ayuda = {
-        punto: 'Toca el mapa donde va el punto.',
-        linea: b.puntos.length ? 'Toca para añadir puntos (se unen solos a otros puntos cercanos). Clic derecho quita el último. Doble clic o Intro para terminar.' : 'Toca el mapa para el primer punto.',
-        area: b.puntos.length >= 3 ? 'Toca el primer punto, doble clic o Intro para cerrar el área. Clic derecho quita el último.' : b.puntos.length ? 'Sigue tocando para añadir puntos.' : 'Toca el mapa para el primer punto.',
-        circulo: b.puntos.length ? 'Toca el borde, o escribe el radio exacto.' : 'Toca el mapa en el centro del círculo.',
-      }[b.tipo];
       const vivos = b.cursor ? [...b.puntos, b.cursor] : b.puntos;
       let medidas = '';
       if (b.tipo === 'circulo' && b.puntos.length) {
@@ -546,7 +509,6 @@ export function iniciarDibujo({ L, mapa, herramienta, elegirHerramienta, fmt, al
       const tituloB = b.simbolo ? esc(b.nombreSimbolo || 'Símbolo nuevo') : { punto: 'Punto nuevo', linea: 'Línea nueva', area: 'Área nueva', circulo: 'Círculo nuevo' }[b.tipo];
       const cuenta = b.n ? `${b.puntos.length} de ${b.n} puntos` : b.puntos.length ? `${b.puntos.length} punto${b.puntos.length > 1 ? 's' : ''}` : '';
       panel.innerHTML = `<div class="pm-cab"><strong>${tituloB}</strong><span>${cuenta}</span></div>
-        <p class="el-ayuda">${esc(b.ayuda || '') || ayuda}${b.n && b.puntos.length < b.n ? ` <b>Punto ${b.puntos.length + 1}.</b>` : ''}</p>
         ${htmlColor({ bando: preferencias.bando }, 'pref-bando')}
         ${b.tipo === 'punto' ? `<div class="el-fila"><div class="seg" data-campo="pref-estado">${Object.entries(ESTADOS).map(([k, v]) => `<button type="button" data-v="${k}" aria-pressed="${k === preferencias.estado}">${v.nombre}</button>`).join('')}</div></div>` : ''}
         <div id="dib-medidas">${medidas}</div>
@@ -668,11 +630,11 @@ export function iniciarDibujo({ L, mapa, herramienta, elegirHerramienta, fmt, al
     if (ev.target.id === 'el-paquete' && el) {
       const v = ev.target.value;
       if (v === '__nueva') {
-        preguntar({ titulo: 'Nueva operación', texto: 'El objeto entrará en ella, y lo que pintes a partir de ahora también.', campo: { ayuda: 'Nombre (ej.: OP NORTE)' }, opciones: [{ v: 'crear', texto: 'Crear', clase: 'primario' }, { v: 'cancelar', texto: 'Cancelar' }] })
+        preguntar({ titulo: 'Nueva operación', campo: { ayuda: 'Nombre' }, opciones: [{ v: 'crear', texto: 'Crear', clase: 'primario' }, { v: 'cancelar', texto: 'Cancelar' }] })
           .then((r) => {
             if (!r) { pintarPanel(); return; }
             const o = cambio(`Crear «${r.texto || 'Operación'}»`, (p) => { const n = nuevoPaquete(p, r.texto || 'Operación'); asignar(p, [el.id], n.id); return n; });
-            ponerActivo(o.id); avisoBreve(`«${o.nombre}» creada. Lo que pintes entra en ella.`);
+            ponerActivo(o.id); avisoBreve(`«${o.nombre}» creada`);
           });
         return;
       }
@@ -737,7 +699,7 @@ export function iniciarDibujo({ L, mapa, herramienta, elegirHerramienta, fmt, al
     }
     if (modo === 'paquete') {
       cambio(els.length === 1 ? `Quitar «${titulo(els[0])}» de su operación` : `Quitar ${els.length} objetos de su operación`, (p) => asignar(p, els.map((e) => e.id), null));
-      avisoBreve(els.length === 1 ? `«${titulo(els[0])}» ya no está en ninguna operación.` : `${els.length} objetos fuera de su operación.`);
+      avisoBreve(els.length === 1 ? `«${titulo(els[0])}» fuera de su operación` : `${els.length} objetos fuera de su operación`, { deshacer: true });
       return 'paquete';
     }
     const nombre = els.length === 1 ? `«${titulo(els[0])}»` : `${els.length} objetos`;
@@ -746,7 +708,7 @@ export function iniciarDibujo({ L, mapa, herramienta, elegirHerramienta, fmt, al
     if (set.has(seleccion)) seleccion = null;
     resaltados = new Set([...resaltados].filter((id) => !set.has(id)));
     pintarTodo(); pintarPanel(); avisar();
-    avisoBreve(`${nombre[0].toUpperCase()}${nombre.slice(1)} borrado${els.length > 1 ? 's' : ''}. Ctrl+Z para recuperar${els.length > 1 ? 'los' : 'lo'}.`);
+    avisoBreve(`${nombre[0].toUpperCase()}${nombre.slice(1)} borrado${els.length > 1 ? 's' : ''}`, { deshacer: true });
     return 'todo';
   }
 
@@ -777,11 +739,14 @@ export function iniciarDibujo({ L, mapa, herramienta, elegirHerramienta, fmt, al
   $('rehacer')?.addEventListener('click', rehacer);
 
   let tAviso = 0;
-  function avisoBreve(texto) {
+  /** Aviso corto abajo; con `deshacer`, lleva el botón para deshacer lo último. */
+  function avisoBreve(texto, { deshacer: conDeshacer = false } = {}) {
     const t = $('aviso-breve'); if (!t) return;
-    t.textContent = texto; t.hidden = false; clearTimeout(tAviso);
-    tAviso = setTimeout(() => { t.hidden = true; }, 2600);
+    t.innerHTML = `<span>${esc(texto)}</span>${conDeshacer ? '<button type="button" data-deshacer>Deshacer</button>' : ''}`;
+    t.hidden = false; clearTimeout(tAviso);
+    tAviso = setTimeout(() => { t.hidden = true; }, conDeshacer ? 5000 : 2600);
   }
+  $('aviso-breve')?.addEventListener('click', (e) => { if (e.target.closest('[data-deshacer]')) { $('aviso-breve').hidden = true; historial.deshacer(); } });
 
   // ---------------------------------------------------------- teclado
   document.addEventListener('keydown', (e) => {

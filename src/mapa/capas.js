@@ -40,6 +40,27 @@ export const FONDOS = [
     atribucion: ATRIB_IGN, maxNativo: 17, max: 21,
   },
   { id: 'relieve', nombre: 'Relieve', detalle: 'Sombreado calculado con el MDT del IGN (5 m al acercarse)', tipo: 'relieve' },
+  // De la carpeta de mapas de ATAK de Balú (noviembre 2026)
+  {
+    id: 'esri-topo', nombre: 'Esri Topo', detalle: 'Esri World Topo Map: topográfico mundial con relieve',
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
+    atribucion: 'Mapa: Esri, HERE, Garmin, USGS, IGN y colaboradores', maxNativo: 19, max: 21,
+  },
+  {
+    id: 'google-relieve', nombre: 'Google Relieve', detalle: 'Google Terrain: relieve sombreado con carreteras y nombres',
+    url: 'https://mt{s}.google.com/vt/lyrs=p&hl=es&x={x}&y={y}&z={z}', subdominios: '0123',
+    atribucion: 'Mapa © Google', maxNativo: 20, max: 21,
+  },
+  {
+    id: 'opentopo', nombre: 'OpenTopoMap', detalle: 'OpenTopoMap: curvas de nivel y sendas (OpenStreetMap)',
+    url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', subdominios: 'abc',
+    atribucion: '© OpenStreetMap · SRTM · estilo © OpenTopoMap (CC-BY-SA)', maxNativo: 17, max: 21,
+  },
+  {
+    id: 'mtbmap', nombre: 'MTBMap', detalle: 'MTBMap Europa: sendas, pistas y relieve (OpenStreetMap)',
+    url: 'https://tile.mtbmap.cz/mtbmap_tiles/{z}/{x}/{y}.png',
+    atribucion: '© OpenStreetMap · © MTBMap.cz', maxNativo: 18, max: 21,
+  },
 ];
 
 /** Imágenes para el Híbrido. */
@@ -59,10 +80,20 @@ export const IMAGENES = {
     url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
     atribucion: 'Imágenes: Esri, Maxar, Earthstar Geographics y colaboradores', maxNativo: 19, max: 21, fecha: 'esri',
   },
+  clarity: {
+    nombre: 'Esri Clarity', detalle: 'Esri Clarity: imagen más nítida en muchas zonas (a veces más antigua; fecha no publicada)',
+    url: 'https://clarity.maptiles.arcgis.com/arcgis/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    atribucion: 'Imágenes: Esri, Maxar, Earthstar Geographics y colaboradores', maxNativo: 19, max: 21,
+  },
   bing: {
     nombre: 'Bing', detalle: 'Bing aéreo (fecha no publicada)',
     quadkey: 'https://ecn.t{s}.tiles.virtualearth.net/tiles/a{q}.jpeg?g=14000', subdominios: '0123',
     atribucion: 'Imágenes © Microsoft', maxNativo: 19, max: 21,
+  },
+  'bing-rotulos': {
+    nombre: 'Bing + rótulos', detalle: 'Bing híbrido: imagen con sus propios nombres y carreteras',
+    quadkey: 'https://ecn.t{s}.tiles.virtualearth.net/tiles/h{q}.jpeg?g=14000&mkt=es-es', subdominios: '0123',
+    atribucion: 'Imágenes y rótulos © Microsoft', maxNativo: 19, max: 21, conRotulos: true,
   },
 };
 

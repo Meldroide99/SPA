@@ -24,6 +24,8 @@ const AZUL = '#1F5FA8';
 // Tamaño con el zoom: tope al acercar y mínimo al alejar (respecto al zoom al colocarlo)
 export const TOPE_CRECER = 1.35;
 export const MINIMO = 0.28;
+/** Zoom al que todos los símbolos tienen el tamaño elegido en Ajustes. */
+export const ZOOM_REFERENCIA = 14;
 export const factorZoom = (zActual, z0) => Math.min(TOPE_CRECER, Math.max(MINIMO, 2 ** (zActual - (z0 ?? zActual))));
 
 /** Miniatura de una unidad para listas y botones. */
@@ -107,17 +109,20 @@ export function iniciarSimbolos({ L, mapa, elegirHerramienta, herramienta = () =
     recientes: [],
   };
   try { const g = JSON.parse(localStorage.getItem(CLAVE) || '{}'); Object.assign(est, g, { unidad: { ...est.unidad, ...g.unidad }, abiertos: g.abiertos ?? {} }); } catch { /* nada */ }
-  const guardar = () => { try { localStorage.setItem(CLAVE, JSON.stringify({ pestaña: est.pestaña, unidad: est.unidad, arma: est.arma, recientes: est.recientes, conjunto: est.conjunto, abiertos: est.abiertos, todo: est.todo })); } catch { /* nada */ } };
+  const guardar = () => { try { localStorage.setItem(CLAVE, JSON.stringify({ pestaña: est.pestaña, unidad: est.unidad, arma: est.arma, recientes: est.recientes, recientesAbiertos: est.recientesAbiertos, conjunto: est.conjunto, abiertos: est.abiertos, todo: est.todo })); } catch { /* nada */ } };
 
   // ---------------------------------------------------------- tamaño
   const metrosPx = () => (156543.03392804097 * Math.cos((mapa.getCenter().lat * Math.PI) / 180)) / 2 ** mapa.getZoom();
   const base = () => tamano?.()?.px ?? 34;
-  const ladoDe = (s) => base() * factorZoom(mapa.getZoom(), s?.zoom);
+  // Todos iguales: el mismo tamaño para todos los símbolos, los pusieras al zoom que fuera
+  const ladoDe = () => base() * factorZoom(mapa.getZoom(), ZOOM_REFERENCIA);
   mapa.on('zoomend', () => dibujo?.repintar());
 
   // ---------------------------------------------------------- pintar en el mapa
   const normalRot = (r) => { let x = ((r % 360) + 540) % 360 - 180; let girado = false; if (x > 90) { x -= 180; girado = true; } if (x < -90) { x += 180; girado = true; } return { r: x, girado }; };
-  const marcadorTexto = (pos, html) => L.marker(pos, { pane: 'elementos', interactive: false, keyboard: false, icon: L.divIcon({ className: 'etq-ancla', html, iconSize: null }) });
+  // Rótulos en su propia capa, por encima de todas las líneas (que no queden tachados)
+  if (!mapa.getPane('rotulos')) { const p = mapa.createPane('rotulos'); p.style.zIndex = 466; p.style.pointerEvents = 'none'; }
+  const marcadorTexto = (pos, html) => L.marker(pos, { pane: 'rotulos', interactive: false, keyboard: false, icon: L.divIcon({ className: 'etq-ancla', html, iconSize: null }) });
 
   /** Rótulos flotantes sobre la línea: en cada tramo al acercar, menos al alejar. */
   function colocarRotulos(g, rotulos, color) {
@@ -344,9 +349,9 @@ export function iniciarSimbolos({ L, mapa, elegirHerramienta, herramienta = () =
     if (panel.hidden) return;
     const scroll = panel.querySelector('.sim-cuerpo')?.scrollTop ?? 0;
     const cab = `<div class="pm-cab v-cab"><strong>Símbolos APP-6</strong><span class="v-sub"></span><button type="button" class="pm-x" data-s="cerrar" aria-label="Cerrar">×</button></div>
-      <input class="sim-buscar" id="sim-buscar" placeholder="Buscar: «sección paracaidista», «carro», «PL», «bloquear»…" value="${esc(est.busqueda)}" autocomplete="off">
+      <input class="sim-buscar" id="sim-buscar" placeholder="Buscar" value="${esc(est.busqueda)}" autocomplete="off">
       <div class="seg sim-pestanas">${[['unidades', 'Unidades'], ['medidas', 'Líneas de coordinación'], ['cometidos', 'Cometidos']].map(([k, n]) => `<button type="button" data-pestana="${k}" aria-pressed="${est.pestaña === k}">${n}</button>`).join('')}</div>
-      ${est.recientes.length ? `<div class="sim-recientes"><span class="el-et">Recientes <small>(clic o arrastra al mapa)</small></span><div>${est.recientes.map((r, i) => `<button type="button" class="sim-chip" data-reciente="${i}" data-arrastrar title="${esc(tituloSimbolo(r))}">${r.clase === 'unidad' ? miniUnidad(r, 18) : miniMedida(medida(r.id), AZUL, 34, 20)}</button>`).join('')}</div></div>` : ''}`;
+      ${est.recientes.length ? `<details class="sim-recientes"${est.recientesAbiertos ? ' open' : ''}><summary class="el-et">Recientes <small>${est.recientes.length}</small></summary><div>${est.recientes.map((r, i) => `<button type="button" class="sim-chip" data-reciente="${i}" data-arrastrar title="${esc(tituloSimbolo(r))}">${r.clase === 'unidad' ? miniUnidad(r, 18) : miniMedida(medida(r.id), AZUL, 34, 20)}</button>`).join('')}</div></details>` : ''}`;
     let cuerpo;
     if (est.busqueda.trim()) cuerpo = htmlBusqueda(est.busqueda.trim());
     else if (est.pestaña === 'unidades') cuerpo = htmlConstructor();
@@ -362,11 +367,10 @@ export function iniciarSimbolos({ L, mapa, elegirHerramienta, herramienta = () =
   function htmlConstructor() {
     const s = u();
     const conj = String(s.conjunto ?? '10');
-    const grande = svgUnidad(s, { tam: 44 });
+    const grande = svgUnidad(s, { tam: 26 });
     const ids = ['amigo', 'hostil', 'neutral', 'desconocido'];
     const masIds = ['supuesto', 'sospechoso', 'pendiente'];
-    const vista = `<button type="button" class="sim-vista" data-vista data-arrastrar title="Arrastra al mapa, o toca el mapa para ponerla">${grande.svg}<div><b>${esc(nombreUnidad(s))}</b><small>SIDC ${grande.sidc}</small></div></button>
-      <p class="sim-armado" hidden>Toca el mapa para ponerla (o arrástrala). <b>Esc</b> para dejar de poner.</p>`;
+    const vista = `<button type="button" class="sim-vista" data-vista data-arrastrar>${grande.svg}<div><b>${esc(nombreUnidad(s))}</b></div></button>`;
     const CORTO = [['10', 'Unidades'], ['15', 'Material'], ['20', 'Instalaciones'], ['27', 'A pie'], ['40', 'Actividades'], ['11', 'Civiles']];
     const conjuntos = `<div class="sim-conjuntos">${CORTO.map(([k, n]) => `<button type="button" data-conjunto="${k}" aria-pressed="${conj === k}" title="${esc(CONJUNTOS[k].nombre)}">${n}</button>`).join('')}</div>`;
     const bandos = `<div class="sim-paso"><span class="el-et">1 · Bando</span><div class="sim-rejilla sim-bandos">${[...ids, ...(est.masOpciones ? masIds : [])].map((id) => `<button type="button" class="sim-tile" data-identidad="${id}" aria-pressed="${s.identidad === id}">${miniUnidad({ ...s, identidad: id, escalon: '' }, 20)}<span>${IDENTIDADES[id].nombre}</span></button>`).join('')}</div></div>`;
@@ -384,8 +388,7 @@ export function iniciarSimbolos({ L, mapa, elegirHerramienta, herramienta = () =
     return `${vista}${conjuntos}${bandos}${tipo}${pasoEsc}${movil}
       <div class="sim-paso sim-campos"><label>Designación <input data-campo-u="T" value="${esc(s.T)}" placeholder="1" maxlength="21"></label><label>Unidad superior <input data-campo-u="M" value="${esc(s.M)}" placeholder="II/RI4" maxlength="21"></label></div>
       <button type="button" class="sim-mas" data-s="mas">${est.masOpciones ? 'Menos opciones ▲' : 'Más opciones (modificadores, CG, agrupación, refuerzo…) ▼'}</button>
-      ${est.masOpciones ? htmlExtras(s, 'u') : ''}
-      <p class="sim-pista">Toca el mapa para ponerla o arrástrala desde aquí. Se repite con cada clic.</p>`;
+      ${est.masOpciones ? htmlExtras(s, 'u') : ''}`;
   }
   /** Lista completa de iconos APP-6 de un conjunto, agrupada por entidad. */
   function htmlArbol(conj, s) {
@@ -419,7 +422,7 @@ export function iniciarSimbolos({ L, mapa, elegirHerramienta, herramienta = () =
       const lista = MEDIDAS.filter((m) => m.grupo === gk && !m.oculto);
       if (!lista.length) return '';
       const abierto = est.abiertos[`m/${gk}`] ?? (gk === 'lineas' || gk === 'zonas' || gk === 'cometidos');
-      return `<details class="sim-grupo-det" data-grupo="m/${gk}"${abierto ? ' open' : ''}><summary>${GRUPOS[gk]} <small>${lista.length}</small></summary>${abierto ? `<div class="sim-lista-cm">${lista.map((m) => `<button type="button" class="sim-cm" data-medida="${m.id}" data-arrastrar title="${esc(`${m.nombre}${m.ayuda ? ` — ${m.ayuda}` : ''} · Clic para dibujarla punto a punto; arrastra para soltarla ya hecha.`)}"><span class="sim-cm-ico">${miniMedida(m)}</span><span>${esc(m.nombre)}${m.sigla && gk !== 'cometidos' ? ` <small>${esc(m.sigla)}</small>` : ''}</span></button>`).join('')}</div>` : ''}</details>`;
+      return `<details class="sim-grupo-det" data-grupo="m/${gk}"${abierto ? ' open' : ''}><summary>${GRUPOS[gk]} <small>${lista.length}</small></summary>${abierto ? `<div class="sim-lista-cm">${lista.map((m) => `<button type="button" class="sim-cm" data-medida="${m.id}" data-arrastrar title="${esc(m.nombre)}"><span class="sim-cm-ico">${miniMedida(m)}</span><span>${esc(m.nombre)}${m.sigla && gk !== 'cometidos' ? ` <small>${esc(m.sigla)}</small>` : ''}</span></button>`).join('')}</div>` : ''}</details>`;
     }).join('');
   }
   function htmlBusqueda(q) {
@@ -487,7 +490,9 @@ export function iniciarSimbolos({ L, mapa, elegirHerramienta, herramienta = () =
     if (est.pestaña === 'unidades') armar({ clase: 'unidad', ...est.unidad });
   });
   panel.addEventListener('toggle', (ev) => {
-    const d = ev.target; if (!d.matches?.('.sim-grupo-det')) return;
+    const d = ev.target;
+    if (d.matches?.('.sim-recientes')) { est.recientesAbiertos = d.open; guardar(); return; }
+    if (!d.matches?.('.sim-grupo-det')) return;
     const k = d.dataset.grupo; const antes = est.abiertos[k];
     est.abiertos[k] = d.open; guardar();
     if (d.open && !antes) pintarPanel();
@@ -495,7 +500,7 @@ export function iniciarSimbolos({ L, mapa, elegirHerramienta, herramienta = () =
   panel.addEventListener('input', (ev) => {
     if (ev.target.id === 'sim-buscar') { est.busqueda = ev.target.value; est._enfocar = true; pintarPanel(); return; }
     const k = ev.target.dataset.campoU;
-    if (k) { u()[k] = ev.target.value; guardar(); const v = panel.querySelector('.sim-vista'); if (v) { const r = svgUnidad(u(), { tam: 44 }); v.innerHTML = `${r.svg}<div><b>${esc(nombreUnidad(u()))}</b><small>SIDC ${r.sidc}</small></div>`; } if (armada) armada = { clase: 'unidad', ...u() }; }
+    if (k) { u()[k] = ev.target.value; guardar(); const v = panel.querySelector('.sim-vista'); if (v) { const r = svgUnidad(u(), { tam: 26 }); v.innerHTML = `${r.svg}<div><b>${esc(nombreUnidad(u()))}</b></div>`; } if (armada) armada = { clase: 'unidad', ...u() }; }
   });
   panel.addEventListener('change', (ev) => { const k = ev.target.dataset.boolU; if (k) { u()[k] = ev.target.checked; guardar(); pintarPanel(); if (armada) armada = { clase: 'unidad', ...u() }; } });
   panel.addEventListener('keydown', (ev) => {
@@ -523,32 +528,12 @@ export function iniciarSimbolos({ L, mapa, elegirHerramienta, herramienta = () =
     let grupoAnt = null;
     return opciones.map((o) => { const cab = o.grupo && o.grupo !== grupoAnt ? `<div class="sel-vis-grupo">${esc(o.grupo)}</div>` : ''; grupoAnt = o.grupo; return `${cab}<button type="button" data-elegir="${esc(o.v)}" aria-pressed="${o.v === valor}">${typeof o.ico === 'function' ? o.ico() : o.ico ?? ''}<span>${esc(o.nombre)}</span></button>`; }).join('');
   }
-  // Los desplegables con miniaturas se abren solos al dejar el ratón encima (y se cierran al irse)
-  let tSel = 0, selHover = null, tAbiertaHover = 0;
-  function abrirLista(caja) {
-    tAbiertaHover = performance.now();
-    const lista = caja.querySelector('.sel-vis-lista'); if (!lista || !lista.hidden) return;
-    document.querySelectorAll('.sel-vis-lista').forEach((x) => { x.hidden = true; });
-    lista.innerHTML = htmlLista(caja.dataset.selId); lista.hidden = false;
-    lista.querySelector('[aria-pressed="true"]')?.scrollIntoView({ block: 'nearest' });
-  }
-  document.addEventListener('pointerover', (ev) => {
-    if (ev.pointerType !== 'mouse') return;
-    const caja = ev.target.closest?.('.sel-vis');
-    if (caja === selHover) return;
-    clearTimeout(tSel);
-    if (selHover && !caja) { const ant = selHover; tSel = setTimeout(() => { const l = ant.querySelector('.sel-vis-lista'); if (l && !ant.matches(':hover')) l.hidden = true; }, 320); }
-    selHover = caja;
-    if (caja && ev.target.closest('.sel-vis-btn')) tSel = setTimeout(() => { if (caja.matches(':hover')) abrirLista(caja); }, 260);
-  });
-
   /** Abre/cierra/elige en un selector visual. `elegir(campo, valor)` aplica la elección. */
   function manejarSelector(ev, elegir) {
     const t = ev.target;
     const abrirSel = t.closest('[data-abrir-sel]');
     if (abrirSel) {
       const caja = abrirSel.closest('.sel-vis'), lista = caja.querySelector('.sel-vis-lista'), ab = lista.hidden;
-      if (!ab && performance.now() - tAbiertaHover < 900) return true; // se acaba de abrir sola: el clic no la cierra
       document.querySelectorAll('.sel-vis-lista').forEach((x) => { x.hidden = true; });
       if (ab) { lista.innerHTML = htmlLista(caja.dataset.selId); lista.hidden = false; lista.querySelector('[aria-pressed="true"]')?.scrollIntoView({ block: 'nearest' }); }
       return true;
@@ -570,7 +555,7 @@ export function iniciarSimbolos({ L, mapa, elegirHerramienta, herramienta = () =
       const todos = arbol(conj).map((n) => ({ v: `${conj}:${n.codigo}`, grupo: n.grupo, nombre: n.nombre, ico: () => miniUnidad({ identidad: s.identidad, conjunto: conj, icono: n.codigo }, 18) }));
       return {
         titulo: nombreUnidad(s), tipo: CONJUNTOS[conj]?.nombre ?? 'Unidad',
-        html: `<div class="sim-vista sim-vista-ficha">${svgUnidad({ ...s, estado: el.propiedades.estado }, { tam: 40 }).svg}<div><b>${esc(nombreUnidad(s))}</b><small>SIDC ${svgUnidad(s).sidc}</small></div></div>
+        html: `<div class="sim-vista sim-vista-ficha">${svgUnidad({ ...s, estado: el.propiedades.estado }, { tam: 26 }).svg}<div><b>${esc(nombreUnidad(s))}</b></div></div>
           <div class="el-fila"><span class="el-et">Bando</span><div class="seg sim-seg" data-f="identidad">${['amigo', 'hostil', 'neutral', 'desconocido', 'supuesto', 'sospechoso', 'pendiente'].map((id) => `<button type="button" data-v="${id}" aria-pressed="${s.identidad === id}" title="${IDENTIDADES[id].nombre}">${miniUnidad({ ...s, identidad: id }, 16)}</button>`).join('')}</div></div>
           ${conj === '10' ? selectorVisual('tipo', 'Tipo (ET)', tiposET, e ? `${e.arma.id}/${e.tipo.id}` : '') : ''}
           ${selectorVisual('icono', conj === '10' ? 'Icono APP-6 (todos)' : 'Tipo', todos, `${conj}:${s.icono}`)}
@@ -583,26 +568,17 @@ export function iniciarSimbolos({ L, mapa, elegirHerramienta, herramienta = () =
     const m = medida(s.id); if (!m) return null;
     const mismos = MEDIDAS.filter((x) => !x.oculto && (x.id === m.id || (x.forma === m.forma && puntosNecesarios(x) === puntosNecesarios(m) && (x.grupo === m.grupo || m.forma !== 'especial'))));
     const n = puntosNecesarios(m);
-    const giro = m.forma !== 'punto';
     return {
       titulo: el.propiedades.nombre || m.nombre, tipo: GRUPOS[m.grupo],
       html: `${selectorVisual('medida', 'Tipo', mismos.map((x) => ({ v: x.id, grupo: GRUPOS[x.grupo], nombre: x.nombre, ico: () => miniMedida(x, AZUL, 40, 24) })), m.id)}
         ${m.campos?.includes('ancho') || m.forma === 'rect' || m.forma === 'corredor' ? `<form class="el-radio" id="sim-ancho"><label>Anchura <input type="number" min="1" step="any" id="sim-ancho-m" value="${s.ancho ? Math.round(s.ancho) : ''}" placeholder="auto"></label><span>m</span><button type="submit">Aplicar</button></form>` : ''}
         ${m.estatico ? `<form class="el-radio" id="sim-tam"><label>Tamaño <input type="number" min="1" step="any" id="sim-tam-m" value="${s.tam ? Math.round(s.tam) : ''}" placeholder="auto"></label><span>m</span><button type="submit">Aplicar</button></form>` : ''}
         ${m.campos?.includes('escalon') ? selectorVisual('escalon', 'Escalón', ORDEN_ESCALONES.map((k) => ({ v: k, nombre: nombreEscalon(k, 'infanteria'), ico: `<b class="marca-esc">${ESCALONES[k].marca ?? '—'}</b>` })), s.escalon ?? '') : ''}
-        ${m.id === 'limite' ? `<div class="sim-campos"><label>Unidad a la izquierda <input data-campo-f="izq" value="${esc(s.izq ?? '')}" maxlength="20" placeholder="1/II/4"></label><label>A la derecha <input data-campo-f="der" value="${esc(s.der ?? '')}" maxlength="20" placeholder="2/II/4"></label></div><p class="el-ayuda">Izquierda y derecha según el sentido en que se dibujó la línea.</p>` : ''}
-        ${giro ? htmlGiro(el) : ''}
-        ${n > 1 || m.ayuda ? `<p class="el-ayuda">${esc(ayudaDe(m))} Arrastra los puntos para ajustarlo y el centro (✥) para moverlo entero. Para girarlo, arrastra la rueda o la flecha ↻ del mapa (de 5 en 5°; con Mayús, de 1 en 1).</p>` : ''}`,
+        ${m.id === 'limite' ? `<div class="sim-campos"><label>Unidad a la izquierda <input data-campo-f="izq" value="${esc(s.izq ?? '')}" maxlength="20" placeholder="1/II/4"></label><label>A la derecha <input data-campo-f="der" value="${esc(s.der ?? '')}" maxlength="20" placeholder="2/II/4"></label></div>` : ''}
+`,
     };
   }
 
-  /** Rueda de giro: aguja que se arrastra, rumbo exacto y giros rápidos. */
-  function htmlGiro(el) {
-    const o = dibujo?.orientacion?.(el) ?? 0;
-    return `<div class="dial-fila"><div class="dial" style="--a:${o}" title="Arrastra para girar" role="slider" aria-label="Rumbo del símbolo" aria-valuemin="0" aria-valuemax="359" aria-valuenow="${o}"><i></i><b></b></div>
-      <div class="dial-datos"><label>Rumbo <input id="dial-grados" type="number" min="0" max="359" step="1" value="${o}">°</label>
-      <div class="seg"><button type="button" data-girar="-15" title="15° a la izquierda">↺ 15°</button><button type="button" data-girar="15" title="15° a la derecha">↻ 15°</button><button type="button" data-girar="180" title="Darle la vuelta">180°</button></div></div></div>`;
-  }
   /** Sigla de base de una línea de coordinación (PL, LD…): el nombre si el usuario no pone otro. */
   const siglaDe = (el) => (el.simbolo?.clase === 'medida' ? medida(el.simbolo.id)?.sigla ?? '' : '');
 

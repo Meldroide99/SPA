@@ -92,13 +92,14 @@ const capasFondo = {
   base: vigilar('base', crearCapa(L, FONDOS.find((f) => f.id === 'base'))),
   relieve: vigilar('relieve', capaRelieve(L, 'fondo', { atribucion: ATRIBUCION_MDT })),
   hibrido: L.layerGroup(),
+  ...Object.fromEntries(FONDOS.filter((f) => f.url && !['mtn', 'base'].includes(f.id)).map((f) => [f.id, vigilar(f.id, crearCapa(L, f))])),
 };
 capasFondo.mtn.ponerDetalle?.(Boolean(estado.mtnDetalle));
 function montarHibrido() {
   const g = capasFondo.hibrido;
   g.clearLayers();
   g.addLayer(capasImagen[estado.imagen]);
-  if (estado.rotulos) g.addLayer(capaRotulos);
+  if (estado.rotulos && !IMAGENES[estado.imagen].conRotulos) g.addLayer(capaRotulos);
   g.idDiag = `img-${estado.imagen}`;
 }
 montarHibrido();
@@ -107,7 +108,7 @@ let fondoActual = null;
 let alCambiarFondo = () => {}; // la cuadrícula se pinta en blanco sobre el híbrido
 // eslint-disable-next-line prefer-const
 let importar = null;
-const VERSION = '0.9.0';
+const VERSION = '0.9.1';
 function ponerFondo(id, { automatico = false } = {}) {
   if (!capasFondo[id]) id = 'mtn';
   if (fondoActual) mapa.removeLayer(fondoActual);
@@ -227,11 +228,10 @@ for (const d of document.querySelectorAll('.seccion')) {
 const abrirSeccion = (sec) => { const d = document.querySelector(`.seccion[data-sec="${sec}"]`); if (d) d.open = true; ponerPanelCapas(true); };
 // Capas: se recoge sola sin uso (ventanas.js); clic en el título la abre o la recoge
 function ponerPanelCapas(abierto) {
-  $('panel-capas').classList.toggle('v-recogida', !abierto);
-  if (abierto) ventanas?.usada($('panel-capas'));
+  if (ventanas) ventanas.recoger($('panel-capas'), !abierto); else $('panel-capas').classList.toggle('v-recogida', !abierto);
   recolocarEtiquetas();
 }
-$('capas-toggle').addEventListener('click', (e) => { if (!e.target.closest('.v-pin')) ponerPanelCapas($('panel-capas').classList.contains('v-recogida')); });
+$('capas-toggle').addEventListener('click', (e) => { if (!e.target.closest('.v-pin')) ponerPanelCapas(ventanas ? ventanas.recogida($('panel-capas')) : $('panel-capas').classList.contains('v-recogida')); });
 if (window.matchMedia('(max-width: 760px)').matches) ponerPanelCapas(false);
 
 // ---------------------------------------------------------------- herramientas, dibujo e importación
@@ -303,7 +303,7 @@ importar = iniciarImportar({
     if (!esPaqueteSpa(pq)) return false;
     pq.nombre ||= nombreArchivo.replace(/\.(spa\.json|json|spa)$/i, '');
     const o = dibujo.cambio(`Abrir paquete «${pq.nombre}»`, (p) => abrirPaquete(p, pq));
-    dibujo.avisoBreve(`«${o.nombre}» abierto como operación: puedes modificarlo.`);
+    dibujo.avisoBreve(`«${o.nombre}» abierto`);
     setTimeout(() => { ponerPanel('operaciones', true); operaciones.mostrar(o.id); dibujo.encuadrar(dibujo.plan().elementos.filter((e) => e.paquete && e.paquete === o.id || dibujo.plan().operaciones.some((x) => x.id === e.paquete && x.padre === o.id)).map((e) => e.id)); }, 0);
     return true;
   },
@@ -402,10 +402,25 @@ let tOcultar = 0;
 function mostrarHerramientas(si) {
   clearTimeout(tOcultar);
   if (si) { $('herramientas').classList.add('visible'); document.body.classList.add('herr-visibles'); recolocarEtiquetas(); return; }
-  tOcultar = setTimeout(() => { $('herramientas').classList.remove('visible'); document.body.classList.remove('herr-visibles'); recolocarEtiquetas(); }, 450);
+  tOcultar = setTimeout(() => { $('herramientas').classList.remove('visible'); document.body.classList.remove('herr-visibles'); recolocarEtiquetas(); }, 700);
+}
+// Cabecera: sin usarla se esconde hacia arriba; vuelve al acercar el ratón al borde de arriba
+let tCabecera = 0;
+const cabeceraEnUso = () => $('barra-sup').matches(':hover') || $('barra-sup').contains(document.activeElement) || !$('ajustes').hidden || !$('buscar-res').hidden;
+function mostrarCabecera(si) {
+  clearTimeout(tCabecera); tCabecera = 0;
+  if (si) { document.body.classList.remove('sup-oculta'); return; }
+  tCabecera = setTimeout(() => { tCabecera = 0; if (!cabeceraEnUso()) document.body.classList.add('sup-oculta'); recolocarEtiquetas(); }, 2200);
 }
 if (tactil) mostrarHerramientas(true);
 else {
+  document.addEventListener('mousemove', (e) => {
+    const cerca = e.clientY < 66 || cabeceraEnUso();
+    if (cerca) mostrarCabecera(true); else if (!document.body.classList.contains('sup-oculta') && !tCabecera) mostrarCabecera(false);
+  }, { passive: true });
+  document.addEventListener('focusin', (e) => { if (e.target.closest?.('#barra-sup')) mostrarCabecera(true); });
+  document.addEventListener('focusout', () => mostrarCabecera(false));
+  mostrarCabecera(false);
   $('contenido').addEventListener('mousemove', (e) => {
     const r = $('contenido').getBoundingClientRect(), b = $('herramientas').getBoundingClientRect();
     const sup = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--sup')) || 64;
@@ -516,10 +531,9 @@ function pintarMedida() {
     const de = String.fromCharCode(65 + ((i - 1) % 26)), a = String.fromCharCode(65 + (i % 26));
     filas.push(`<tr><td>${de}→${a}</td><td>${metros(r.distancia)}</td><td>${rumbo(r.rumbo)}</td><td>${rumbo(r.rumboCuadricula)}</td></tr>`);
   }
-  const unidad = { grados: 'grados', milesimas: 'milésimas', gms: 'G M S' }[estado.angulo];
   cuerpo.innerHTML = `<div class="pm-total"><div class="grande">${metros(total)}</div><div class="peq">Real, sobre el elipsoide · Sobre el mapa: ${metros(totalMapa)}</div></div>
     <table class="pm-tramos"><thead><tr><th>Tramo</th><th>Distancia</th><th>Rumbo geo</th><th>Rumbo cuad.</th></tr></thead><tbody>${filas.join('')}</tbody></table>
-    <p class="pm-nota">Rumbos en ${unidad} (cámbialo en Ajustes). Rumbo magnético: pendiente.</p>`;
+`;
 }
 $('pm-deshacer').addEventListener('click', () => { medida.pop(); pintarMedida(); });
 $('pm-nueva').addEventListener('click', () => { medida.length = 0; pintarMedida(); });

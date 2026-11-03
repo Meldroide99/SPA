@@ -16,6 +16,10 @@ export const CAPAS_CREADOR = [
   { id: 'hibrido', nombre: 'Híbrido', detalle: 'Imagen + nombres y carreteras (JPEG)', zMax: 20, kb: 32, porSeg: 22, ext: 'jpg' },
   { id: 'base', nombre: 'Mapa base', detalle: 'IGN Base (PNG)', zMax: 17, kb: 30, porSeg: 25, ext: 'png' },
   { id: 'relieve', nombre: 'Relieve', detalle: 'Sombreado del MDT del IGN (JPEG)', zMax: 17, kb: 15, porSeg: 6, ext: 'jpg' },
+  { id: 'esri-topo', nombre: 'Esri Topo', detalle: 'Esri World Topo Map (JPEG)', zMax: 19, kb: 25, porSeg: 22, ext: 'jpg' },
+  { id: 'google-relieve', nombre: 'Google Relieve', detalle: 'Google Terrain (JPEG)', zMax: 20, kb: 20, porSeg: 22, ext: 'jpg' },
+  { id: 'opentopo', nombre: 'OpenTopoMap', detalle: 'OpenTopoMap (PNG)', zMax: 17, kb: 40, porSeg: 6, ext: 'png' },
+  { id: 'mtbmap', nombre: 'MTBMap', detalle: 'MTBMap Europa (PNG)', zMax: 18, kb: 35, porSeg: 6, ext: 'png' },
 ];
 
 export const teselaX = (lon, z) => ((lon + 180) / 360) * 2 ** z;
