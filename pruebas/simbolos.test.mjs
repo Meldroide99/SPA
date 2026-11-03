@@ -72,7 +72,9 @@ test('Medidas y cometidos: geometría válida y anclas exactas', () => {
   // Las líneas (PL, LD…) pasan exactamente por sus puntos y llevan su nombre flotante
   const pl = geometria(MEDIDAS.find((m) => m.id === 'pl'), ej.slice(0, 3), { nombre: 'ROJA', mpp: 4 });
   pl.lineas[0].pts.forEach((p, i) => { assert.ok(Math.abs(p[0] - ej[i].lat) < 1e-12 && Math.abs(p[1] - ej[i].lon) < 1e-12); });
-  assert.deepEqual(pl.rotulos.map((t) => t.texto), ['PL ROJA']);
+  // Con nombre, solo el nombre del usuario; sin nombre, la sigla de base
+  assert.deepEqual(pl.rotulos.map((t) => t.texto), ['ROJA']);
+  assert.deepEqual(geometria(MEDIDAS.find((m) => m.id === 'pl'), ej.slice(0, 3), { mpp: 4 }).rotulos.map((t) => t.texto), ['PL']);
   // Límite: el escalón y las unidades a cada lado van como rótulo flotante
   const li = geometria(MEDIDAS.find((m) => m.id === 'limite'), ej.slice(0, 3), { escalonMarca: 'II', izq: '1/II', der: '2/II', mpp: 4 });
   assert.equal(li.rotulos[0].texto, 'II'); assert.deepEqual(li.rotulos[0].lados, { izq: '1/II', der: '2/II' });

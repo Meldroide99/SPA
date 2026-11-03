@@ -16,9 +16,13 @@ import {
   Historial, formatearArea, esPlan, tocar, TIPOS, BANDOS, ESTADOS, estiloDe,
 } from '../plan/plan.js';
 import { capaForma, esc, ICONOS } from './formas.js';
+import { esVisible, buscarPaquete, nombreRuta, asignar, paquetes, nuevoPaquete } from '../plan/operaciones.js';
+import { preguntar } from './dialogo.js';
 import { tomarFicha, alPerderFicha, htmlColor, htmlTrazo, htmlAltitud, rellenarAltitud, htmlLinea, rellenarPerfil } from './ficha.js';
 
 const CLAVE_PLAN = 'spa.plan.actual';
+const CLAVE_VISTA = 'spa.vista.paquetes';   // qué paquetes ve este usuario (no va en el plan)
+const CLAVE_ACTIVO = 'spa.paquete.activo';  // dónde entra lo que pinta este usuario
 const IMAN_PX = 12;
 export const HERRAMIENTAS_DIBUJO = ['punto', 'linea', 'area', 'circulo'];
 
@@ -45,9 +49,26 @@ export function iniciarDibujo({ L, mapa, herramienta, elegirHerramienta, fmt, al
     alCambiar: () => {
       try { localStorage.setItem(CLAVE_PLAN, JSON.stringify(plan)); } catch { /* nada */ }
       if (seleccion && !buscar(seleccion)) seleccion = null;
-      pintarTodo(); pintarPanel(); pintarLista(); pintarBotones();
+      if (activo && !buscarPaquete(plan, activo)) ponerActivo(null);
+      pintarTodo(); pintarPanel(); avisar(); pintarBotones();
     },
   });
+  plan.operaciones ??= [];
+
+  // ---------------------------------------------------------- vista de cada usuario: qué ve y dónde pinta
+  let vista = { ocultos: [], solo: null, sueltosOcultos: false };
+  try { Object.assign(vista, JSON.parse(localStorage.getItem(CLAVE_VISTA) || '{}')); } catch { /* nada */ }
+  let activo = null;
+  try { activo = localStorage.getItem(CLAVE_ACTIVO) || null; } catch { /* nada */ }
+  if (activo && !buscarPaquete(plan, activo)) activo = null;
+  const guardarVista = () => { try { localStorage.setItem(CLAVE_VISTA, JSON.stringify(vista)); } catch { /* nada */ } };
+  function ponerActivo(id) { activo = id && buscarPaquete(plan, id) ? id : null; try { if (activo) localStorage.setItem(CLAVE_ACTIVO, activo); else localStorage.removeItem(CLAVE_ACTIVO); } catch { /* nada */ } avisar(); }
+  const visible = (el) => esVisible(plan, el, vista);
+  // Avisos a quien escuche (paneles de Objetos, Operaciones, Lazo…)
+  const oyentes = new Set();
+  let tAvisar = 0;
+  function avisar() { cancelAnimationFrame(tAvisar); tAvisar = requestAnimationFrame(() => { for (const f of oyentes) { try { f(); } catch (e) { console.error(e); } } }); }
+  let resaltados = new Set(); // objetos marcados (lazo, selección múltiple)
   const buscar = (id) => plan.elementos.find((e) => e.id === id);
   const cambio = (desc, fn) => historial.hacer(desc, fn);
 
@@ -97,12 +118,20 @@ export function iniciarDibujo({ L, mapa, herramienta, elegirHerramienta, fmt, al
       });
     }
     grupo.addTo(capaElementos);
+    if (resaltados.has(el.id)) marcarHalo(grupo);
     capasDe.set(el.id, grupo);
+  }
+
+  /** Resalta en el mapa (halo azul) las capas de un objeto marcado. */
+  function marcarHalo(capa) {
+    if (capa.eachLayer) { capa.eachLayer(marcarHalo); return; }
+    capa.getElement?.()?.classList.add('halo-sel');
   }
 
   function pintarTodo() {
     capaElementos.clearLayers(); capasDe.clear();
-    for (const el of plan.elementos) pintarElemento(el);
+    if (seleccion && buscar(seleccion) && !visible(buscar(seleccion))) { seleccion = null; pintarPanel(); }
+    for (const el of plan.elementos) if (visible(el)) pintarElemento(el);
     pintarAsas();
   }
 
@@ -110,7 +139,7 @@ export function iniciarDibujo({ L, mapa, herramienta, elegirHerramienta, fmt, al
   /** Puntos a los que se puede unir uno nuevo. */
   function candidatos({ excluir, propios = [] } = {}) {
     const out = [...propios];
-    for (const el of plan.elementos) { if (el.id !== excluir) out.push(...puntosDe(el)); }
+    for (const el of plan.elementos) { if (el.id !== excluir && visible(el)) out.push(...puntosDe(el)); }
     out.push(...puntosExternos());
     return out;
   }
@@ -177,29 +206,75 @@ export function iniciarDibujo({ L, mapa, herramienta, elegirHerramienta, fmt, al
     }
   }
 
-  /** Asas para mover entero (✥, en el centro) y girar (↻, encima) un símbolo de medida. */
+  /** Centro de un símbolo (media de sus puntos). */
+  const centroDe = (pts) => ({ lat: pts.reduce((s, p) => s + p.lat, 0) / pts.length, lon: pts.reduce((s, p) => s + p.lon, 0) / pts.length });
+  /** Orientación (rumbo, 0–359°) de un símbolo girable: `giro` si es de un punto; si no, rumbo de su primer tramo. */
+  function orientacion(el) {
+    const pts = puntosDe(el);
+    if (pts.length === 1) return Math.round((((el.simbolo?.giro ?? 0) % 360) + 360) % 360);
+    return Math.round(((medir(pts[0], pts[1]).rumbo % 360) + 360) % 360);
+  }
+  /** Muestra el símbolo girado `d` grados (sin guardar). */
+  function verGirado(el, pts, d, centro) {
+    if (pts.length === 1) { const g0 = el.simbolo.giro ?? 0; el.simbolo.giro = g0 + d; pintarElemento(el); el.simbolo.giro = g0; } else pintarElemento(el, simbolos.girarPuntos(pts, d, centro));
+  }
+  /** Gira y guarda (se puede deshacer). */
+  function girarGuardar(el, pts, d, centro) {
+    d = ((Math.round(d) % 360) + 540) % 360 - 180; if (!d) { pintarTodo(); return; }
+    if (pts.length === 1) cambio('Girar', () => { el.simbolo.giro = ((((el.simbolo.giro ?? 0) + d) % 360) + 360) % 360; tocar(el); });
+    else cambio('Girar', () => moverPuntos(el, simbolos.girarPuntos(pts, d, centro)));
+  }
+  const iman5 = (d, fino) => (fino ? Math.round(d) : Math.round(d / 5) * 5);
+  let burbuja = null;
+  function ponerBurbuja(q, texto) {
+    if (!burbuja) { burbuja = document.createElement('div'); burbuja.className = 'giro-burbuja'; mapa.getContainer().parentElement.append(burbuja); }
+    const r = mapa.getContainer().getBoundingClientRect(), c = mapa.getContainer().parentElement.getBoundingClientRect();
+    burbuja.style.left = `${q.x + r.left - c.left}px`; burbuja.style.top = `${q.y + r.top - c.top}px`; burbuja.textContent = texto;
+  }
+  const quitarBurbuja = () => { burbuja?.remove(); burbuja = null; };
+
+  /**
+   * Asas de un símbolo girable: ↻ encima para girarlo (se arrastra alrededor
+   * del centro, de 5 en 5 grados; con Mayús, de 1 en 1) y ✥ en el centro para
+   * moverlo entero. El giro se ve en directo y se guarda al soltar.
+   */
   function asasGiro(el) {
     const pts = puntosDe(el);
-    const centro = { lat: pts.reduce((s, p) => s + p.lat, 0) / pts.length, lon: pts.reduce((s, p) => s + p.lon, 0) / pts.length };
+    const centro = centroDe(pts);
     const cpx = px(centro);
     const arriba = pts.length > 1 ? Math.min(...pts.map((p) => px(p).y)) : cpx.y;
-    const pGiro = mapa.containerPointToLatLng([cpx.x, Math.min(arriba, cpx.y) - 46]);
-    const ang = (q) => (Math.atan2(q.x - cpx.x, -(q.y - cpx.y)) * 180) / Math.PI;
-    const giro = L.marker(pGiro, { icon: L.divIcon({ className: 'asa asa-giro', html: '↻', iconSize: [24, 24] }), draggable: true, title: 'Arrastra para girar' });
+    const radioPx = Math.max(46, cpx.y - Math.min(arriba, cpx.y) + 40);
+    const pGiro = mapa.containerPointToLatLng([cpx.x, cpx.y - radioPx]);
+    const giro = L.marker(pGiro, { icon: L.divIcon({ className: 'asa asa-giro', html: '↻', iconSize: [26, 26] }), keyboard: false, title: 'Arrastra alrededor para girar (Mayús: de 1 en 1)' });
     const guia = L.polyline([[centro.lat, centro.lon], pGiro], { pane: 'borrador', color: '#E0B252', weight: 1.5, dashArray: '3 4', interactive: false });
-    let a0 = 0, giro0 = 0;
-    giro.on('dragstart', () => { document.body.classList.add('arrastrando'); a0 = ang(px({ lat: pGiro.lat, lon: pGiro.lng })); giro0 = el.simbolo.giro ?? 0; });
-    const nuevo = () => { const ll = giro.getLatLng(); const d = ang(px({ lat: ll.lat, lon: ll.lng })) - a0; return Math.round(d); };
-    giro.on('drag', () => {
-      const d = nuevo(); guia.setLatLngs([[centro.lat, centro.lon], giro.getLatLng()]);
-      if (pts.length === 1) { el.simbolo.giro = giro0 + d; pintarElemento(el); el.simbolo.giro = giro0; } else pintarElemento(el, simbolos.girarPuntos(pts, d, centro));
-      avisoBreve(`Girando ${((d % 360) + 360) % 360}°`);
-    });
-    giro.on('dragend', () => {
-      document.body.classList.remove('arrastrando');
-      const d = nuevo(); if (!d) { pintarAsas(); return; }
-      if (pts.length === 1) cambio('Girar', () => { el.simbolo.giro = (((giro0 + d) % 360) + 360) % 360; tocar(el); });
-      else cambio('Girar', () => moverPuntos(el, simbolos.girarPuntos(pts, d, centro)));
+    const angulo = (x, y) => (Math.atan2(x - cpx.x, -(y - cpx.y)) * 180) / Math.PI;
+    giro.on('add', () => {
+      const dom = giro.getElement(); if (!dom) return;
+      L.DomEvent.disableClickPropagation(dom);
+      dom.addEventListener('pointerdown', (e) => {
+        if (e.button !== 0) return;
+        e.preventDefault(); e.stopPropagation();
+        mapa.dragging.disable(); dom.setPointerCapture(e.pointerId); dom.classList.add('girando');
+        document.body.classList.add('girando');
+        const rc = mapa.getContainer().getBoundingClientRect();
+        const a0 = angulo(e.clientX - rc.left, e.clientY - rc.top), o0 = orientacion(el);
+        let d = 0;
+        const mover = (ev) => {
+          d = iman5(angulo(ev.clientX - rc.left, ev.clientY - rc.top) - a0, ev.shiftKey);
+          const rad = ((angulo(ev.clientX - rc.left, ev.clientY - rc.top)) * Math.PI) / 180;
+          const q = L.point(cpx.x + radioPx * Math.sin(rad), cpx.y - radioPx * Math.cos(rad));
+          const ll = mapa.containerPointToLatLng(q);
+          giro.setLatLng(ll); guia.setLatLngs([[centro.lat, centro.lon], ll]);
+          verGirado(el, pts, d, centro);
+          ponerBurbuja(q, `${(((o0 + d) % 360) + 360) % 360}°`);
+        };
+        const soltar = () => {
+          dom.removeEventListener('pointermove', mover); dom.removeEventListener('pointerup', soltar); dom.removeEventListener('pointercancel', soltar);
+          mapa.dragging.enable(); document.body.classList.remove('girando'); quitarBurbuja();
+          girarGuardar(el, pts, d, centro);
+        };
+        dom.addEventListener('pointermove', mover); dom.addEventListener('pointerup', soltar); dom.addEventListener('pointercancel', soltar);
+      });
     });
     capaAsas.addLayer(guia).addLayer(giro);
     if (pts.length > 1) {
@@ -210,6 +285,37 @@ export function iniciarDibujo({ L, mapa, herramienta, elegirHerramienta, fmt, al
       mover.on('dragend', () => { document.body.classList.remove('arrastrando'); cambio('Mover', () => moverPuntos(el, desplazar())); });
       capaAsas.addLayer(mover);
     }
+  }
+
+  // Rueda de giro de la ficha: se arrastra la aguja (o se escribe el rumbo)
+  panelGiro();
+  function panelGiro() {
+    const panelEl = document.getElementById('panel-elemento'); if (!panelEl) return;
+    panelEl.addEventListener('pointerdown', (e) => {
+      const dial = e.target.closest('.dial'); if (!dial || e.button !== 0) return;
+      const el = seleccion && buscar(seleccion); if (!el?.simbolo) return;
+      e.preventDefault(); dial.setPointerCapture(e.pointerId);
+      const pts = puntosDe(el), centro = centroDe(pts), o0 = orientacion(el);
+      const r = dial.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+      const objetivo = (ev) => iman5((Math.atan2(ev.clientX - cx, -(ev.clientY - cy)) * 180) / Math.PI, ev.shiftKey);
+      let d = 0;
+      const mover = (ev) => {
+        const o = ((objetivo(ev) % 360) + 360) % 360; d = o - o0;
+        dial.style.setProperty('--a', String(o));
+        const inp = panelEl.querySelector('#dial-grados'); if (inp) inp.value = String(o);
+        verGirado(el, pts, d, centro);
+      };
+      const soltar = () => { dial.removeEventListener('pointermove', mover); dial.removeEventListener('pointerup', soltar); dial.removeEventListener('pointercancel', soltar); girarGuardar(el, pts, d, centro); };
+      dial.addEventListener('pointermove', mover); dial.addEventListener('pointerup', soltar); dial.addEventListener('pointercancel', soltar);
+      mover(e);
+    });
+    panelEl.addEventListener('change', (e) => {
+      if (e.target.id !== 'dial-grados') return;
+      const el = seleccion && buscar(seleccion); if (!el?.simbolo) return;
+      const v = Number(String(e.target.value).replace(',', '.')); if (!Number.isFinite(v)) return;
+      const pts = puntosDe(el);
+      girarGuardar(el, pts, (((v % 360) + 360) % 360) - orientacion(el), centroDe(pts));
+    });
   }
 
   function quitarVertice(el, i) {
@@ -226,7 +332,7 @@ export function iniciarDibujo({ L, mapa, herramienta, elegirHerramienta, fmt, al
     seleccion = id && buscar(id) ? id : null;
     if (seleccion) tomarFicha(DUENO);
     capaCursorPerfil.clearLayers();
-    pintarTodo(); pintarPanel(); pintarLista();
+    pintarTodo(); pintarPanel(); avisar();
     const el = seleccion && buscar(seleccion);
     if (el && centrar) {
       const pts = el.tipo === 'circulo' ? puntosCirculo(puntosDe(el)[0], el.propiedades.radio, 36) : puntosDe(el);
@@ -235,11 +341,11 @@ export function iniciarDibujo({ L, mapa, herramienta, elegirHerramienta, fmt, al
       else mapa.flyToBounds(b, { padding: [80, 80], maxZoom: 16, duration: 0.6 });
     }
   }
-  alPerderFicha(DUENO, () => { if (seleccion || borrador) { seleccion = null; if (borrador) cancelarBorrador(); pintarTodo(); pintarLista(); } });
+  alPerderFicha(DUENO, () => { if (seleccion || borrador) { seleccion = null; if (borrador) cancelarBorrador(); pintarTodo(); avisar(); } });
 
   // ---------------------------------------------------------- dibujar
   function empezar(tipo) {
-    seleccion = null; tomarFicha(DUENO); pintarTodo(); pintarLista();
+    seleccion = null; tomarFicha(DUENO); pintarTodo(); avisar();
     borrador = { tipo, puntos: [], cursor: null };
     pintarBorrador(); pintarPanel();
   }
@@ -288,7 +394,7 @@ export function iniciarDibujo({ L, mapa, herramienta, elegirHerramienta, fmt, al
     if (pts.length < TIPOS[b.tipo].min) { avisoBreve(`Faltan puntos: una ${TIPOS[b.tipo].nombre.toLowerCase()} necesita al menos ${TIPOS[b.tipo].min}`); return; }
     if (b.n && pts.length < b.n) { avisoBreve(`Faltan puntos: este símbolo necesita ${b.n}`); return; }
     const el = cambio(b.simbolo ? `Colocar ${b.nombreSimbolo || 'símbolo'}` : `Dibujar ${TIPOS[b.tipo].nombre.toLowerCase()}`, (p) => {
-      const e = nuevoElemento(b.tipo, pts.slice(), { radio, bando: preferencias.bando, estado: preferencias.estado });
+      const e = nuevoElemento(b.tipo, pts.slice(), { radio, bando: preferencias.bando, estado: preferencias.estado, paquete: activoValido() });
       if (b.simbolo) { e.simbolo = JSON.parse(JSON.stringify(b.simbolo)); simbolos?.alCrear(e); }
       p.elementos.push(e); return e;
     });
@@ -297,11 +403,24 @@ export function iniciarDibujo({ L, mapa, herramienta, elegirHerramienta, fmt, al
     seleccionar(el.id);
   }
 
+  /** Paquete donde entra lo nuevo (si sigue existiendo). Si está oculto, se vuelve a mostrar. */
+  function activoValido() {
+    if (!activo || !buscarPaquete(plan, activo)) return null;
+    const cadena = new Set(nombreRutaIds(activo));
+    if (vista.ocultos.some((id) => cadena.has(id)) || (vista.solo && !cadena.has(vista.solo))) {
+      vista.ocultos = vista.ocultos.filter((id) => !cadena.has(id));
+      if (vista.solo && !cadena.has(vista.solo)) vista.solo = null;
+      guardarVista();
+    }
+    return activo;
+  }
+  const nombreRutaIds = (id) => { const out = []; for (let o = buscarPaquete(plan, id); o && !out.includes(o.id); o = buscarPaquete(plan, o.padre)) out.push(o.id); return out; };
+
   /** Crea un elemento con símbolo ya colocado (clic con unidad elegida o arrastrar y soltar). */
   function crearConSimbolo(simbolo, pts, tipo, nombre = 'símbolo') {
     if (borrador) cancelarBorrador();
     const el = cambio(`Colocar ${nombre}`, (p) => {
-      const e = nuevoElemento(tipo, pts.slice(), { bando: preferencias.bando, estado: preferencias.estado });
+      const e = nuevoElemento(tipo, pts.slice(), { bando: preferencias.bando, estado: preferencias.estado, paquete: activoValido() });
       e.simbolo = JSON.parse(JSON.stringify(simbolo)); simbolos?.alCrear(e);
       p.elementos.push(e); return e;
     });
@@ -465,7 +584,8 @@ export function iniciarDibujo({ L, mapa, herramienta, elegirHerramienta, fmt, al
         ${fs.html}
         ${el.simbolo.clase === 'medida' ? htmlColor({ bando: el.propiedades.bando, color: el.propiedades.color }, 'el-bando') : ''}
         ${estado}
-        <label class="el-nombre">Nombre <input id="el-nombre" value="${esc(el.propiedades.nombre)}" placeholder="${el.simbolo.clase === 'unidad' ? 'Opcional' : 'Ej.: ROJA, 1, NORTE'}" maxlength="60"></label>
+        <label class="el-nombre">Nombre <input id="el-nombre" value="${esc(el.propiedades.nombre)}" placeholder="${el.simbolo.clase === 'unidad' ? 'Opcional' : `${esc(simbolos?.siglaDe?.(el) || 'Ej.: PL ROJA')} (si lo dejas vacío)`}" maxlength="60"></label>
+        ${htmlPaquete(el)}
         ${pos}
         ${nVert ? `<details class="el-vert" ${verticesAbiertos ? 'open' : ''}><summary>Puntos (${pts.length})</summary><ol>${pts.map((p, i) => `<li><span class="v-letra">${i + 1}</span><code>${esc(fmt.coord(p))}</code>${fijos(el) ? '' : `<button type="button" data-quitar-v="${i}" title="Quitar punto" aria-label="Quitar punto">×</button>`}</li>`).join('')}</ol></details>` : ''}
         <div class="pm-acciones"><button type="button" data-acc="centrar">Centrar</button><button type="button" data-acc="duplicar">Duplicar</button><button type="button" data-acc="borrar" class="peligro">Borrar</button><button type="button" data-acc="cerrar">Cerrar</button></div>`;
@@ -476,6 +596,7 @@ export function iniciarDibujo({ L, mapa, herramienta, elegirHerramienta, fmt, al
     panel.dataset.dueno = DUENO;
     panel.innerHTML = `<div class="pm-cab"><strong><span class="muestra-bando" style="--c:${est.color}"></span>${esc(titulo(el))}</strong><span>${TIPOS[el.tipo].nombre}</span></div>
       <label class="el-nombre">Nombre <input id="el-nombre" value="${esc(el.propiedades.nombre)}" placeholder="Sin nombre (ej.: PL ROJA, OBJ 1)" maxlength="60"></label>
+      ${htmlPaquete(el)}
       ${htmlColor({ bando: el.propiedades.bando, color: el.propiedades.color }, 'el-bando')}
       ${cuerpo}
       ${nVert ? `<details class="el-vert" ${verticesAbiertos ? 'open' : ''}><summary>Puntos (${pts.length})</summary><ol>${pts.map((p, i) => `<li><span class="v-letra">${i + 1}</span><code>${esc(fmt.coord(p))}</code><button type="button" data-quitar-v="${i}" title="Quitar punto" aria-label="Quitar punto">×</button></li>`).join('')}</ol></details>` : ''}
@@ -483,6 +604,18 @@ export function iniciarDibujo({ L, mapa, herramienta, elegirHerramienta, fmt, al
     mostrarPanel(true);
     if (el.tipo === 'punto') rellenarAltitud(alturas, pts[0]);
     if (el.tipo === 'linea') rellenarPerfil(pts, alturas, `plan/${el.id}/${el.version}`, marcarPerfil).catch(() => {});
+  }
+
+  /** Desplegable «Operación» de la ficha: en qué paquete está el objeto. */
+  function htmlPaquete(el) {
+    const ops = [];
+    const rec = (padre, niv) => { for (const o of paquetes(plan).filter((x) => (x.padre ?? null) === padre)) { ops.push({ o, niv }); rec(o.id, niv + 1); } };
+    rec(null, 0);
+    const actual = el.paquete && buscarPaquete(plan, el.paquete) ? el.paquete : '';
+    return `<label class="el-op"><span class="el-et">Operación</span><select id="el-paquete" class="v-select">
+      <option value="">Ninguna</option>
+      ${ops.map(({ o }) => `<option value="${o.id}" ${o.id === actual ? 'selected' : ''}>${esc(nombreRuta(plan, o.id))}</option>`).join('')}
+      <option value="__nueva">+ Nueva operación…</option></select></label>`;
   }
 
   function marcarPerfil(p) {
@@ -532,6 +665,19 @@ export function iniciarDibujo({ L, mapa, herramienta, elegirHerramienta, fmt, al
     const el = seleccion && buscar(seleccion);
     if (el?.simbolo && simbolos?.manejarFicha(ev, el, tocarYPintar(el))) return;
     if (ev.target.id === 'el-nombre' && el) { const v = ev.target.value.trim(); cambio('Cambiar nombre', () => { el.propiedades.nombre = v; tocar(el); }); }
+    if (ev.target.id === 'el-paquete' && el) {
+      const v = ev.target.value;
+      if (v === '__nueva') {
+        preguntar({ titulo: 'Nueva operación', texto: 'El objeto entrará en ella, y lo que pintes a partir de ahora también.', campo: { ayuda: 'Nombre (ej.: OP NORTE)' }, opciones: [{ v: 'crear', texto: 'Crear', clase: 'primario' }, { v: 'cancelar', texto: 'Cancelar' }] })
+          .then((r) => {
+            if (!r) { pintarPanel(); return; }
+            const o = cambio(`Crear «${r.texto || 'Operación'}»`, (p) => { const n = nuevoPaquete(p, r.texto || 'Operación'); asignar(p, [el.id], n.id); return n; });
+            ponerActivo(o.id); avisoBreve(`«${o.nombre}» creada. Lo que pintes entra en ella.`);
+          });
+        return;
+      }
+      cambio(v ? `Meter en «${buscarPaquete(plan, v)?.nombre}»` : 'Sacar de la operación', (p) => asignar(p, [el.id], v || null));
+    }
     if (ev.target.dataset.campo === 'el-bando-libre' && el) { const v = ev.target.value; cambio('Cambiar color', () => { el.propiedades.color = v; tocar(el); }); }
   });
   panel.addEventListener('submit', (ev) => {
@@ -557,19 +703,54 @@ export function iniciarDibujo({ L, mapa, herramienta, elegirHerramienta, fmt, al
     const pts = puntosDe(el).map((p) => destino(p, 135, d));
     const nuevo = nuevoElemento(el.tipo, pts.map((q) => ({ lat: q.lat, lon: q.lon })), { radio: el.propiedades.radio, bando: el.propiedades.bando, estado: el.propiedades.estado });
     nuevo.propiedades = { ...copia.propiedades }; if (copia.simbolo) nuevo.simbolo = copia.simbolo;
+    nuevo.paquete = copia.paquete ?? null;
     cambio('Duplicar', (p) => { p.elementos.push(nuevo); });
     seleccionar(nuevo.id);
   }
 
   function borrarSeleccion() {
     const el = seleccion && buscar(seleccion); if (!el) return;
-    const nombre = titulo(el);
-    cambio(`Borrar ${nombre}`, (p) => { p.elementos = p.elementos.filter((e) => e.id !== el.id); });
-    seleccion = null; pintarTodo(); pintarPanel(); pintarLista();
-    avisoBreve(`«${nombre}» borrado. Ctrl+Z para recuperarlo.`);
+    borrar([el.id]);
   }
 
-  // ---------------------------------------------------------- lista
+  /**
+   * Borra objetos. Si alguno está en una operación pregunta antes: quitarlo
+   * solo del paquete (sigue en el mapa, suelto) o borrarlo del todo.
+   * `modo`: 'preguntar' | 'paquete' | 'todo'. Devuelve lo que se hizo.
+   */
+  async function borrar(ids, modo = 'preguntar') {
+    const els = ids.map(buscar).filter(Boolean); if (!els.length) return null;
+    const enPaquete = els.filter((e) => e.paquete && buscarPaquete(plan, e.paquete));
+    if (modo === 'preguntar' && enPaquete.length) {
+      const uno = els.length === 1;
+      const donde = [...new Set(enPaquete.map((e) => nombreRuta(plan, e.paquete)))];
+      modo = await preguntar({
+        titulo: uno ? `¿Borrar «${titulo(els[0])}»?` : `¿Borrar ${els.length} objetos?`,
+        texto: `${uno ? 'Está' : `${enPaquete.length} están`} en ${donde.length === 1 ? `«${donde[0]}»` : `${donde.length} operaciones`}.`,
+        opciones: [
+          { v: 'paquete', texto: 'Quitar solo de la operación', detalle: 'Sigue en el mapa, sin operación' },
+          { v: 'todo', texto: 'Borrar del todo', detalle: 'Desaparece del mapa y de la operación', clase: 'peligro' },
+          { v: 'cancelar', texto: 'Cancelar' },
+        ],
+      });
+      if (!modo) return null;
+    }
+    if (modo === 'paquete') {
+      cambio(els.length === 1 ? `Quitar «${titulo(els[0])}» de su operación` : `Quitar ${els.length} objetos de su operación`, (p) => asignar(p, els.map((e) => e.id), null));
+      avisoBreve(els.length === 1 ? `«${titulo(els[0])}» ya no está en ninguna operación.` : `${els.length} objetos fuera de su operación.`);
+      return 'paquete';
+    }
+    const nombre = els.length === 1 ? `«${titulo(els[0])}»` : `${els.length} objetos`;
+    const set = new Set(els.map((e) => e.id));
+    cambio(`Borrar ${nombre}`, (p) => { p.elementos = p.elementos.filter((e) => !set.has(e.id)); });
+    if (set.has(seleccion)) seleccion = null;
+    resaltados = new Set([...resaltados].filter((id) => !set.has(id)));
+    pintarTodo(); pintarPanel(); avisar();
+    avisoBreve(`${nombre[0].toUpperCase()}${nombre.slice(1)} borrado${els.length > 1 ? 's' : ''}. Ctrl+Z para recuperar${els.length > 1 ? 'los' : 'lo'}.`);
+    return 'todo';
+  }
+
+  // ---------------------------------------------------------- resumen (para listas)
   function resumen(el) {
     const m = medidasDe(el);
     if (m.tipo === 'punto') return fmt.coord(m.posicion);
@@ -577,18 +758,12 @@ export function iniciarDibujo({ L, mapa, herramienta, elegirHerramienta, fmt, al
     if (m.tipo === 'area') return formatearArea(m.area);
     return `r ${fmt.metros(m.radio)}`;
   }
-  function pintarLista() {
-    const caja = $('plan-lista'); if (!caja) return;
-    $('plan-cuenta').textContent = plan.elementos.length ? `(${plan.elementos.length})` : '';
-    if (!plan.elementos.length) { caja.innerHTML = '<p class="plan-vacio">Aún no hay nada dibujado. Usa Punto, Línea, Área o Círculo.</p>'; return; }
-    caja.innerHTML = plan.elementos.map((el) => {
-      const est = estiloDe(el);
-      return `<button type="button" class="plan-el" data-el="${el.id}" aria-pressed="${el.id === seleccion}">
-      ${(el.simbolo && simbolos?.icono(el)) ? `<span class="pe-sim">${simbolos.icono(el)}</span>` : `<svg viewBox="0 0 24 24" style="--c:${est.color}" ${est.trazo !== 'continuo' ? 'class="previsto"' : ''}>${ICONOS[el.tipo]}</svg>`}
-      <span class="pe-nom">${esc(titulo(el))}</span><span class="pe-med">${esc(resumen(el))}</span></button>`;
-    }).join('');
+  /** Icono pequeño (símbolo APP-6 o forma). */
+  function iconoDe(el) {
+    if (el.simbolo && simbolos?.icono(el)) return simbolos.icono(el);
+    const est = estiloDe(el);
+    return `<svg class="forma${est.trazo !== 'continuo' ? ' previsto' : ''}" viewBox="0 0 24 24" style="--c:${est.color}">${ICONOS[el.tipo]}</svg>`;
   }
-  $('plan-lista')?.addEventListener('click', (ev) => { const b = ev.target.closest('[data-el]'); if (b) seleccionar(b.dataset.el, { centrar: true }); });
 
   // ---------------------------------------------------------- deshacer / rehacer
   function pintarBotones() {
@@ -625,7 +800,7 @@ export function iniciarDibujo({ L, mapa, herramienta, elegirHerramienta, fmt, al
     if (seleccion && e.key === 'Escape') seleccionar(null);
   });
 
-  pintarTodo(); pintarLista(); pintarBotones();
+  pintarTodo(); avisar(); pintarBotones();
   const arrastrandoAlgo = () => document.body.classList.contains('arrastrando');
 
   return {
@@ -643,12 +818,34 @@ export function iniciarDibujo({ L, mapa, herramienta, elegirHerramienta, fmt, al
     anadir(elementos, desc = 'Añadir al plan') {
       return cambio(desc, (p) => { for (const e of elementos) p.elementos.push(e); return elementos; });
     },
-    refrescar() { pintarTodo(); pintarPanel(); pintarLista(); },
+    refrescar() { pintarTodo(); pintarPanel(); avisar(); },
     /** Vuelve a pintar el mapa (al cambiar el zoom: tamaños y rótulos). */
     repintar() { if (!arrastrandoAlgo()) pintarTodo(); },
     crearConSimbolo, puntosDe,
     moverTodo(el, pts, desc = 'Mover') { cambio(desc, () => moverPuntos(el, pts)); },
     get dibujando() { return Boolean(borrador); },
     get seleccion() { return seleccion; },
+    // ---- operaciones, listas y selección múltiple
+    /** Cambio que se puede deshacer (para otros paneles). */
+    cambio,
+    /** Llama a `f` cada vez que cambia algo (plan, selección, vista). Devuelve cómo dejar de escuchar. */
+    suscribir(f) { oyentes.add(f); return () => oyentes.delete(f); },
+    borrar, titulo, resumen, iconoDe, visible, orientacion,
+    /** Vista de este usuario: { ocultos, solo, sueltosOcultos }. */
+    get vista() { return vista; },
+    ponerVista(cambios) { Object.assign(vista, cambios); vista.ocultos = [...new Set(vista.ocultos)]; guardarVista(); pintarTodo(); pintarPanel(); avisar(); },
+    get activo() { return activo && buscarPaquete(plan, activo) ? activo : null; },
+    ponerActivo,
+    /** Marca objetos en el mapa con un halo (lazo, selección en Objetos). */
+    resaltar(ids) { resaltados = new Set(ids); pintarTodo(); },
+    get resaltados() { return [...resaltados]; },
+    /** Encuadra unos objetos. */
+    encuadrar(ids) {
+      const pts = ids.map(buscar).filter(Boolean).flatMap((el) => (el.tipo === 'circulo' ? puntosCirculo(puntosDe(el)[0], el.propiedades.radio, 24) : puntosDe(el)));
+      if (!pts.length) return;
+      const b = L.latLngBounds(pts.map((p) => [p.lat, p.lon]));
+      if (pts.length === 1) mapa.flyTo(b.getCenter(), Math.max(mapa.getZoom(), 14), { duration: 0.6 });
+      else mapa.flyToBounds(b, { padding: [90, 90], maxZoom: 16, duration: 0.6 });
+    },
   };
 }

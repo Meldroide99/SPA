@@ -146,7 +146,8 @@ export function geometria(m, anclas, props = {}) {
   const RT = (pts, texto, opc = {}) => { if (texto || opc.lados) out.rotulos.push({ pts: pts.map(g), texto, ...opc }); };
   const G = (p, gl, opc = {}) => out.glifos.push({ pos: g(p), ...gl, ...opc });
   const nombre = props.nombre ?? '';
-  const etiqueta = [m.sigla, nombre].filter(Boolean).join(' ');
+  // Nombre del usuario si lo ha puesto; si no, la sigla de base (PL, LD…)
+  const etiqueta = nombre || m.sigla || '';
   const color = m.color ?? props.color;
   const disc = Boolean(m.discontinua);
 
@@ -337,7 +338,7 @@ export function geometria(m, anclas, props = {}) {
     if (v === 'frontal') { const n = cuerpo.nFin, f = sum(cuerpo.fin, mul(cuerpo.dFin, px(4))); L([sum(f, mul(n, ancho)), sum(f, mul(n, -ancho))]); }
     if (v === 'envolvente') { const c = Q[0], d0 = uni(res(Q[1], Q[0])), n0 = perp(d0), w = ancho; const cc = sum(c, mul(d0, w)); L([sum(cc, sum(mul(d0, -w * 0.8), mul(n0, w))), sum(cc, sum(mul(d0, w * 0.8), mul(n0, -w)))]); L([sum(cc, sum(mul(d0, -w * 0.8), mul(n0, -w))), sum(cc, sum(mul(d0, w * 0.8), mul(n0, w)))]); }
     if (v === 'contraataque-fuego') { const f = cuerpo.fin, d = cuerpo.dFin, l = ancho * 0.9; L([f, sum(f, mul(d, l))]); L(punta(sum(f, mul(d, l)), d, ancho * 0.3)); }
-    const txt = [m.sigla, nombre].filter(Boolean).join(' ');
+    const txt = nombre || m.sigla || '';
     T(cMed, txt, { rumbo: angulo(dir) - 90, negrita: true, tam: 13 });
   }
   function direccion(Q) {

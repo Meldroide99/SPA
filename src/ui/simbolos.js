@@ -333,6 +333,7 @@ export function iniciarSimbolos({ L, mapa, elegirHerramienta, herramienta = () =
     if (pestaña) est.pestaña = pestaña;
     panel.hidden = !si;
     document.querySelectorAll('[data-simbolos]').forEach((b) => b.setAttribute('aria-pressed', String(si && b.dataset.simbolos === est.pestaña)));
+    document.getElementById('btn-app6')?.setAttribute('aria-pressed', String(si));
     if (!si) { armada = null; document.body.classList.remove('sim-armado'); }
     if (si) { pausado = false; pintarPanel(); }
     guardar();
@@ -342,9 +343,9 @@ export function iniciarSimbolos({ L, mapa, elegirHerramienta, herramienta = () =
   function pintarPanel() {
     if (panel.hidden) return;
     const scroll = panel.querySelector('.sim-cuerpo')?.scrollTop ?? 0;
-    const cab = `<div class="pm-cab"><strong>Símbolos</strong><button type="button" class="pm-x" data-s="cerrar" aria-label="Cerrar">×</button></div>
+    const cab = `<div class="pm-cab v-cab"><strong>Símbolos APP-6</strong><span class="v-sub"></span><button type="button" class="pm-x" data-s="cerrar" aria-label="Cerrar">×</button></div>
       <input class="sim-buscar" id="sim-buscar" placeholder="Buscar: «sección paracaidista», «carro», «PL», «bloquear»…" value="${esc(est.busqueda)}" autocomplete="off">
-      <div class="seg sim-pestanas">${[['unidades', 'Unidades'], ['medidas', 'Medidas'], ['cometidos', 'Cometidos']].map(([k, n]) => `<button type="button" data-pestana="${k}" aria-pressed="${est.pestaña === k}">${n}</button>`).join('')}</div>
+      <div class="seg sim-pestanas">${[['unidades', 'Unidades'], ['medidas', 'Líneas de coordinación'], ['cometidos', 'Cometidos']].map(([k, n]) => `<button type="button" data-pestana="${k}" aria-pressed="${est.pestaña === k}">${n}</button>`).join('')}</div>
       ${est.recientes.length ? `<div class="sim-recientes"><span class="el-et">Recientes <small>(clic o arrastra al mapa)</small></span><div>${est.recientes.map((r, i) => `<button type="button" class="sim-chip" data-reciente="${i}" data-arrastrar title="${esc(tituloSimbolo(r))}">${r.clase === 'unidad' ? miniUnidad(r, 18) : miniMedida(medida(r.id), AZUL, 34, 20)}</button>`).join('')}</div></div>` : ''}`;
     let cuerpo;
     if (est.busqueda.trim()) cuerpo = htmlBusqueda(est.busqueda.trim());
@@ -424,7 +425,7 @@ export function iniciarSimbolos({ L, mapa, elegirHerramienta, herramienta = () =
   function htmlBusqueda(q) {
     const cands = [
       ...candidatosUnidad().map((c) => ({ ...c, grupo: c.tipo.conjunto === '15' ? 'Material' : c.tipo.conjunto === '20' ? 'Instalación' : c.tipo.conjunto === '11' ? 'Civil' : 'Unidad' })),
-      ...MEDIDAS.filter((m) => !m.oculto).map((m) => ({ grupo: m.grupo === 'cometidos' ? 'Cometido' : 'Medida', texto: m.nombre, extra: `${m.sigla ?? ''} ${m.claves ?? ''} ${GRUPOS[m.grupo]}`, medida: m })),
+      ...MEDIDAS.filter((m) => !m.oculto).map((m) => ({ grupo: m.grupo === 'cometidos' ? 'Cometido' : 'Línea de coordinación', texto: m.nombre, extra: `${m.sigla ?? ''} ${m.claves ?? ''} ${GRUPOS[m.grupo]}`, medida: m })),
     ];
     const qn = q.toLowerCase();
     const escalon = ORDEN_ESCALONES.find((k) => k && qn.includes(nombreEscalon(k, 'infanteria').toLowerCase().split(' ')[0]))
@@ -522,12 +523,32 @@ export function iniciarSimbolos({ L, mapa, elegirHerramienta, herramienta = () =
     let grupoAnt = null;
     return opciones.map((o) => { const cab = o.grupo && o.grupo !== grupoAnt ? `<div class="sel-vis-grupo">${esc(o.grupo)}</div>` : ''; grupoAnt = o.grupo; return `${cab}<button type="button" data-elegir="${esc(o.v)}" aria-pressed="${o.v === valor}">${typeof o.ico === 'function' ? o.ico() : o.ico ?? ''}<span>${esc(o.nombre)}</span></button>`; }).join('');
   }
+  // Los desplegables con miniaturas se abren solos al dejar el ratón encima (y se cierran al irse)
+  let tSel = 0, selHover = null, tAbiertaHover = 0;
+  function abrirLista(caja) {
+    tAbiertaHover = performance.now();
+    const lista = caja.querySelector('.sel-vis-lista'); if (!lista || !lista.hidden) return;
+    document.querySelectorAll('.sel-vis-lista').forEach((x) => { x.hidden = true; });
+    lista.innerHTML = htmlLista(caja.dataset.selId); lista.hidden = false;
+    lista.querySelector('[aria-pressed="true"]')?.scrollIntoView({ block: 'nearest' });
+  }
+  document.addEventListener('pointerover', (ev) => {
+    if (ev.pointerType !== 'mouse') return;
+    const caja = ev.target.closest?.('.sel-vis');
+    if (caja === selHover) return;
+    clearTimeout(tSel);
+    if (selHover && !caja) { const ant = selHover; tSel = setTimeout(() => { const l = ant.querySelector('.sel-vis-lista'); if (l && !ant.matches(':hover')) l.hidden = true; }, 320); }
+    selHover = caja;
+    if (caja && ev.target.closest('.sel-vis-btn')) tSel = setTimeout(() => { if (caja.matches(':hover')) abrirLista(caja); }, 260);
+  });
+
   /** Abre/cierra/elige en un selector visual. `elegir(campo, valor)` aplica la elección. */
   function manejarSelector(ev, elegir) {
     const t = ev.target;
     const abrirSel = t.closest('[data-abrir-sel]');
     if (abrirSel) {
       const caja = abrirSel.closest('.sel-vis'), lista = caja.querySelector('.sel-vis-lista'), ab = lista.hidden;
+      if (!ab && performance.now() - tAbiertaHover < 900) return true; // se acaba de abrir sola: el clic no la cierra
       document.querySelectorAll('.sel-vis-lista').forEach((x) => { x.hidden = true; });
       if (ab) { lista.innerHTML = htmlLista(caja.dataset.selId); lista.hidden = false; lista.querySelector('[aria-pressed="true"]')?.scrollIntoView({ block: 'nearest' }); }
       return true;
@@ -564,16 +585,26 @@ export function iniciarSimbolos({ L, mapa, elegirHerramienta, herramienta = () =
     const n = puntosNecesarios(m);
     const giro = m.forma !== 'punto';
     return {
-      titulo: el.propiedades.nombre ? `${m.sigla ? `${m.sigla} ` : ''}${el.propiedades.nombre}` : m.nombre, tipo: GRUPOS[m.grupo],
+      titulo: el.propiedades.nombre || m.nombre, tipo: GRUPOS[m.grupo],
       html: `${selectorVisual('medida', 'Tipo', mismos.map((x) => ({ v: x.id, grupo: GRUPOS[x.grupo], nombre: x.nombre, ico: () => miniMedida(x, AZUL, 40, 24) })), m.id)}
         ${m.campos?.includes('ancho') || m.forma === 'rect' || m.forma === 'corredor' ? `<form class="el-radio" id="sim-ancho"><label>Anchura <input type="number" min="1" step="any" id="sim-ancho-m" value="${s.ancho ? Math.round(s.ancho) : ''}" placeholder="auto"></label><span>m</span><button type="submit">Aplicar</button></form>` : ''}
         ${m.estatico ? `<form class="el-radio" id="sim-tam"><label>Tamaño <input type="number" min="1" step="any" id="sim-tam-m" value="${s.tam ? Math.round(s.tam) : ''}" placeholder="auto"></label><span>m</span><button type="submit">Aplicar</button></form>` : ''}
         ${m.campos?.includes('escalon') ? selectorVisual('escalon', 'Escalón', ORDEN_ESCALONES.map((k) => ({ v: k, nombre: nombreEscalon(k, 'infanteria'), ico: `<b class="marca-esc">${ESCALONES[k].marca ?? '—'}</b>` })), s.escalon ?? '') : ''}
         ${m.id === 'limite' ? `<div class="sim-campos"><label>Unidad a la izquierda <input data-campo-f="izq" value="${esc(s.izq ?? '')}" maxlength="20" placeholder="1/II/4"></label><label>A la derecha <input data-campo-f="der" value="${esc(s.der ?? '')}" maxlength="20" placeholder="2/II/4"></label></div><p class="el-ayuda">Izquierda y derecha según el sentido en que se dibujó la línea.</p>` : ''}
-        ${giro ? `<div class="el-fila sim-giro"><span class="el-et">Girar</span><div class="seg"><button type="button" data-girar="-45">↺ 45°</button><button type="button" data-girar="-15">↺ 15°</button><button type="button" data-girar="15">↻ 15°</button><button type="button" data-girar="45">↻ 45°</button><button type="button" data-girar="180">180°</button></div></div>` : ''}
-        ${n > 1 || m.ayuda ? `<p class="el-ayuda">${esc(ayudaDe(m))} Arrastra los puntos para ajustarlo, el centro (✥) para moverlo entero y la flecha curva (↻) para girarlo.</p>` : ''}`,
+        ${giro ? htmlGiro(el) : ''}
+        ${n > 1 || m.ayuda ? `<p class="el-ayuda">${esc(ayudaDe(m))} Arrastra los puntos para ajustarlo y el centro (✥) para moverlo entero. Para girarlo, arrastra la rueda o la flecha ↻ del mapa (de 5 en 5°; con Mayús, de 1 en 1).</p>` : ''}`,
     };
   }
+
+  /** Rueda de giro: aguja que se arrastra, rumbo exacto y giros rápidos. */
+  function htmlGiro(el) {
+    const o = dibujo?.orientacion?.(el) ?? 0;
+    return `<div class="dial-fila"><div class="dial" style="--a:${o}" title="Arrastra para girar" role="slider" aria-label="Rumbo del símbolo" aria-valuemin="0" aria-valuemax="359" aria-valuenow="${o}"><i></i><b></b></div>
+      <div class="dial-datos"><label>Rumbo <input id="dial-grados" type="number" min="0" max="359" step="1" value="${o}">°</label>
+      <div class="seg"><button type="button" data-girar="-15" title="15° a la izquierda">↺ 15°</button><button type="button" data-girar="15" title="15° a la derecha">↻ 15°</button><button type="button" data-girar="180" title="Darle la vuelta">180°</button></div></div></div>`;
+  }
+  /** Sigla de base de una línea de coordinación (PL, LD…): el nombre si el usuario no pone otro. */
+  const siglaDe = (el) => (el.simbolo?.clase === 'medida' ? medida(el.simbolo.id)?.sigla ?? '' : '');
 
   /** Clics y cambios en la ficha. Devuelve true si los ha atendido. */
   function manejarFicha(ev, el, cambio) {
@@ -657,13 +688,17 @@ export function iniciarSimbolos({ L, mapa, elegirHerramienta, herramienta = () =
   function candidatosBusqueda() {
     return [
       ...candidatosUnidad().map((c) => ({ grupo: 'Símbolos', texto: c.texto, extra: `unidad símbolo ${c.extra}`, detalle: `${CONJUNTOS[c.tipo.conjunto ?? '10'].nombre} · colocar`, accion: () => { Object.assign(est.unidad, { conjunto: c.tipo.conjunto ?? '10', icono: c.tipo.icono, mod1: c.tipo.mod1 ?? '', mod2: c.tipo.mod2 ?? '' }); est.conjunto = c.tipo.conjunto ?? '10'; if (ARMAS.some((a) => a.id === c.arma)) { est.arma = c.arma; est.todo = false; } else est.todo = true; abrir('unidades'); armar({ clase: 'unidad', ...est.unidad }); } })),
-      ...MEDIDAS.filter((m) => !m.oculto).map((m) => ({ grupo: 'Símbolos', texto: m.nombre, extra: `${m.sigla ?? ''} ${m.claves ?? ''} ${m.grupo === 'cometidos' ? 'cometido verbo' : 'medida de coordinación'}`, detalle: m.grupo === 'cometidos' ? 'Cometido · dibujar' : 'Medida · dibujar', accion: () => colocar({ clase: 'medida', id: m.id }) })),
+      ...MEDIDAS.filter((m) => !m.oculto).map((m) => ({ grupo: 'Símbolos', texto: m.nombre, extra: `${m.sigla ?? ''} ${m.claves ?? ''} ${m.grupo === 'cometidos' ? 'cometido verbo' : 'línea de coordinación medida'}`, detalle: m.grupo === 'cometidos' ? 'Cometido · dibujar' : 'Línea de coordinación · dibujar', accion: () => colocar({ clase: 'medida', id: m.id }) })),
     ];
   }
 
   return {
     conectar(d) { dibujo = d; },
-    abrir, pintar, previsualizar, ficha, manejarFicha, alCrear, icono, puntosFijos, girable, girarPuntos, candidatosBusqueda, colocarEn,
+    abrir, pintar, previsualizar, ficha, manejarFicha, alCrear, icono, puntosFijos, girable, girarPuntos, candidatosBusqueda, colocarEn, siglaDe,
+    /** Medida del catálogo (para clasificar los objetos). */
+    medidaDe: (id) => medida(id),
+    /** Código SIDC de una unidad (para exportar). */
+    sidcDe: (el) => (el.simbolo?.clase === 'unidad' ? svgUnidad(el.simbolo).sidc : ''),
     get abierto() { return !panel.hidden; },
     get armado() { return armadoAhora(); },
     actualizarAviso: () => pintarAviso(),

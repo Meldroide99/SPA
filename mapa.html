@@ -3,15 +3,15 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>SPA · Mapa piloto</title>
+<title>SPA · Mapa</title>
 <link rel="stylesheet" href="src/vendor/leaflet/leaflet.css">
 <link rel="stylesheet" href="assets/css/base.css">
 <link rel="stylesheet" href="assets/css/mapa.css">
 </head>
 <body class="app-mapa">
 <div id="app">
-  <header class="barra-sup">
-    <div class="marca"><span class="sello-spa">SPA</span><span class="marca-txt"><strong>Mapa piloto</strong><small>Planeamiento · S3</small></span></div>
+  <header class="barra-sup vidrio">
+    <div class="marca"><span class="sello-spa">SPA</span><span class="marca-txt"><strong>Mapa</strong><small>Planeamiento · S3</small></span></div>
     <form class="buscar" id="buscar" autocomplete="off">
       <input id="buscar-txt" spellcheck="false" placeholder="Buscar: coordenadas, archivos, puntos, mapas, ajustes…" aria-label="Buscar" aria-autocomplete="list" aria-controls="buscar-res">
       <button type="submit">Ir</button>
@@ -23,7 +23,24 @@
         <span>Ajustes</span></button>
       <div class="ajustes" id="ajustes" hidden>
         <div class="aj-cab">Ajustes</div>
-        <details class="aj-sec" data-aj="coordenadas" open>
+        <details class="aj-sec" data-aj="apariencia" open>
+          <summary>Pantalla y ventanas</summary>
+          <div class="aj-cuerpo">
+            <div class="aj-tit">Tema</div>
+            <div class="seg seg-ancho" data-ap="tema"><button type="button" data-v="auto" title="Oscuro sobre el híbrido, claro sobre los mapas">Automático</button><button type="button" data-v="claro">Claro</button><button type="button" data-v="oscuro">Oscuro</button></div>
+            <label class="intensidad aj-int">Transparencia <input type="range" id="ap-transparencia" min="0" max="70" step="5"><output id="ap-transparencia-v"></output></label>
+            <label class="intensidad aj-int">Desenfoque <input type="range" id="ap-desenfoque" min="0" max="40" step="2"><output id="ap-desenfoque-v"></output></label>
+            <label class="intensidad aj-int">Tamaño <input type="range" id="ap-escala" min="80" max="125" step="5"><output id="ap-escala-v"></output></label>
+            <div class="aj-tit">Ventanas sin usar</div>
+            <div class="seg seg-ancho" data-ap="reposo"><button type="button" data-v="0">Nunca</button><button type="button" data-v="4">4 s</button><button type="button" data-v="8">8 s</button><button type="button" data-v="15">15 s</button><button type="button" data-v="30">30 s</button></div>
+            <p class="aj-nota">Pasado ese tiempo se recogen y dejan ver el mapa. Al pasar el ratón por encima se vuelven a abrir. La chincheta de cada ventana la deja fija.</p>
+            <label class="sup sup-auto"><input type="checkbox" id="ap-apartar"><span class="txt"><b>Apartar ventanas al poner objetos</b><small>Se vuelven casi transparentes y dejan pinchar el mapa. Para usarlas, deja el ratón quieto encima.</small></span></label>
+            <label class="sup sup-auto"><input type="checkbox" id="ap-barra"><span class="txt"><b>Barra de herramientas siempre visible</b><small>Si no, aparece al acercar el ratón arriba</small></span></label>
+            <label class="sup sup-auto"><input type="checkbox" id="ap-altitud"><span class="txt"><b>Altitud junto a las coordenadas</b><small>MDT05 del IGN, al metro</small></span></label>
+            <div class="pm-acciones"><button type="button" id="ap-recolocar">Recolocar ventanas</button><button type="button" id="ap-defecto">Valores de fábrica</button></div>
+          </div>
+        </details>
+        <details class="aj-sec" data-aj="coordenadas">
           <summary>Coordenadas y rumbos</summary>
           <div class="aj-cuerpo">
             <div class="aj-tit">Coordenadas (siempre al metro)</div>
@@ -96,16 +113,14 @@
           <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 12h8"/><circle cx="12" cy="12" r="1.2"/></svg><span>Círculo</span></button>
       </div>
       <div class="h-grupo" aria-label="Símbolos APP-6">
-        <button type="button" data-simbolos="unidades" aria-pressed="false" title="Unidades (APP-6): constructor guiado y recientes">
-          <svg viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="12"/><path d="M3 7l18 12M3 19 21 7M10 4h4"/></svg><span>Unidad</span></button>
-        <button type="button" data-simbolos="medidas" aria-pressed="false" title="Medidas de coordinación: líneas, ejes, zonas y puntos">
-          <svg viewBox="0 0 24 24"><path d="M3 16h18M3 16v-3M21 16v-3"/><path d="M6 8h9l3 3-3 3"/></svg><span>Medida</span></button>
-        <button type="button" data-simbolos="cometidos" aria-pressed="false" title="Cometidos tácticos (verbos): bloquear, fijar, destruir…">
-          <svg viewBox="0 0 24 24"><path d="M17 4v16M17 12H4"/><path d="M8 9.5 4 12l4 2.5"/></svg><span>Cometido</span></button>
+        <button type="button" id="btn-app6" aria-haspopup="menu" aria-expanded="false" aria-pressed="false" title="Símbolos APP-6: unidades, líneas de coordinación y cometidos">
+          <svg viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="12" rx="1"/><path d="M3 7l18 12M3 19 21 7M10 4h4"/></svg><span>APP-6</span></button>
       </div>
       <div class="h-grupo">
         <button type="button" data-herr="medir" aria-pressed="false" title="Regla: medir distancias y rumbos sin guardar">
           <svg viewBox="0 0 24 24"><path d="M3 17 17 3l4 4L7 21z"/><path d="M7 13l2 2M10 10l2 2M13 7l2 2"/></svg><span>Medir</span></button>
+        <button type="button" data-herr="lazo" aria-pressed="false" title="Lazo: pinta un círculo y selecciona todo lo que hay dentro para exportarlo o enviarlo">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="11" r="7.5" stroke-dasharray="3.2 2.2"/><path d="M12 18.5c0 2 -1.5 3 -3.5 3"/><circle cx="12" cy="11" r="1.3"/></svg><span>Lazo</span></button>
       </div>
       <div class="h-grupo">
         <button type="button" id="deshacer" disabled title="Deshacer (Ctrl+Z)">
@@ -114,28 +129,44 @@
           <svg viewBox="0 0 24 24"><path d="m15 14 5-5-5-5"/><path d="M20 9H10a6 6 0 0 0 0 12h3"/></svg><span>Rehacer</span></button>
       </div>
       <div class="h-grupo">
-        <button type="button" id="btn-plan" aria-pressed="false" title="Lo dibujado y los archivos importados">
-          <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg><span>Plan</span></button>
-        <button type="button" id="ir-piloto" title="Volver a la zona piloto">
-          <svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z" stroke-dasharray="3 2"/><circle cx="12" cy="12" r="2"/></svg><span>Zona</span></button>
+        <button type="button" id="btn-objetos" aria-pressed="false" title="Objetos: todo lo pintado e importado, con filtros, selección y borrado">
+          <svg viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11"/><rect x="3.5" y="4.5" width="3" height="3" rx=".6"/><rect x="3.5" y="10.5" width="3" height="3" rx=".6"/><rect x="3.5" y="16.5" width="3" height="3" rx=".6"/></svg><span>Objetos</span></button>
+        <button type="button" id="btn-operaciones" aria-pressed="false" title="Operaciones: paquetes con fases y saltos para agrupar lo que pintas">
+          <svg viewBox="0 0 24 24"><path d="M3 7.5 12 3l9 4.5-9 4.5z"/><path d="m3 12 9 4.5 9-4.5"/><path d="m3 16.5 9 4.5 9-4.5"/></svg><span>Operaciones</span></button>
       </div>
     </div>
+    <div class="menu-app6 vidrio" id="menu-app6" role="menu" hidden>
+      <button type="button" role="menuitem" data-simbolos="unidades"><svg viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="12" rx="1"/><path d="M3 7l18 12M3 19 21 7M10 4h4"/></svg><span><b>Unidades</b><small>Unidades, material, instalaciones…</small></span></button>
+      <button type="button" role="menuitem" data-simbolos="medidas"><svg viewBox="0 0 24 24"><path d="M3 16h18M3 16v-3M21 16v-3"/><path d="M6 8h9l3 3-3 3"/></svg><span><b>Líneas de coordinación</b><small>Líneas, ejes, zonas y puntos</small></span></button>
+      <button type="button" role="menuitem" data-simbolos="cometidos"><svg viewBox="0 0 24 24"><path d="M17 4v16M17 12H4"/><path d="M8 9.5 4 12l4 2.5"/></svg><span><b>Cometidos</b><small>Bloquear, fijar, destruir…</small></span></button>
+    </div>
 
-    <!-- Panel «Plan»: lo dibujado y lo importado -->
-    <aside class="panel-plan" id="panel-plan" hidden>
-      <div class="pp-cab"><strong>Plan</strong><button type="button" id="plan-cerrar" class="gi-mini" title="Cerrar">×</button></div>
-      <div class="grupo-tit">Dibujado <span id="plan-cuenta"></span></div>
-      <div class="plan-lista" id="plan-lista"></div>
-      <p class="plan-nota">Se guarda en este navegador. Guardar en archivo y exportar: fase 5.</p>
-      <div class="grupo-tit">Archivos importados <span id="importados-cuenta"></span></div>
-      <div id="importados-lista"></div>
-      <div class="pm-acciones"><button type="button" id="btn-importar-datos">Importar archivo…</button></div>
-      <input type="file" id="entrada-datos" multiple hidden accept=".gpx,.kml,.kmz,.zip,.cot">
+    <!-- Objetos: todo lo pintado e importado -->
+    <aside class="ventana panel-objetos" id="panel-objetos" data-ventana="objetos" hidden aria-label="Objetos">
+      <div class="v-cab"><strong>Objetos</strong><span class="v-sub" id="obj-cuenta"></span><button type="button" class="v-x" id="objetos-cerrar" title="Cerrar" aria-label="Cerrar">×</button></div>
+      <div class="v-cuerpo" id="objetos-cuerpo">
+        <div id="objetos-lista"></div>
+        <details class="obj-imp"><summary>Archivos importados <span id="importados-cuenta"></span></summary>
+          <div id="importados-lista"></div>
+          <div class="pm-acciones"><button type="button" id="btn-importar-datos">Importar archivo…</button></div></details>
+      </div>
+      <input type="file" id="entrada-datos" multiple hidden accept=".gpx,.kml,.kmz,.zip,.cot,.json,.spa">
     </aside>
 
-    <aside class="panel-capas" id="panel-capas">
-      <button type="button" class="panel-tit" id="capas-toggle" aria-expanded="true">
-        <svg viewBox="0 0 24 24"><path d="M12 3 2 8l10 5 10-5z"/><path d="m2 13 10 5 10-5"/></svg>Capas</button>
+    <!-- Operaciones: paquetes de datos con fases y saltos -->
+    <aside class="ventana panel-operaciones" id="panel-operaciones" data-ventana="operaciones" hidden aria-label="Operaciones">
+      <div class="v-cab"><strong>Operaciones</strong><span class="v-sub" id="op-cuenta"></span><button type="button" class="v-x" id="operaciones-cerrar" title="Cerrar" aria-label="Cerrar">×</button></div>
+      <div class="v-cuerpo" id="operaciones-cuerpo"></div>
+    </aside>
+
+    <!-- Lazo: selección en círculo para exportar o enviar -->
+    <aside class="ventana panel-lazo" id="panel-lazo" data-ventana="lazo" hidden aria-label="Lazo">
+      <div class="v-cab"><strong>Lazo</strong><span class="v-sub" id="lazo-sub"></span><button type="button" class="v-x" id="lazo-cerrar" title="Cerrar" aria-label="Cerrar">×</button></div>
+      <div class="v-cuerpo" id="lazo-cuerpo"></div>
+    </aside>
+
+    <aside class="ventana panel-capas" id="panel-capas" data-ventana="capas">
+      <div class="v-cab panel-tit" id="capas-toggle"><svg viewBox="0 0 24 24"><path d="M12 3 2 8l10 5 10-5z"/><path d="m2 13 10 5 10-5"/></svg><strong>Capas</strong><span class="v-sub" id="capas-resumen"></span></div>
       <div class="panel-cuerpo" id="capas-cuerpo">
         <details class="seccion" data-sec="fondo" open>
           <summary><span>Fondo</span><span class="sec-val" id="fondo-actual"></span></summary>
@@ -146,7 +177,6 @@
         <details class="seccion" data-sec="mapas">
           <summary><span>Mapas</span><span class="sec-val" id="mapas-cuenta"></span></summary>
           <div class="sec-cuerpo">
-            <label class="sup"><input type="checkbox" data-id="piloto" id="sup-piloto"><span class="txt"><b>Zona piloto</b><small>Guadarrama, unos 20 × 20 km</small></span></label>
             <div id="mapas-importados"></div>
             <div class="pm-acciones"><button type="button" id="btn-importar-mapa">Importar mapa…</button><button type="button" id="btn-buscar-mapas">Buscar en mis mapas…</button><button type="button" id="btn-crear-mapa" class="btn-crear">Crear mapa…</button></div>
             <input type="file" id="entrada-mapa" multiple hidden accept=".sqlite,.mbtiles,.db,.tif,.tiff,.jpg,.jpeg,.png,.jgw,.pgw,.tfw,.wld,.prj,.ecw,.jp2">
@@ -161,24 +191,25 @@
 
     <div class="aviso" id="aviso" hidden role="alert"></div>
     <div class="aviso-breve" id="aviso-breve" hidden role="status"></div>
-    <section class="panel-medida panel-elemento" id="panel-elemento" hidden aria-live="polite"></section>
-    <section class="panel-medida panel-creador" id="panel-creador" hidden aria-label="Creador de mapas"></section>
-    <section class="panel-simbolos" id="panel-simbolos" hidden aria-label="Símbolos"></section>
-    <section class="panel-medida" id="panel-medida" hidden aria-live="polite">
+    <section class="ventana panel-medida panel-elemento" id="panel-elemento" data-ventana="ficha" hidden aria-live="polite"></section>
+    <section class="ventana panel-medida panel-creador" id="panel-creador" data-ventana="creador" hidden aria-label="Creador de mapas"></section>
+    <section class="ventana panel-simbolos" id="panel-simbolos" data-ventana="simbolos" hidden aria-label="Símbolos"></section>
+    <section class="ventana panel-medida" id="panel-medida" data-ventana="regla" hidden aria-live="polite">
       <div class="pm-cab"><strong>Regla</strong><span id="pm-ayuda">Toca el mapa para añadir puntos</span></div>
       <div id="pm-cuerpo"></div>
       <div class="pm-acciones"><button type="button" id="pm-deshacer">Quitar último</button><button type="button" id="pm-nueva">Nueva medida</button></div>
     </section>
+    <div class="pildoras" id="pildoras">
+      <button type="button" class="pildora pildora-op vidrio" id="pildora-op" hidden title="Lo que pintes entra en esta operación. Clic para gestionarla."></button>
+      <div class="pildora pildora-coord vidrio" id="pildora-coord">
+        <span class="be-et" id="be-et">Cursor</span>
+        <span class="be-coord" id="be-coord">—</span>
+        <span class="be-alt" id="be-alt" title="Altitud del terreno (MDT05 del IGN)"></span>
+      </div>
+    </div>
     <div class="velo-soltar" id="velo-soltar" hidden><div>Suelta aquí: GPX, KML/KMZ, paquetes .zip de ATAK, o mapas (.sqlite, .mbtiles, .tif, .jpg + .jgw)</div></div>
   </div>
 
-  <footer class="barra-estado">
-    <div class="be-pos">
-      <span class="be-et" id="be-et">Cursor</span>
-      <span class="be-coord" id="be-coord">—</span>
-      <span class="be-alt" id="be-alt" title="Altitud del terreno (MDT05 del IGN)"></span>
-    </div>
-  </footer>
 </div>
 <dialog id="dialogo"></dialog>
 <script src="src/vendor/leaflet/leaflet.js"></script>

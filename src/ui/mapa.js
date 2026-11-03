@@ -15,6 +15,12 @@ import { prepararRejillas } from '../geo/rejillas.js';
 import { crsDesdeEpsg } from '../geo/crs.js';
 import { buscar, leerCoordenadaFlexible } from './difuso.js';
 import { TIPOS } from '../plan/plan.js';
+import { esPaqueteSpa, abrirPaquete } from '../plan/operaciones.js';
+import { iniciarVentanas } from './ventanas.js';
+import { iniciarApariencia } from './apariencia.js';
+import { iniciarObjetos } from './objetos.js';
+import { iniciarPanelOperaciones } from './panel-operaciones.js';
+import { iniciarLazo } from './lazo.js';
 
 const L = window.L;
 const $ = (id) => document.getElementById(id);
@@ -25,13 +31,14 @@ const CLAVE = 'spa.mapa.estado';
 const estado = {
   angulo: 'grados', coordenadas: 'mgrs', fondo: 'mtn', imagen: 'google', rotulos: true,
   fondoAuto: false, mtnDetalle: false, intensidadCuadricula: 35, simTam: { px: 34 },
-  superpuestas: { cuadricula: true, piloto: true }, secciones: { fondo: true }, ajustesAbiertos: { coordenadas: true }, vista: null,
+  superpuestas: { cuadricula: true }, secciones: { fondo: true }, ajustesAbiertos: { coordenadas: true }, vista: null,
 };
 try { Object.assign(estado, JSON.parse(localStorage.getItem(CLAVE) || '{}')); } catch { /* sin almacenamiento */ }
 if (!FONDOS.some((f) => f.id === estado.fondo)) estado.fondo = ['ortofoto', 'satelite'].includes(estado.fondo) ? 'hibrido' : 'mtn';
 if (!IMAGENES[estado.imagen] || !(estado.version >= 6)) estado.imagen = 'google'; // v0.6: Google por defecto
 estado.version = 6;
 delete estado.superpuestas.vertices;
+delete estado.superpuestas.piloto; // v0.9: sin zona piloto
 const guardar = () => { try { localStorage.setItem(CLAVE, JSON.stringify(estado)); } catch { /* nada */ } };
 
 const metros = (m) => (m >= 1000 ? `${(m / 1000).toLocaleString('es-ES', { minimumFractionDigits: 3, maximumFractionDigits: 3 })} km` : `${m.toLocaleString('es-ES', { maximumFractionDigits: 1 })} m`);
@@ -42,11 +49,12 @@ const alturas = crearServicioAlturas();
 prepararRejillas().catch(() => {}); // ED50 y geoide (mapas antiguos, alturas de ATAK, búsqueda en ED50)
 
 // ---------------------------------------------------------------- mapa
-const piloto = L.latLngBounds([ZONA_PILOTO.sur, ZONA_PILOTO.oeste], [ZONA_PILOTO.norte, ZONA_PILOTO.este]);
+// Vista de la primera vez (sin nada guardado): la zona de Guadarrama
+const vistaInicial = L.latLngBounds([ZONA_PILOTO.sur, ZONA_PILOTO.oeste], [ZONA_PILOTO.norte, ZONA_PILOTO.este]);
 const mapa = L.map('mapa', { zoomControl: true, attributionControl: true, minZoom: 5, maxZoom: 21, doubleClickZoom: false, zoomSnap: 1 });
 mapa.attributionControl.setPrefix('<a href="https://leafletjs.com" target="_blank" rel="noopener">Leaflet</a>');
 L.control.scale({ metric: true, imperial: false, maxWidth: 160, position: 'bottomright' }).addTo(mapa);
-if (estado.vista) mapa.setView(estado.vista.centro, estado.vista.zoom); else mapa.fitBounds(piloto, { padding: [20, 20] });
+if (estado.vista) mapa.setView(estado.vista.centro, estado.vista.zoom); else mapa.fitBounds(vistaInicial, { padding: [20, 20] });
 new ResizeObserver(() => mapa.invalidateSize({ pan: false })).observe($('mapa'));
 mapa.on('moveend', () => { const c = mapa.getCenter(); estado.vista = { centro: [c.lat, c.lng], zoom: mapa.getZoom() }; guardar(); });
 const centro = () => { const c = mapa.getCenter(); return { lat: c.lat, lon: c.lng }; };
@@ -99,7 +107,7 @@ let fondoActual = null;
 let alCambiarFondo = () => {}; // la cuadrícula se pinta en blanco sobre el híbrido
 // eslint-disable-next-line prefer-const
 let importar = null;
-const VERSION = '0.8.0';
+const VERSION = '0.9.0';
 function ponerFondo(id, { automatico = false } = {}) {
   if (!capasFondo[id]) id = 'mtn';
   if (fondoActual) mapa.removeLayer(fondoActual);
@@ -113,7 +121,11 @@ function ponerFondo(id, { automatico = false } = {}) {
   $('fondo-actual').textContent = FONDOS.find((f) => f.id === id).nombre + (id === 'hibrido' ? ` · ${IMAGENES[estado.imagen].nombre}` : '');
   actualizarFecha();
   alCambiarFondo();
+  apariencia?.refrescar(); // tema automático: oscuro sobre el híbrido
+  if ($('capas-resumen')) $('capas-resumen').textContent = FONDOS.find((f) => f.id === id).nombre;
 }
+// eslint-disable-next-line prefer-const
+let apariencia = null;
 $('fondos').innerHTML = FONDOS.map((f) => `<button type="button" class="fondo" data-id="${f.id}" title="${esc(f.detalle)}" aria-pressed="false">
   <span class="muestra muestra-${f.id}"></span><span class="nom">${esc(f.nombre)}</span></button>`).join('');
 $('fondos').addEventListener('click', (ev) => { const b = ev.target.closest('.fondo'); if (b) ponerFondo(b.dataset.id); });
@@ -171,8 +183,8 @@ fondoPorZoom({ forzar: true });
 $('mtn-detalle').checked = Boolean(estado.mtnDetalle);
 $('mtn-detalle').addEventListener('change', (ev) => { estado.mtnDetalle = ev.target.checked; guardar(); capasFondo.mtn.ponerDetalle?.(estado.mtnDetalle); });
 
-// ---------------------------------------------------------------- visualización y zona piloto
-const SELECTORES_OBSTACULO = '.herramientas.visible, .herr-pista, .panel-capas, .panel-plan, .panel-medida, .panel-simbolos, .aviso, .aviso-breve, .leaflet-control-zoom, .leaflet-control-scale, .leaflet-control-attribution';
+// ---------------------------------------------------------------- visualización
+const SELECTORES_OBSTACULO = '.barra-sup, .herramientas.visible, .herr-pista, .ventana, .pildora, .aviso, .aviso-breve, .leaflet-control-zoom, .leaflet-control-scale, .leaflet-control-attribution';
 function obstaculos() {
   const base = $('mapa').getBoundingClientRect();
   return [...document.querySelectorAll(SELECTORES_OBSTACULO)].map((el) => el.getBoundingClientRect()).filter((r) => r.width && r.height)
@@ -180,17 +192,14 @@ function obstaculos() {
 }
 const cuadricula = capaCuadricula(L, mapa, { intensidad: () => estado.intensidadCuadricula / 100, obstaculos, claro: () => fondoActual?.idSpa === 'hibrido' });
 alCambiarFondo = () => { cuadricula.redibujar(); importar?.pintarMapas(); };
-const recolocarEtiquetas = () => requestAnimationFrame(() => { if (mapa.hasLayer(cuadricula)) cuadricula.redibujar(); });
-const zonaPiloto = L.layerGroup([
-  L.rectangle(piloto, { color: '#9A7642', weight: 2, dashArray: '7 5', fill: false, interactive: false }),
-  L.marker([ZONA_PILOTO.norte, ZONA_PILOTO.oeste], { interactive: false, icon: L.divIcon({ className: 'zona-piloto-etq', html: esc(ZONA_PILOTO.nombre), iconSize: null, iconAnchor: [0, 28] }) }),
-]);
+let ventanas = null;
+const recolocarEtiquetas = () => { ventanas?.apilar(); requestAnimationFrame(() => { if (mapa.hasLayer(cuadricula)) cuadricula.redibujar(); }); };
 const VISUAL = [
   { id: 'cuadricula', nombre: 'Cuadrícula MGRS', detalle: 'Calculada por SPA (100 km → 100 m según zoom)', capa: cuadricula },
   { id: 'sombreado', nombre: 'Sombreado', detalle: 'Relieve del MDT del IGN sobre cualquier fondo (5 m al acercarse)', capa: vigilar('sombreado', capaRelieve(L, 'sombreado', { atribucion: ATRIBUCION_MDT, zIndex: 2 })) },
   ...SUPERPUESTAS.map((s) => ({ ...s, capa: vigilar(s.id, crearCapa(L, s)) })),
 ];
-const todasSup = [...VISUAL, { id: 'piloto', capa: zonaPiloto }];
+const todasSup = VISUAL;
 $('superpuestas').innerHTML = VISUAL.map((s) => `<label class="sup"><input type="checkbox" data-id="${s.id}">
   <span class="txt"><b>${esc(s.nombre)}</b><small>${esc(s.detalle)}</small></span></label>`).join('');
 $('cuad-intensidad').value = estado.intensidadCuadricula;
@@ -216,11 +225,13 @@ for (const d of document.querySelectorAll('.seccion')) {
   d.addEventListener('toggle', () => { estado.secciones = { ...estado.secciones, [d.dataset.sec]: d.open }; guardar(); recolocarEtiquetas(); });
 }
 const abrirSeccion = (sec) => { const d = document.querySelector(`.seccion[data-sec="${sec}"]`); if (d) d.open = true; ponerPanelCapas(true); };
+// Capas: se recoge sola sin uso (ventanas.js); clic en el título la abre o la recoge
 function ponerPanelCapas(abierto) {
-  $('panel-capas').classList.toggle('cerrado', !abierto);
-  $('capas-toggle').setAttribute('aria-expanded', String(abierto)); recolocarEtiquetas();
+  $('panel-capas').classList.toggle('v-recogida', !abierto);
+  if (abierto) ventanas?.usada($('panel-capas'));
+  recolocarEtiquetas();
 }
-$('capas-toggle').addEventListener('click', () => ponerPanelCapas($('panel-capas').classList.contains('cerrado')));
+$('capas-toggle').addEventListener('click', (e) => { if (!e.target.closest('.v-pin')) ponerPanelCapas($('panel-capas').classList.contains('v-recogida')); });
 if (window.matchMedia('(max-width: 760px)').matches) ponerPanelCapas(false);
 
 // ---------------------------------------------------------------- herramientas, dibujo e importación
@@ -248,7 +259,31 @@ function abrirSimbolos(pestana) {
   document.body.classList.toggle('simbolos-abierto', simbolos.abierto);
   recolocarEtiquetas();
 }
-document.querySelectorAll('[data-simbolos]').forEach((b) => b.addEventListener('click', () => abrirSimbolos(b.dataset.simbolos)));
+document.querySelectorAll('[data-simbolos]').forEach((b) => b.addEventListener('click', () => { cerrarMenuApp6(); abrirSimbolos(b.dataset.simbolos); }));
+
+// Botón APP-6: al pasar el ratón aparecen Unidades, Líneas de coordinación y Cometidos; al irse, desaparecen
+const menuApp6 = $('menu-app6');
+let tMenuApp6 = 0;
+function abrirMenuApp6() {
+  clearTimeout(tMenuApp6);
+  if (!menuApp6.hidden) return;
+  const b = $('btn-app6').getBoundingClientRect(), c = $('contenido').getBoundingClientRect();
+  const k = Number(getComputedStyle(document.documentElement).getPropertyValue('--escala-ui')) || 1;
+  menuApp6.style.left = `${(b.left - c.left) / k}px`; menuApp6.style.top = `${(b.bottom - c.top + 6) / k}px`;
+  menuApp6.hidden = false; $('btn-app6').setAttribute('aria-expanded', 'true');
+  mostrarHerramientas(true);
+}
+function cerrarMenuApp6(espera = 0) {
+  clearTimeout(tMenuApp6);
+  const cerrar = () => { menuApp6.hidden = true; $('btn-app6').setAttribute('aria-expanded', 'false'); };
+  if (espera) tMenuApp6 = setTimeout(cerrar, espera); else cerrar();
+}
+$('btn-app6').addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse') abrirMenuApp6(); });
+$('btn-app6').addEventListener('pointerleave', () => cerrarMenuApp6(260));
+menuApp6.addEventListener('pointerenter', () => clearTimeout(tMenuApp6));
+menuApp6.addEventListener('pointerleave', () => cerrarMenuApp6(220));
+$('btn-app6').addEventListener('click', () => { if (menuApp6.hidden) abrirMenuApp6(); else cerrarMenuApp6(); });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') cerrarMenuApp6(); });
 new MutationObserver(() => { document.body.classList.toggle('simbolos-abierto', !$('panel-simbolos').hidden); recolocarEtiquetas(); }).observe($('panel-simbolos'), { attributes: true, attributeFilter: ['hidden'] });
 // Tamaño de los símbolos (Ajustes): al ponerlos; crecen al acercar hasta un tope y encogen al alejar
 function ponerTamSim() {
@@ -263,6 +298,15 @@ $('sim-tam').addEventListener('input', (ev) => {
 ponerTamSim();
 importar = iniciarImportar({
   L, mapa, alturas, fmt, dibujo,
+  alPaqueteSpa: (texto, nombreArchivo) => {
+    let pq; try { pq = JSON.parse(texto); } catch { return false; }
+    if (!esPaqueteSpa(pq)) return false;
+    pq.nombre ||= nombreArchivo.replace(/\.(spa\.json|json|spa)$/i, '');
+    const o = dibujo.cambio(`Abrir paquete «${pq.nombre}»`, (p) => abrirPaquete(p, pq));
+    dibujo.avisoBreve(`«${o.nombre}» abierto como operación: puedes modificarlo.`);
+    setTimeout(() => { ponerPanel('operaciones', true); operaciones.mostrar(o.id); dibujo.encuadrar(dibujo.plan().elementos.filter((e) => e.paquete && e.paquete === o.id || dibujo.plan().operaciones.some((x) => x.id === e.paquete && x.padre === o.id)).map((e) => e.id)); }, 0);
+    return true;
+  },
   fondo: () => fondoActual?.idSpa ?? '',
   herramienta: () => herramienta,
   alCambiarPaneles: () => recolocarEtiquetas(),
@@ -283,34 +327,74 @@ $('btn-crear-mapa').addEventListener('click', abrirCreador);
 new MutationObserver(() => { const n = document.querySelectorAll('#mapas-importados .mapa-imp').length; $('mapas-cuenta').textContent = n ? `${n} importado${n > 1 ? 's' : ''}` : ''; })
   .observe($('mapas-importados'), { childList: true });
 
-const NOMBRE_HERR = { consultar: 'Mover', punto: 'Punto', linea: 'Línea', area: 'Área', circulo: 'Círculo', medir: 'Medir', 'zona-mapa': 'Zona del mapa' };
+const NOMBRE_HERR = { consultar: 'Mover', punto: 'Punto', linea: 'Línea', area: 'Área', circulo: 'Círculo', medir: 'Medir', lazo: 'Lazo', 'zona-mapa': 'Zona del mapa' };
+/** ¿Se está poniendo algo en el mapa? (las ventanas se apartan) */
+const colocando = () => herramienta !== 'consultar' || simbolos.armado || dibujo.dibujando;
 function elegirHerramienta(h) {
   herramienta = h;
   document.querySelectorAll('[data-herr]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.herr === h)));
   $('herr-actual').textContent = NOMBRE_HERR[h] ?? h;
   $('herr-pista').classList.toggle('activa', h !== 'consultar');
   $('panel-medida').hidden = h !== 'medir';
-  mapa.getContainer().classList.toggle('cursor-cruz', h === 'medir' || h === 'zona-mapa' || HERRAMIENTAS_DIBUJO.includes(h));
+  mapa.getContainer().classList.toggle('cursor-cruz', h === 'medir' || h === 'zona-mapa' || h === 'lazo' || HERRAMIENTAS_DIBUJO.includes(h));
   if (h === 'medir') importar.cerrarFicha();
   pintarMedida();
   dibujo.herramientaCambiada(h);
   creador?.herramientaCambiada(h);
+  lazo?.herramientaCambiada(h);
   simbolos.actualizarAviso();
+  ventanas?.actualizar();
   recolocarEtiquetas();
 }
 document.querySelectorAll('[data-herr]').forEach((b) => b.addEventListener('click', () => elegirHerramienta(b.dataset.herr)));
-$('ir-piloto').addEventListener('click', () => mapa.flyToBounds(piloto, { padding: [20, 20], duration: 0.8 }));
-function ponerPanelPlan(abierto) {
-  if (abierto && window.matchMedia('(max-width: 760px)').matches) ponerPanelCapas(false);
-  $('panel-plan').hidden = !abierto;
-  $('btn-plan').setAttribute('aria-pressed', String(abierto));
-  document.body.classList.toggle('plan-abierto', abierto);
-  try { localStorage.setItem('spa.panelPlan', abierto ? '1' : '0'); } catch { /* nada */ }
+// ---------------------------------------------------------------- Objetos, Operaciones y Lazo
+const lazo = iniciarLazo({
+  L, mapa, dibujo, simbolos, fmt, importar: () => importar,
+  herramienta: () => herramienta,
+  elegirHerramienta: (h) => elegirHerramienta(h),
+  alCambiarPaneles: () => recolocarEtiquetas(),
+});
+const objetos = iniciarObjetos({ dibujo, simbolos, exportar: (ids, nombre) => lazo.exportar(ids, nombre), alCambiarPaneles: () => recolocarEtiquetas() });
+const operaciones = iniciarPanelOperaciones({
+  dibujo, exportar: (ids, nombre) => lazo.exportar(ids, nombre),
+  verEnObjetos: (id) => { ponerPanel('objetos', true); objetos.filtrarPaquete(id); },
+  alCambiarPaneles: () => recolocarEtiquetas(),
+});
+const PANELES = { objetos: { api: objetos, boton: 'btn-objetos' }, operaciones: { api: operaciones, boton: 'btn-operaciones' } };
+function ponerPanel(id, abierto) {
+  const p = PANELES[id];
+  if (abierto && window.matchMedia('(max-width: 760px)').matches) { ponerPanelCapas(false); for (const k of Object.keys(PANELES)) if (k !== id) PANELES[k].api.abrir(false); }
+  p.api.abrir(abierto);
+  $(p.boton).setAttribute('aria-pressed', String(abierto));
+  if (abierto) ventanas?.usada(document.querySelector(`.ventana[data-ventana="${id}"]`));
+  try { localStorage.setItem(`spa.panel.${id}`, abierto ? '1' : '0'); } catch { /* nada */ }
   recolocarEtiquetas();
 }
-$('btn-plan').addEventListener('click', () => ponerPanelPlan($('panel-plan').hidden));
-$('plan-cerrar').addEventListener('click', () => ponerPanelPlan(false));
-try { if (localStorage.getItem('spa.panelPlan') === '1') ponerPanelPlan(true); } catch { /* nada */ }
+for (const id of Object.keys(PANELES)) {
+  $(PANELES[id].boton).addEventListener('click', () => ponerPanel(id, !PANELES[id].api.abierto));
+  $(`${id}-cerrar`).addEventListener('click', () => ponerPanel(id, false));
+  try { if (localStorage.getItem(`spa.panel.${id}`) === '1' || (id === 'objetos' && localStorage.getItem('spa.panelPlan') === '1')) ponerPanel(id, true); } catch { /* nada */ }
+}
+// Píldora de la operación activa (abajo, junto a las coordenadas)
+function pintarPildoraOp() {
+  const id = dibujo.activo, b = $('pildora-op');
+  b.hidden = !id;
+  if (id) b.innerHTML = `<i></i><span>${esc(nombreRutaOp(id))}</span>`;
+}
+const nombreRutaOp = (id) => { const out = []; const pl = dibujo.plan(); for (let o = pl.operaciones.find((x) => x.id === id); o && !out.includes(o.nombre); o = pl.operaciones.find((x) => x.id === o.padre)) out.unshift(o.nombre); return out.join(' › '); };
+$('pildora-op').addEventListener('click', () => { ponerPanel('operaciones', true); operaciones.mostrar(dibujo.activo); });
+dibujo.suscribir(pintarPildoraOp); pintarPildoraOp();
+
+// Ventanas: mover, redimensionar, recogerse sin uso y apartarse al poner objetos
+apariencia = iniciarApariencia({ fondoOscuro: () => fondoActual?.idSpa === 'hibrido', alCambiar: () => { ventanas?.actualizar(); recolocarEtiquetas(); } });
+ventanas = iniciarVentanas({
+  reposo: () => apariencia.valores.reposo,
+  apartar: () => apariencia.valores.apartar,
+  colocando,
+  escala: () => apariencia.valores.escala / 100,
+  alCambiar: () => recolocarEtiquetas(),
+});
+$('ap-recolocar').addEventListener('click', () => ventanas.recolocar());
 
 // Barra de herramientas: aparece al acercar el ratón arriba (en táctil, siempre)
 const tactil = window.matchMedia('(hover: none)').matches;
@@ -324,8 +408,9 @@ if (tactil) mostrarHerramientas(true);
 else {
   $('contenido').addEventListener('mousemove', (e) => {
     const r = $('contenido').getBoundingClientRect(), b = $('herramientas').getBoundingClientRect();
-    const cerca = e.clientY - r.top < 70 && e.clientX - r.left < Math.max(b.right - r.left, 240) + 40;
-    const encima = $('herramientas').matches(':hover');
+    const sup = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--sup')) || 64;
+    const cerca = e.clientY - r.top < sup + 50 && e.clientX - r.left < Math.max(b.right - r.left, 240) + 40;
+    const encima = $('herramientas').matches(':hover') || !menuApp6.hidden;
     if (cerca || encima) mostrarHerramientas(true);
     else if ($('herramientas').classList.contains('visible')) mostrarHerramientas(false);
   });
@@ -363,6 +448,7 @@ for (const grupo of document.querySelectorAll('[data-pref]')) {
 
 mapa.on('click', (e) => {
   const p = { lat: e.latlng.lat, lon: e.latlng.lng };
+  if (herramienta === 'lazo' || lazo.recienTerminado) return; // el lazo maneja sus gestos
   if (herramienta === 'medir') { medida.push(p); pintarMedida(); return; }
   if (herramienta === 'zona-mapa') { creador.clic(p); return; }
   if (HERRAMIENTAS_DIBUJO.includes(herramienta)) { dibujo.clic(p); return; }
@@ -451,7 +537,7 @@ function irA(p) {
   L.marker([p.lat, p.lon], { interactive: false, icon: L.divIcon({ className: 'etq-ancla', html: '<span class="senal-busqueda"></span>', iconSize: null }) }).addTo(capaBusqueda);
   setTimeout(() => capaBusqueda.clearLayers(), 6000);
 }
-const conmutar = (id) => ({ accion: () => { ponerSup(id, !estado.superpuestas[id]); abrirSeccion(id === 'piloto' ? 'mapas' : 'visual'); } });
+const conmutar = (id) => ({ accion: () => { ponerSup(id, !estado.superpuestas[id]); abrirSeccion('visual'); } });
 const caja = (id, ajuste) => ({ accion: () => { const c = $(id); c.checked = !c.checked; c.dispatchEvent(new Event('change', { bubbles: true })); abrirAjustes(true, ajuste); } });
 const ACCIONES = [
   ...FONDOS.map((f) => ({ texto: `Fondo ${f.nombre.toLowerCase()}`, extra: `${f.detalle} mapa fondo`, detalle: f.detalle, accion: () => { ponerFondo(f.id); abrirSeccion('fondo'); } })),
@@ -463,8 +549,6 @@ const ACCIONES = [
   { texto: 'Intensidad de la cuadrícula', extra: 'malla grid tenue opacidad', detalle: 'Ajustar', accion: () => { abrirAjustes(true, 'cuadricula'); $('cuad-intensidad').focus(); } },
   { texto: 'Sombreado', extra: 'relieve mdt sombra', detalle: 'Mostrar u ocultar', ...conmutar('sombreado') },
   { texto: 'Curvas de nivel', extra: 'altura mdt', detalle: 'Mostrar u ocultar', ...conmutar('curvas') },
-  { texto: 'Zona piloto', extra: 'guadarrama', detalle: 'Mostrar u ocultar', ...conmutar('piloto') },
-  { texto: 'Ir a la zona piloto', extra: 'guadarrama centrar', detalle: 'Centrar el mapa', accion: () => mapa.flyToBounds(piloto, { padding: [20, 20], duration: 0.8 }) },
   ...[['mgrs', 'MGRS'], ['utm', 'UTM'], ['gms', 'geográficas (G M S)'], ['gd', 'grados decimales']].map(([v, n]) => ({ texto: `Coordenadas en ${n}`, extra: 'formato ajustes coordenada', detalle: 'Ajustes', accion: () => { ponerPref('coordenadas', v); abrirAjustes(true, 'coordenadas'); } })),
   ...[['grados', 'grados'], ['milesimas', 'milésimas'], ['gms', 'G M S']].map(([v, n]) => ({ texto: `Rumbos en ${n}`, extra: 'ángulos ajustes regla azimut', detalle: 'Ajustes', accion: () => { ponerPref('angulo', v); abrirAjustes(true, 'coordenadas'); } })),
   ...['punto', 'linea', 'area', 'circulo'].map((h) => ({ texto: `Dibujar ${TIPOS[h].nombre.toLowerCase()}`, extra: 'herramienta nuevo crear', detalle: 'Herramienta', accion: () => elegirHerramienta(h) })),
@@ -472,12 +556,17 @@ const ACCIONES = [
   { texto: 'Mover', extra: 'seleccionar herramienta', detalle: 'Herramienta', accion: () => elegirHerramienta('consultar') },
   { texto: 'Deshacer', extra: 'ctrl z', detalle: 'Ctrl+Z', accion: () => $('deshacer').click() },
   { texto: 'Rehacer', extra: 'ctrl y', detalle: 'Ctrl+Y', accion: () => $('rehacer').click() },
-  { texto: 'Plan', extra: 'dibujado archivos importados panel lista', detalle: 'Abrir el panel', accion: () => ponerPanelPlan(true) },
+  { texto: 'Objetos', extra: 'plan dibujado pintado archivos importados panel lista filtros borrar', detalle: 'Todo lo pintado e importado', accion: () => ponerPanel('objetos', true) },
+  { texto: 'Operaciones', extra: 'paquetes fases saltos operación en curso futuras pasadas', detalle: 'Paquetes de datos', accion: () => ponerPanel('operaciones', true) },
+  { texto: 'Crear operación', extra: 'nueva operación paquete fase', detalle: 'Lo que pintes entra en ella', accion: () => { ponerPanel('operaciones', true); setTimeout(() => $('op-nueva-nombre')?.focus(), 50); } },
+  { texto: 'Lazo', extra: 'seleccionar círculo exportar enviar kmz kml gpx geojson csv compartir', detalle: 'Seleccionar en círculo y exportar', accion: () => elegirHerramienta('lazo') },
+  { texto: 'Recolocar ventanas', extra: 'paneles posición tamaño restablecer', detalle: 'A su sitio y tamaño de siempre', accion: () => ventanas.recolocar() },
+  { texto: 'Pantalla y ventanas', extra: 'tema oscuro claro transparencia desenfoque tamaño personalizar', detalle: 'Ajustes', accion: () => abrirAjustes(true, 'apariencia') },
   { texto: 'Ajustes', extra: 'opciones configuración', detalle: 'Abrir', accion: () => abrirAjustes(true) },
   { texto: 'Importar archivo', extra: 'gpx kml kmz zip atak paquete datos', detalle: 'GPX, KML/KMZ, paquetes de ATAK', accion: () => $('btn-importar-datos').click() },
   { texto: 'Importar mapa', extra: 'sqlite mbtiles tif geotiff jpg', detalle: 'Mapas propios', accion: () => $('btn-importar-mapa').click() },
   { texto: 'Símbolos de unidad', extra: 'app-6 app6 unidad símbolo paleta constructor', detalle: 'Abrir la paleta', accion: () => abrirSimbolos('unidades') },
-  { texto: 'Medidas de coordinación', extra: 'app-6 líneas zonas puntos paleta', detalle: 'Abrir la paleta', accion: () => abrirSimbolos('medidas') },
+  { texto: 'Líneas de coordinación', extra: 'medidas de coordinación app-6 líneas zonas puntos paleta', detalle: 'Abrir la paleta', accion: () => abrirSimbolos('medidas') },
   { texto: 'Cometidos tácticos', extra: 'verbos app-6 paleta', detalle: 'Abrir la paleta', accion: () => abrirSimbolos('cometidos') },
   { texto: 'Tamaño de los símbolos', extra: 'tamaño unidades ajustes', detalle: 'Ajustes', accion: () => abrirAjustes(true, 'simbolos') },
   { texto: 'Crear mapa', extra: 'creador de mapas descargar zona teselas atak sqlite mbtiles geotiff offline sin conexión', detalle: 'Descargar una zona en ATAK, MBTiles, ZIP o GeoTIFF', accion: abrirCreador },
@@ -488,9 +577,10 @@ function candidatos() {
   const nomTipo = { punto: 'punto', linea: 'línea track ruta', area: 'área zona', circulo: 'círculo' };
   const plan = dibujo.plan().elementos.map((el) => {
     const n = el.propiedades.nombre || `${TIPOS[el.tipo].nombre} ${dibujo.plan().elementos.filter((e) => e.tipo === el.tipo).indexOf(el) + 1}`;
-    return { grupo: 'Plan', texto: n, extra: `${nomTipo[el.tipo]} dibujado ${el.propiedades.bando}`, detalle: TIPOS[el.tipo].nombre, accion: () => { ponerPanelPlan(true); dibujo.seleccionar(el.id, { centrar: true }); } };
+    return { grupo: 'Objetos', texto: dibujo.titulo(el) || n, extra: `${nomTipo[el.tipo]} dibujado ${el.propiedades.bando}`, detalle: TIPOS[el.tipo].nombre, accion: () => { if (!dibujo.visible(el)) dibujo.ponerVista({ ocultos: [], solo: null, sueltosOcultos: false }); dibujo.seleccionar(el.id, { centrar: true }); } };
   });
-  return [...plan, ...importar.candidatosBusqueda(), ...ACCIONES, ...simbolos.candidatosBusqueda()];
+  const ops = dibujo.plan().operaciones.map((o) => ({ grupo: 'Operaciones', texto: o.nombre, extra: 'operación fase paquete', detalle: o.padre ? nombreRutaOp(o.id) : 'Operación', accion: () => { ponerPanel('operaciones', true); operaciones.mostrar(o.id); dibujo.encuadrar(dibujo.plan().elementos.filter((e) => e.paquete === o.id).map((e) => e.id)); } }));
+  return [...plan, ...ops, ...importar.candidatosBusqueda(), ...ACCIONES, ...simbolos.candidatosBusqueda()];
 }
 let resultados = [], marcado = 0;
 function pintarResultados(q) {
@@ -540,4 +630,4 @@ document.addEventListener('click', (ev) => { if (!ev.target.closest('#buscar')) 
 mostrarPos(centro(), 'Centro');
 elegirHerramienta('consultar');
 // Para pruebas automáticas
-window.__spa = { creador, mapa, estado, medida, pintarMedida, diag, dibujo, importar, cuadricula, alturas, capasFondo, capasImagen };
+window.__spa = { creador, mapa, estado, medida, pintarMedida, diag, dibujo, importar, cuadricula, alturas, capasFondo, capasImagen, objetos, operaciones, lazo, ventanas, apariencia };

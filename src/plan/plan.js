@@ -65,7 +65,7 @@ export function crearPlan(nombre = 'Plan sin nombre') {
     formato: 'spa-plan', version: 1, id: uuid(), nombre,
     creado: t, modificado: t, datum: 'WGS84',
     capas: [{ id: 'principal', nombre: 'Principal', visible: true, orden: 0 }],
-    elementos: [], opord: {},
+    elementos: [], operaciones: [], opord: {},
   };
 }
 
@@ -103,7 +103,7 @@ export function nuevoElemento(tipo, puntos, opc = {}) {
   }
   return {
     id: uuid(), tipo, geometria: geometria(tipo, puntos), simbolo: null, propiedades,
-    capa: 'principal', creado: t, modificado: t, autor: '', fuente: 'manual', hora: null, version: 1,
+    capa: 'principal', paquete: opc.paquete ?? null, creado: t, modificado: t, autor: '', fuente: 'manual', hora: null, version: 1,
   };
 }
 
@@ -196,12 +196,16 @@ export class Historial {
     this.atras = []; this.adelante = [];
   }
 
+  // Lo que se puede deshacer: los objetos y los paquetes (operaciones, fases…)
+  foto() { return JSON.stringify({ e: this.plan.elementos, o: this.plan.operaciones ?? [] }); }
+  poner(foto) { const f = JSON.parse(foto); this.plan.elementos = f.e; this.plan.operaciones = f.o; }
+
   /** Ejecuta `fn(plan)` como un cambio que se puede deshacer. */
   hacer(descripcion, fn) {
-    const antes = JSON.stringify(this.plan.elementos);
+    const antes = this.foto();
     const r = fn(this.plan);
-    if (JSON.stringify(this.plan.elementos) === antes) return r; // nada cambió
-    this.atras.push({ descripcion, elementos: antes });
+    if (this.foto() === antes) return r; // nada cambió
+    this.atras.push({ descripcion, foto: antes });
     if (this.atras.length > this.limite) this.atras.shift();
     this.adelante.length = 0;
     this.plan.modificado = ahora();
@@ -216,16 +220,16 @@ export class Historial {
 
   deshacer() {
     const paso = this.atras.pop(); if (!paso) return false;
-    this.adelante.push({ descripcion: paso.descripcion, elementos: JSON.stringify(this.plan.elementos) });
-    this.plan.elementos = JSON.parse(paso.elementos);
+    this.adelante.push({ descripcion: paso.descripcion, foto: this.foto() });
+    this.poner(paso.foto);
     this.alCambiar(this);
     return paso.descripcion;
   }
 
   rehacer() {
     const paso = this.adelante.pop(); if (!paso) return false;
-    this.atras.push({ descripcion: paso.descripcion, elementos: JSON.stringify(this.plan.elementos) });
-    this.plan.elementos = JSON.parse(paso.elementos);
+    this.atras.push({ descripcion: paso.descripcion, foto: this.foto() });
+    this.poner(paso.foto);
     this.alCambiar(this);
     return paso.descripcion;
   }

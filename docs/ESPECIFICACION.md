@@ -68,9 +68,15 @@ Un plan es un único archivo JSON. Las geometrías siguen GeoJSON
   "modificado": "2026-11-01T10:00:00Z",
   "datum": "WGS84",
   "capas": [{ "id": "uuid", "nombre": "Propias", "visible": true, "orden": 0 }],
+  "operaciones": [
+    { "id": "uuid", "nombre": "OP NORTE", "padre": null, "estado": "curso | futura | pasada",
+      "notas": "", "autor": "", "origen": "local | recibido de …", "creado": "…", "modificado": "…", "version": 1 },
+    { "id": "uuid", "nombre": "Fase 1", "padre": "uuid de OP NORTE", "estado": null, "…": "…" }
+  ],
   "elementos": [
     {
       "id": "uuid",
+      "paquete": "uuid de la operación o fase (o null)",
       "tipo": "unidad | grafico | punto | linea | area | texto",
       "geometria": { "type": "Point", "coordinates": [-4.0058, 40.7354] },
       "simbolo": { "norma": "APP-6", "edicion": "E", "sidc": "…", "modificadores": {} },
@@ -242,7 +248,8 @@ docs/                    esta especificación e informe de precisión
 - **Área / círculo:** superficie, perímetro / radio exacto; mismo estilo.
 - **Editar:** arrastrar vértices (con imán), añadir en puntos medios, quitar
   con clic derecho; Supr borra; deshacer/rehacer (Ctrl+Z / Ctrl+Y).
-- **Panel «Plan»** (botón en la barra): lo dibujado y lo importado.
+- **Panel «Objetos»** (botón en la barra; antes «Plan»): todo lo pintado y lo
+  importado, con filtros (ver §12).
 
 ## 9. Alturas
 
@@ -260,7 +267,7 @@ docs/                    esta especificación e informe de precisión
 ## 10. Importar (`src/datos/`, `src/ui/importar.js`)
 
 - **Arrastrar y soltar** en cualquier parte de la página, o botones.
-- **Datos** → panel «Plan · Archivos importados» (ver/ocultar, nombres,
+- **Datos** → panel «Objetos · Archivos importados» (ver/ocultar, nombres,
   centrar, «Pasar al plan» para editarlos, quitar):
   GPX (wpt, rte, trk), KML/KMZ (puntos, líneas, polígonos, tracks, estilos,
   superposiciones de imagen), CoT de ATAK (puntos con bando, líneas,
@@ -326,7 +333,77 @@ docs/                    esta especificación e informe de precisión
   cancelar). Se elige dónde guardar antes de empezar (Chrome/Edge) o se
   descarga normal. Opción de abrir el mapa en SPA al terminar.
 
-## 12. Pendiente
+## 12. Operaciones, Objetos, Lazo e interfaz (v0.9)
+
+**Operaciones** (`src/plan/operaciones.js`, `src/ui/panel-operaciones.js`).
+Paquetes de datos anidados: una operación contiene fases, saltos… (con el
+nombre que se quiera) y estos otros, sin límite. Cada objeto está en un
+paquete como mucho (`el.paquete`) y pertenece también a los de arriba.
+- Pestañas **En curso / Futuras / Pasadas** (estado del paquete de primer nivel).
+- **Operación activa** (●, píldora verde abajo): lo que se pinte entra en ella.
+- **Ojo** por paquete, **ver solo esta**, **Ocultar todo** (mapa sin símbolos).
+  Lo que se ve es de cada usuario (`localStorage spa.vista.paquetes`), no del plan.
+- Arrastrar objetos entre paquetes y paquetes dentro de otros (sin ciclos).
+- Menú ⋯: fase dentro, renombrar, pasar a futura/pasada, sacar al primer
+  nivel, duplicar, encuadrar, ver en Objetos, exportar o enviar, borrar
+  (solo el paquete —sus objetos suben un nivel— o con todo).
+- Todo se deshace (el historial guarda objetos y paquetes).
+- **Paquete SPA** (`.spa.json`, formato `spa-paquete`): objetos + los
+  paquetes que los contienen. Al abrirlo (soltarlo o Importar) entra como
+  operación nueva y editable, con ids nuevos (no pisa nada) y `origen`
+  «recibido de …».
+- **Varios usuarios (pendiente de servidor):** el modelo ya lleva `autor`,
+  `origen` y `version`. Con usuario y contraseña, cada uno cargará la
+  operación del servidor y, al modificar algo, elegirá si es **para todos**
+  (se sube) **o solo para él** (capa personal encima). Esa pregunta necesita el
+  servidor: se hará en la fase de usuarios.
+
+**Objetos** (`src/ui/objetos.js`). Lista de todo lo pintado con filtros
+(categoría: unidades, líneas de coordinación, cometidos, dibujos; operación;
+bando; estado; texto), selección múltiple (Mayús: un tramo), resaltado en el
+mapa y acciones: ver, meter en una operación, exportar o enviar, borrar. Al
+borrar algo que está en una operación pregunta: **quitarlo solo de la
+operación** (sigue en el mapa) o **borrarlo del todo**.
+
+**Lazo** (`src/ui/lazo.js`, `src/datos/exportar.js`). Círculo geodésico (radio
+exacto sobre el elipsoide): pulsar en el centro y arrastrar al borde, o clic y
+clic. Selecciona lo visible que queda dentro (o lo toca, a elegir), agrupado
+por operación y por archivo importado. Exporta a **KMZ** (carpetas por
+operación › fase), **KML**, **GeoJSON** (RFC 7946), **GPX** 1.1, **CSV** (Excel,
+«;», con MGRS al metro) o **paquete SPA**; «Enviar…» usa el Compartir del
+sistema cuando el navegador lo permite (si no, descarga el archivo para
+adjuntarlo). Coordenadas WGS84 a 7 decimales (~1 cm). Los círculos salen como
+polígono de 72 vértices a la distancia exacta del centro.
+
+**Líneas de coordinación** (antes «medidas»): el rótulo es el nombre que
+escribe el usuario; si no escribe nada, la sigla de base (PL, LD…). Nunca
+«PL PL1».
+
+**Giro**: rueda en la ficha (aguja que se arrastra, rumbo exacto escrito, ±15°
+y 180°) y asa ↻ en el mapa que se arrastra alrededor del centro, de 5 en 5°
+(con Mayús, de 1 en 1). Se ve en directo y se guarda al soltar.
+
+**Interfaz** (`src/ui/ventanas.js`, `src/ui/apariencia.js`):
+- Vidrio esmerilado en todo lo que flota (sin color propio, difumina lo de
+  detrás). Tema automático (oscuro sobre el híbrido), claro u oscuro.
+- Mapa a pantalla completa; cabecera y coordenadas flotan (píldora con fondo
+  difuminado y texto con halo para leerse sobre cualquier fondo).
+- Barra de herramientas: aparece al acercar el ratón bajo la cabecera.
+  **APP-6**: un solo botón; al pasar el ratón salen Unidades, Líneas de
+  coordinación y Cometidos.
+- **Ventanas**: se mueven por la cabecera, cambian de tamaño desde la esquina
+  (doble clic en la cabecera: a su sitio) y su contenido se adapta al ancho
+  («container queries»). Sin usar unos segundos se recogen y se abren al pasar
+  el ratón; la chincheta las fija. Al poner objetos se apartan (casi
+  transparentes, se pincha el mapa a través); para usar una, ratón quieto
+  encima. Los desplegables con miniaturas se abren solos al pasar el ratón.
+- **Ajustes › Pantalla y ventanas**: tema, transparencia, desenfoque, tamaño
+  de la interfaz, tiempo para recogerse, apartar al poner objetos, barra fija,
+  altitud, recolocar ventanas y valores de fábrica. Todo por usuario.
+- Sin zona piloto (la primera vez el mapa se abre en Guadarrama).
+
+## 13. Pendiente
 
 - Rumbo magnético (modelo WMM).
-- Puntos de control: vértices geodésicos del IGN en la zona piloto.
+- Puntos de control: vértices geodésicos del IGN en la zona de Guadarrama.
+- Usuarios y servidor: cargar operaciones del servidor y preguntar al modificar «¿para todos o solo para ti?».

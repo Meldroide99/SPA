@@ -48,6 +48,8 @@ pag.on('console', (m) => { if (m.type() === 'error') errores.push(m.text()); });
 
 await pag.goto(`http://localhost:${PUERTO}/mapa.html`);
 await pag.evaluate(() => { localStorage.clear(); return new Promise((r) => { const q = indexedDB.deleteDatabase('spa'); q.onsuccess = q.onerror = q.onblocked = () => r(); }); });
+// Para la prueba: las ventanas no se recogen ni se apartan solas (se prueba aparte, al final)
+await pag.evaluate(() => localStorage.setItem('spa.apariencia', JSON.stringify({ reposo: 0, apartar: false })));
 await pag.reload();
 await pag.waitForFunction(() => window.__spa?.dibujo);
 const vista = (lat, lon, z) => pag.evaluate(([a, b, c]) => window.__spa.mapa.setView([a, b], c, { animate: false }), [lat, lon, z]);
@@ -60,15 +62,15 @@ const plan = () => pag.evaluate(() => JSON.parse(JSON.stringify(window.__spa.dib
 const motor = (codigo) => pag.evaluate(codigo);
 /** Las herramientas se esconden: se acerca el ratón arriba y luego se pulsa. */
 const herr = async (sel) => {
-  await pag.mouse.move(caja.x + 60, caja.y + 15); await pag.waitForTimeout(350);
+  await pag.mouse.move(caja.x + 60, 74); await pag.waitForTimeout(350);
   await pag.click(sel); await pag.waitForTimeout(50);
 };
 
 // ---------------------------------------------------------------- barra de herramientas escondida
 await pag.mouse.move(en(0.5, 0.6).x, en(0.5, 0.6).y); await pag.waitForTimeout(600);
 ok(!(await pag.locator('#herramientas.visible').count()), 'Herramientas escondidas mientras el ratón está lejos');
-await pag.mouse.move(caja.x + 80, caja.y + 20); await pag.waitForTimeout(400);
-ok(await pag.locator('#herramientas.visible').count() === 1, 'Aparecen al acercar el ratón arriba');
+await pag.mouse.move(caja.x + 80, 74); await pag.waitForTimeout(400);
+ok(await pag.locator('#herramientas.visible').count() === 1, 'Aparecen al acercar el ratón arriba (bajo la cabecera)');
 
 // ---------------------------------------------------------------- lo que se quitó
 ok(await pag.locator('#be-copiar, .be-prefs, [data-pref="precision"], .enlaces a').count() === 0, 'Sin «Copiar», sin 1 m/10 m/100 m y sin enlace a la calculadora');
@@ -150,8 +152,9 @@ if (CAPTURAS) await pag.screenshot({ path: 'docs/capturas/v4-linea.png' });
 
 // ---------------------------------------------------------------- importar GPX y paquete ATAK
 await herr('[data-herr="consultar"]');
-await herr('#btn-plan');
-ok(await pag.isVisible('#panel-plan'), 'Botón «Plan» abre el panel con lo dibujado e importado');
+await herr('#btn-objetos');
+ok(await pag.isVisible('#panel-objetos'), 'Botón «Objetos» abre el panel con todo lo pintado e importado');
+await pag.click('#panel-objetos .obj-imp > summary');
 await pag.setInputFiles('#entrada-datos', [GPX ?? 'pruebas/datos/paquete_atak.zip', 'pruebas/datos/paquete_atak.zip']);
 await pag.waitForFunction(() => window.__spa.importar.grupos.length >= 2, null, { timeout: 10000 });
 const grupos = await motor(() => window.__spa.importar.grupos.map((g) => ({ n: g.nombre, f: g.formato, e: g.elementos.length })));
@@ -165,7 +168,8 @@ const ficha = await pag.textContent('#panel-elemento');
 ok(/En el archivo\s*\d+ m s\. n\. m\./.test(ficha) && !/HAE|elipsoidal/.test(ficha), 'Punto de ATAK: altura HAE convertida con el geoide del IGN (solo sobre el nivel del mar)');
 await pag.click('#panel-elemento [data-imp="al-plan"]');
 p = await plan();
-ok(p.elementos.some((e) => e.propiedades.nombre === 'ENE 1' && e.propiedades.bando === 'enemigo'), '«Pasar al plan» lo vuelve editable');
+ok(p.elementos.some((e) => e.propiedades.nombre === 'ENE 1' && e.propiedades.bando === 'enemigo'), '«Pasar a Objetos» lo vuelve editable');
+await pag.click('#objetos-cerrar'); // que no tape el mapa en lo que sigue (en la prueba no se apartan solas)
 if (CAPTURAS) await pag.screenshot({ path: 'docs/capturas/v4-importados.png' });
 
 // ---------------------------------------------------------------- mapas importados
@@ -366,9 +370,11 @@ im=Image.open(sys.argv[1]); a=im.getchannel('A'); print(im.mode, im.size[0]%256,
   const n0 = await motor(() => window.__spa.dibujo.plan().elementos.length);
   const caja = await pag.locator('#mapa').boundingBox();
   const cx = caja.x + caja.width / 2, cy = caja.y + caja.height / 2;
-  await pag.mouse.move(80, 70); await pag.waitForTimeout(200);
-  await pag.click('[data-simbolos="unidades"]');
-  ok(await pag.locator('#panel-simbolos').isVisible(), 'Paleta de símbolos abierta desde la barra');
+  await pag.mouse.move(80, 74); await pag.waitForTimeout(350);
+  await pag.hover('#btn-app6'); await pag.waitForTimeout(200);
+  ok(await pag.locator('#menu-app6').isVisible(), 'Botón APP-6: al pasar el ratón salen Unidades, Líneas de coordinación y Cometidos');
+  await pag.click('#menu-app6 [data-simbolos="unidades"]');
+  ok(await pag.locator('#panel-simbolos').isVisible() && await pag.locator('#menu-app6').isHidden(), 'Paleta de símbolos abierta desde el menú APP-6 (y el menú se va)');
   const anchoPal = await motor(() => { const e = document.querySelector('#panel-simbolos .sim-cuerpo'); return [e.scrollWidth, e.clientWidth]; });
   ok(anchoPal[0] <= anchoPal[1] + 1, `La paleta cabe a lo ancho (sin cortes: ${anchoPal})`);
   await pag.click('#panel-simbolos [data-arma="infanteria"]');
@@ -416,15 +422,29 @@ im=Image.open(sys.argv[1]); a=im.getchannel('A'); print(im.mode, im.size[0]%256,
   ok(b.simbolo?.id === 'bloquear' && b.geometria.coordinates.length === 3, 'Cometido «Bloquear» con sus 3 puntos de anclaje');
   ok(await pag.locator('.asa-media').count() === 0 && await pag.locator('.asa-vert').count() === 3, 'Puntos fijos: se arrastran, no se añaden ni se quitan');
   ok(await pag.locator('.asa-giro').count() === 1 && await pag.locator('.asa-mover').count() === 1, 'Asas para girar y mover el cometido entero');
-  await pag.click('#panel-elemento [data-girar="45"]'); await pag.waitForTimeout(200);
-  const b2 = await motor(() => window.__spa.dibujo.plan().elementos.at(-1).geometria.coordinates);
-  ok(JSON.stringify(b2) !== JSON.stringify(b.geometria.coordinates), 'Girar 45° desde la ficha');
+  const o0 = await motor(() => window.__spa.dibujo.orientacion(window.__spa.dibujo.plan().elementos.at(-1)));
+  await pag.click('#panel-elemento [data-girar="15"]'); await pag.waitForTimeout(200);
+  const o1 = await motor(() => window.__spa.dibujo.orientacion(window.__spa.dibujo.plan().elementos.at(-1)));
+  ok((o1 - o0 + 360) % 360 === 15, `Girar 15° desde la ficha (${o0}° → ${o1}°)`);
+  await pag.fill('#dial-grados', '90'); await pag.press('#dial-grados', 'Enter'); await pag.waitForTimeout(200);
+  ok((await motor(() => window.__spa.dibujo.orientacion(window.__spa.dibujo.plan().elementos.at(-1)))) === 90, 'Rumbo exacto escrito en la rueda: 90°');
+  // Girar arrastrando el asa ↻ alrededor del centro: un cuarto de vuelta
+  {
+    const asa = await pag.locator('.asa-giro').boundingBox();
+    const c = await motor(() => { const d = window.__spa.dibujo; const pts = d.puntosDe(d.plan().elementos.at(-1)); const m = { lat: pts.reduce((s, q) => s + q.lat, 0) / 3, lon: pts.reduce((s, q) => s + q.lon, 0) / 3 }; const r = document.getElementById('mapa').getBoundingClientRect(); const q = window.__spa.mapa.latLngToContainerPoint([m.lat, m.lon]); return { x: q.x + r.left, y: q.y + r.top }; });
+    const ax = asa.x + asa.width / 2, ay = asa.y + asa.height / 2, rr = Math.hypot(ax - c.x, ay - c.y), a0 = Math.atan2(ax - c.x, -(ay - c.y));
+    await pag.mouse.move(ax, ay); await pag.mouse.down();
+    for (let k = 1; k <= 9; k++) { const a = a0 + (k * 10 * Math.PI) / 180; await pag.mouse.move(c.x + rr * Math.sin(a), c.y - rr * Math.cos(a)); }
+    await pag.mouse.up(); await pag.waitForTimeout(250);
+    ok((await motor(() => window.__spa.dibujo.orientacion(window.__spa.dibujo.plan().elementos.at(-1)))) === 180, 'Girar con el asa ↻: 90° más (de 5 en 5)');
+  }
   // Línea de fase con nombre flotante; límite con escalón en cada tramo al acercar
   await pag.click('#panel-simbolos [data-pestana="medidas"]');
   await pag.click('#panel-simbolos [data-medida="pl"]');
   await pag.mouse.click(cx - 0, cy + 150); await pag.mouse.dblclick(cx + 260, cy + 140); await pag.waitForTimeout(300);
-  await pag.fill('#el-nombre', 'ROJA'); await pag.press('#el-nombre', 'Tab'); await pag.waitForTimeout(300);
-  ok((await pag.locator('.etq-linea', { hasText: 'PL ROJA' }).count()) >= 1, 'Línea de fase rotulada «PL ROJA» sobre la línea');
+  ok((await pag.locator('.etq-linea', { hasText: /^PL$/ }).count()) >= 1, 'Sin nombre: la línea de fase lleva su sigla «PL»');
+  await pag.fill('#el-nombre', 'PL ROJA'); await pag.press('#el-nombre', 'Tab'); await pag.waitForTimeout(300);
+  ok((await pag.locator('.etq-linea', { hasText: /^PL ROJA$/ }).count()) >= 1 && (await pag.locator('.etq-linea', { hasText: 'PL PL' }).count()) === 0, 'Con nombre: solo lo que escribe el usuario («PL ROJA», no «PL PL ROJA»)');
   await pag.click('#panel-simbolos [data-medida="limite"]');
   for (const [dx, dy] of [[-150, -200], [-50, -120], [60, -210], [160, -110]]) { await pag.mouse.click(cx + dx, cy + dy); await pag.waitForTimeout(80); }
   await pag.mouse.dblclick(cx + 260, cy - 200); await pag.waitForTimeout(300);
@@ -439,9 +459,116 @@ im=Image.open(sys.argv[1]); a=im.getchannel('A'); print(im.mode, im.size[0]%256,
   ok((await motor(() => window.__spa.dibujo.plan().elementos.at(-1).simbolo.escalon ?? '')) === '', 'Ctrl+Z deshace el último cambio');
   // Buscador universal: «bloquear» → empieza a dibujar el cometido
   await pag.click('#panel-simbolos [data-s="cerrar"]');
-  await pag.fill('#buscar-txt', 'bloquear'); await pag.waitForTimeout(200); await pag.keyboard.press('Enter'); await pag.waitForTimeout(200);
-  ok(await motor(() => window.__spa.dibujo.dibujando), 'Buscar «bloquear» y pulsar Intro: listo para dibujarlo');
+  await pag.fill('#buscar-txt', 'bloquear'); await pag.waitForTimeout(200);
+  ok(await pag.locator('#buscar-res .br-item', { hasText: 'Bloquear' }).count() >= 2, 'Buscar «bloquear»: el cometido ya pintado (Objetos) y el símbolo para pintar otro');
+  await pag.click('#buscar-res .br-item:has(small:text("Cometido · dibujar"))'); await pag.waitForTimeout(200);
+  ok(await motor(() => window.__spa.dibujo.dibujando), 'Elegir el símbolo: listo para dibujarlo');
   await pag.keyboard.press('Escape');
+}
+
+// ---------------------------------------------------------------- operaciones, objetos y lazo (v0.9)
+{
+  await vista(40.83, -3.98, 14); await pag.waitForTimeout(300);
+  const caja = await pag.locator('#mapa').boundingBox();
+  const cx = caja.x + caja.width / 2 + 120, cy = caja.y + caja.height / 2;
+  if (!(await pag.isVisible('#panel-operaciones'))) await herr('#btn-operaciones');
+  ok(await pag.isVisible('#panel-operaciones'), 'Botón «Operaciones» abre el panel (en curso, futuras, pasadas)');
+  await pag.fill('#op-nueva-nombre', 'OP NORTE'); await pag.press('#op-nueva-nombre', 'Enter'); await pag.waitForTimeout(200);
+  const op = await motor(() => window.__spa.dibujo.plan().operaciones.at(-1));
+  ok(op?.nombre === 'OP NORTE' && op.estado === 'curso' && (await motor(() => window.__spa.dibujo.activo)) === op.id, 'Crear operación: queda activa (lo que se pinte entra en ella)');
+  ok(/OP NORTE/.test(await pag.textContent('#pildora-op')), 'Píldora abajo: en qué operación se pinta');
+  // Pintar dos puntos: entran en la operación
+  for (const [dx, dy] of [[0, 0], [80, 40]]) { await herr('[data-herr="punto"]'); await pag.mouse.click(cx + dx, cy + dy); await pag.waitForTimeout(120); }
+  // Fase dentro, con el nombre que se quiera; un punto más en ella
+  const fase = await motor(() => { const o = window.__spa.dibujo.plan().operaciones.find((x) => x.nombre === 'OP NORTE'); return window.__spa.operaciones.crear('Salto 1', { padre: o.id }).id; });
+  await herr('[data-herr="punto"]'); await pag.mouse.click(cx + 160, cy - 30); await pag.waitForTimeout(150);
+  let pl = await plan();
+  const enOp = pl.elementos.filter((e) => e.paquete === op.id).length, enFase = pl.elementos.filter((e) => e.paquete === fase).length;
+  ok(enOp === 2 && enFase === 1, `Lo pintado entra en la operación activa (2) y en su fase «Salto 1» (1)`);
+  // Ocultar la operación: desaparecen sus objetos y los de sus fases
+  await pag.click(`#operaciones-cuerpo .op-nodo[data-op="${op.id}"] [data-acc="ojo"]`); await pag.waitForTimeout(150);
+  ok((await motor(() => window.__spa.dibujo.plan().elementos.filter((e) => e.paquete && !window.__spa.dibujo.visible(e)).length)) === 3, 'Ocultar una operación oculta todo lo que tiene dentro');
+  await pag.click(`#operaciones-cuerpo .op-nodo[data-op="${op.id}"] [data-acc="ojo"]`);
+  await pag.click('#operaciones-cuerpo [data-acc="ocultar-todo"]'); await pag.waitForTimeout(150);
+  ok((await motor(() => window.__spa.dibujo.plan().elementos.filter(window.__spa.dibujo.visible).length)) === 0, '«Ocultar todo»: el mapa sin símbolos');
+  await pag.click('#operaciones-cuerpo [data-acc="ver-todo"]'); await pag.waitForTimeout(150);
+  // Pestaña «Futuras»
+  await pag.click('#operaciones-cuerpo [data-pestana="futura"]');
+  await pag.fill('#op-nueva-nombre', 'OP SUR'); await pag.press('#op-nueva-nombre', 'Enter'); await pag.waitForTimeout(150);
+  ok((await motor(() => window.__spa.dibujo.plan().operaciones.find((o) => o.nombre === 'OP SUR')?.estado)) === 'futura', 'Operación futura en su pestaña');
+  await pag.click('#operaciones-cuerpo [data-pestana="curso"]');
+  // Objetos: filtrar por operación, marcar todo y borrar → pregunta (quitar de la operación o borrar del todo)
+  if (!(await pag.isVisible('#panel-objetos'))) await herr('#btn-objetos');
+  if (await pag.isVisible('#obj-limpiar')) await pag.click('#obj-limpiar');
+  await pag.selectOption('#obj-op', op.id); await pag.waitForTimeout(150);
+  ok((await pag.locator('#obj-lista .obj-fila').count()) === 3, 'Objetos: filtro por operación (incluye sus fases)');
+  await pag.click('#obj-todos'); await pag.waitForTimeout(150);
+  ok(await pag.isVisible('#obj-acciones') && /3 marcados/.test(await pag.textContent('#obj-acciones')), 'Selección múltiple: 3 marcados y sus acciones');
+  await pag.click('#obj-acciones [data-a="borrar"]'); await pag.waitForTimeout(200);
+  ok(await pag.locator('#dialogo[open] button[value="paquete"]').isVisible(), 'Al borrar algo de una operación pregunta: quitarlo solo de ella o borrarlo del todo');
+  await pag.click('#dialogo button[value="paquete"]'); await pag.waitForTimeout(200);
+  pl = await plan();
+  ok(pl.elementos.filter((e) => e.paquete === op.id || e.paquete === fase).length === 0 && pl.elementos.length >= 3, '«Quitar solo de la operación»: siguen en el mapa, sin operación');
+  await pag.keyboard.press('Control+z'); await pag.waitForTimeout(150);
+  ok((await plan()).elementos.filter((e) => e.paquete === op.id || e.paquete === fase).length === 3, 'Ctrl+Z los devuelve a la operación');
+  await pag.selectOption('#obj-op', ''); await pag.uncheck('#obj-todos').catch(() => {});
+  // Lazo: círculo alrededor de los tres puntos
+  await herr('[data-herr="lazo"]');
+  await pag.mouse.move(cx + 80, cy); await pag.mouse.down(); await pag.mouse.move(cx + 200, cy, { steps: 6 }); await pag.mouse.move(cx + 230, cy + 20, { steps: 4 }); await pag.mouse.up(); await pag.waitForTimeout(400);
+  ok(await pag.isVisible('#panel-lazo') && (await pag.locator('#lazo-cuerpo .lazo-grupo', { hasText: 'OP NORTE' }).count()) === 1, 'Lazo: lo de dentro, agrupado por operación');
+  const nLazo = await pag.locator('#lazo-cuerpo [data-item]').count();
+  ok(nLazo >= 3, `Lazo: ${nLazo} objetos dentro`);
+  await pag.click('#lazo-cuerpo [data-formato="geojson"]');
+  const [desc] = await Promise.all([pag.waitForEvent('download'), pag.click('#lazo-cuerpo [data-a="descargar"]')]);
+  const gj = JSON.parse(await (await import('node:fs/promises')).readFile(await desc.path(), 'utf8'));
+  ok(gj.type === 'FeatureCollection' && gj.features.length === nLazo && gj.features.some((f) => f.properties.paquete === 'OP NORTE › Salto 1'), `Exportar GeoJSON: ${gj.features.length} objetos con su operación y fase`);
+  await pag.click('#lazo-cuerpo [data-formato="spa"]');
+  const [dspa] = await Promise.all([pag.waitForEvent('download'), pag.click('#lazo-cuerpo [data-a="descargar"]')]);
+  const rutaSpa = await dspa.path();
+  await pag.click('#lazo-cuerpo [data-formato="kmz"]');
+  const [dkmz] = await Promise.all([pag.waitForEvent('download'), pag.click('#lazo-cuerpo [data-a="descargar"]')]);
+  const kmz = await (await import('node:fs/promises')).readFile(await dkmz.path());
+  ok(kmz.readUInt32LE(0) === 0x04034b50 && kmz.includes(Buffer.from('doc.kml')) && kmz.includes(Buffer.from('<Folder><name>OP NORTE</name>')), 'Exportar KMZ (doc.kml con carpetas por operación)');
+  await pag.click('#lazo-cerrar');
+  // Paquete SPA recibido: se abre como operación editable
+  const nOps = (await plan()).operaciones.length;
+  const { copyFile } = await import('node:fs/promises'); await copyFile(rutaSpa, '/tmp/paquete-prueba.spa.json');
+  await pag.setInputFiles('#entrada-datos', '/tmp/paquete-prueba.spa.json'); await pag.waitForTimeout(400);
+  pl = await plan();
+  const recibida = pl.operaciones.find((o) => !o.padre && /recibido/.test(o.origen));
+  const dentroDe = (id) => { const ids = [id]; for (let i = 0; i < ids.length; i++) for (const o of pl.operaciones) if (o.padre === ids[i]) ids.push(o.id); return new Set(ids); };
+  const enRecibida = recibida ? pl.elementos.filter((e) => dentroDe(recibida.id).has(e.paquete)).length : 0;
+  ok(pl.operaciones.length > nOps && recibida && enRecibida === nLazo && pl.operaciones.some((o) => o.nombre === 'Salto 1' && dentroDe(recibida.id).has(o.id)), `Paquete SPA recibido: se abre como operación nueva y editable, con sus fases (${enRecibida} objetos)`);
+  // Ventanas: mover por la cabecera y cambiar de tamaño desde la esquina
+  const v0 = await pag.locator('#panel-objetos').boundingBox();
+  await pag.mouse.move(v0.x + 120, v0.y + 16); await pag.mouse.down(); await pag.mouse.move(v0.x + 320, v0.y + 96, { steps: 6 }); await pag.mouse.up();
+  const v1 = await pag.locator('#panel-objetos').boundingBox();
+  ok(Math.abs(v1.x - v0.x - 200) < 3 && Math.abs(v1.y - v0.y - 80) < 3, 'Ventana movida arrastrando su cabecera');
+  await pag.mouse.move(v1.x + v1.width - 6, v1.y + v1.height - 6); await pag.mouse.down(); await pag.mouse.move(v1.x + v1.width + 194, v1.y + v1.height + 54, { steps: 6 }); await pag.mouse.up();
+  const v2 = await pag.locator('#panel-objetos').boundingBox();
+  ok(Math.abs(v2.width - v1.width - 200) < 3, 'Ventana más ancha desde la esquina');
+  ok(await pag.locator('#obj-lista .obj-col-ancha').first().isVisible(), 'Más ancha, más información (columna de categoría)');
+  await pag.dblclick('#panel-objetos .v-cab strong'); await pag.waitForTimeout(150);
+  // Recogerse sin uso y abrirse al pasar el ratón
+  await pag.evaluate(() => { const a = JSON.parse(localStorage.getItem('spa.apariencia')); a.reposo = 4; localStorage.setItem('spa.apariencia', JSON.stringify(a)); });
+  await pag.click('#btn-ajustes'); await pag.click('[data-ap="reposo"] [data-v="4"]'); await pag.click('#btn-ajustes');
+  await pag.mouse.move(cx, cy + 200); await pag.waitForTimeout(4800);
+  ok(await motor(() => document.getElementById('panel-objetos').classList.contains('v-recogida')), 'Sin usarla 4 s, la ventana se recoge y deja ver el mapa');
+  await pag.hover('#panel-objetos .v-cab'); await pag.waitForTimeout(400);
+  ok(!(await motor(() => document.getElementById('panel-objetos').classList.contains('v-recogida'))), 'Al pasar el ratón, se vuelve a abrir');
+  await pag.click('#btn-ajustes'); await pag.click('[data-ap="reposo"] [data-v="0"]');
+  // Apartarse al poner objetos
+  await pag.click('#ap-apartar'); await pag.click('#btn-ajustes');
+  await herr('[data-herr="punto"]');
+  await pag.mouse.move(cx, cy + 120, { steps: 3 }); await pag.waitForTimeout(150);
+  const opa = Number(await motor(() => getComputedStyle(document.getElementById('panel-objetos')).opacity));
+  ok(opa < 0.3 && await motor(() => getComputedStyle(document.getElementById('panel-objetos')).pointerEvents === 'none'), `Al poner un objeto, las ventanas se apartan y dejan pinchar el mapa (opacidad ${opa.toFixed(2)})`);
+  await pag.keyboard.press('Escape'); await pag.waitForTimeout(100);
+  // Tema automático: oscuro sobre el híbrido
+  await motor(() => document.querySelector('#panel-capas .fondo[data-id="hibrido"]').click()); await pag.waitForTimeout(150);
+  ok(await motor(() => document.body.classList.contains('tema-oscuro')), 'Tema automático: cristal oscuro sobre el híbrido');
+  await motor(() => document.querySelector('#panel-capas .fondo[data-id="mtn"]').click()); await pag.waitForTimeout(150);
+  ok(!(await motor(() => document.body.classList.contains('tema-oscuro'))), '…y claro sobre el topográfico');
 }
 
 if (CAPTURAS) {

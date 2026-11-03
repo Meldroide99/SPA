@@ -61,7 +61,7 @@ async function componerTesela(t, hay, z, x, y, lienzo) {
   return false;
 }
 
-export function iniciarImportar({ L, mapa, fmt, alturas, dibujo, herramienta, alCambiarPaneles = () => {}, fondo = () => '' }) {
+export function iniciarImportar({ L, mapa, fmt, alturas, dibujo, herramienta, alCambiarPaneles = () => {}, fondo = () => '', alPaqueteSpa = null }) {
   const $ = (id) => document.getElementById(id);
   const DUENO = 'importados';
   if (!mapa.getPane('importados')) mapa.createPane('importados').style.zIndex = 455;
@@ -123,7 +123,7 @@ export function iniciarImportar({ L, mapa, fmt, alturas, dibujo, herramienta, al
         <div class="gi-lista">${g.elementos.map((e, i) => `<button type="button" class="plan-el" data-acc="elem" data-i="${i}" aria-pressed="${seleccion?.grupo === g && seleccion.i === i}">
           <svg viewBox="0 0 24 24" style="--c:${e.color || BANDOS[e.bando]?.color || '#5b3a8c'}">${ICONOS[e.tipo]}</svg><span class="pe-nom">${esc(e.nombre || '(sin nombre)')}</span><span class="pe-med">${e.tipo === 'linea' ? fmt.metros(longitudLinea(e.puntos)) : ''}</span></button>`).join('')}</div>
         ${g.avisos?.length ? `<details class="gi-avisos"><summary>${g.avisos.length} aviso${g.avisos.length > 1 ? 's' : ''}</summary><ul>${g.avisos.map((a) => `<li>${esc(a)}</li>`).join('')}</ul></details>` : ''}
-        <div class="pm-acciones"><button type="button" data-acc="al-plan" title="Copia todos los elementos al plan para poder editarlos">Pasar al plan</button><button type="button" data-acc="borrar" class="peligro">Quitar</button></div>
+        <div class="pm-acciones"><button type="button" data-acc="al-plan" title="Los copia a tus Objetos para poder editarlos">Pasar a Objetos</button><button type="button" data-acc="borrar" class="peligro">Quitar</button></div>
       </div>` : ''}</div>`).join('');
   }
 
@@ -135,7 +135,7 @@ export function iniciarImportar({ L, mapa, fmt, alturas, dibujo, herramienta, al
     if (acc === 'abrir') { g.abierto = !g.abierto; pintarGrupos(); }
     if (acc === 'centrar') { const b = limitesGrupo(g); if (b) mapa.flyToBounds(b, { padding: [60, 60], maxZoom: 15, duration: 0.7 }); }
     if (acc === 'elem') seleccionar(g, Number(ev.target.closest('[data-i]').dataset.i), { centrar: true });
-    if (acc === 'al-plan') pasarAlPlan(g.elementos, `Pasar «${g.nombre}» al plan`);
+    if (acc === 'al-plan') pasarAlPlan(g.elementos, `Pasar «${g.nombre}» a Objetos`);
     if (acc === 'borrar') {
       g.capa.remove(); grupos.splice(grupos.indexOf(g), 1); borrar('datos', g.id);
       if (seleccion?.grupo === g) cerrarFicha();
@@ -157,8 +157,9 @@ export function iniciarImportar({ L, mapa, fmt, alturas, dibujo, herramienta, al
   }
   function pasarAlPlan(elementos, desc) {
     const nuevos = elementos.map(aElementoPlan);
+    for (const n of nuevos) n.paquete = dibujo.activo ?? null; // a la operación en la que se está pintando
     dibujo.anadir(nuevos, desc);
-    dibujo.avisoBreve(`${nuevos.length} elemento${nuevos.length > 1 ? 's' : ''} pasado${nuevos.length > 1 ? 's' : ''} al plan (editable)`);
+    dibujo.avisoBreve(`${nuevos.length} elemento${nuevos.length > 1 ? 's' : ''} pasado${nuevos.length > 1 ? 's' : ''} a Objetos (editable)`);
     return nuevos;
   }
 
@@ -216,7 +217,7 @@ export function iniciarImportar({ L, mapa, fmt, alturas, dibujo, herramienta, al
     panel.innerHTML = `<div class="pm-cab"><strong><span class="muestra-bando" style="--c:${color}"></span>${esc(e.nombre || '(sin nombre)')}</strong><span>${tipoN} importado</span></div>
       <p class="el-ayuda">De «${esc(g.nombre)}» (${esc(g.formato)}).${e.descripcion ? ` ${esc(e.descripcion)}` : ''}</p>
       ${cuerpo}
-      <div class="pm-acciones"><button type="button" data-imp="al-plan" title="Copiar al plan para poder editarlo">Pasar al plan</button><button type="button" data-imp="centrar">Centrar</button><button type="button" data-imp="cerrar">Cerrar</button></div>`;
+      <div class="pm-acciones"><button type="button" data-imp="al-plan" title="Copiarlo a tus Objetos para poder editarlo">Pasar a Objetos</button><button type="button" data-imp="centrar">Centrar</button><button type="button" data-imp="cerrar">Cerrar</button></div>`;
     panel.hidden = false; alCambiarPaneles();
     if (e.tipo === 'punto') rellenarAltitud(alturas, e.puntos[0]);
     if (e.tipo === 'linea') {
@@ -232,7 +233,7 @@ export function iniciarImportar({ L, mapa, fmt, alturas, dibujo, herramienta, al
     const { grupo: g, i } = seleccion;
     if (a === 'cerrar') cerrarFicha();
     if (a === 'centrar') seleccionar(g, i, { centrar: true });
-    if (a === 'al-plan') { const [n] = pasarAlPlan([g.elementos[i]], 'Pasar al plan'); cerrarFicha(); dibujo.seleccionar(n.id); }
+    if (a === 'al-plan') { const [n] = pasarAlPlan([g.elementos[i]], 'Pasar a Objetos'); cerrarFicha(); dibujo.seleccionar(n.id); }
   });
 
   /** Puntos de lo importado visible (para el imán del dibujo). */
@@ -435,6 +436,11 @@ export function iniciarImportar({ L, mapa, fmt, alturas, dibujo, herramienta, al
     for (const e of entradas) {
       const n = e.archivo.name;
       try {
+        // Paquete de SPA (de otro usuario o de un Lazo): se abre como operación editable
+        if (/\.(spa|json)$/i.test(n) && alPaqueteSpa) {
+          if (await alPaqueteSpa(await e.archivo.text(), n)) hechos++; else avisos.push(`${n}: no es un paquete de SPA`);
+          continue;
+        }
         if (esDatos(n)) {
           const r = await importarDatos(e.archivo, n);
           for (const s of r.superposiciones) await anadirMapa({ nombre: s.nombre, tipo: 'superposicion', superposicion: s }, { centrar: false }).catch(() => {});
