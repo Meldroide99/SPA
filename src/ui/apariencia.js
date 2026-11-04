@@ -6,7 +6,7 @@ const CLAVE = 'spa.apariencia';
 export const APARIENCIA_FABRICA = Object.freeze({
   tema: 'auto', transparencia: 60, desenfoque: 6, escala: 95, reposo: 8, apartar: true, barraFija: false, altitud: true,
 });
-const VERSION = 2; // v0.9.1: nuevos valores de fábrica de Balú (60 % · 6 px · 95 %)
+const VERSION = 3; // v0.9.4: valores de fábrica de Balú (65 % · 10 px · 95 %)
 
 /**
  * @param {{ fondoOscuro: () => boolean, alCambiar?: () => void }} o

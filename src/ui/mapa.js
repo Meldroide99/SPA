@@ -22,7 +22,7 @@ import { iniciarObjetos } from './objetos.js';
 import { iniciarPanelOperaciones } from './panel-operaciones.js';
 import { iniciarLazo } from './lazo.js';
 import { iniciarRegla } from './regla.js';
-import { lupa, etiquetas, reordenable } from './vivo.js';
+import { lupa, etiquetas, reordenable, deslizador } from './vivo.js';
 import { zoomSuave } from '../mapa/zoom-suave.js';
 import { crearBuscadorLugares } from '../datos/lugares.js';
 import { FORMATOS_EXPORTAR } from '../datos/exportar.js';
@@ -121,7 +121,7 @@ let fondoActual = null;
 let alCambiarFondo = () => {}; // la cuadrícula se pinta en blanco sobre el híbrido
 // eslint-disable-next-line prefer-const
 let importar = null;
-const VERSION = '0.9.3';
+const VERSION = '0.9.4';
 function ponerFondo(id, { automatico = false } = {}) {
   if (!capasFondo[id]) id = 'mtn';
   if (fondoActual) mapa.removeLayer(fondoActual);
@@ -394,6 +394,7 @@ for (const id of Object.keys(PANELES)) {
   new MutationObserver(() => $(PANELES[id].boton).setAttribute('aria-pressed', String(!panel.hidden))).observe(panel, { attributes: true, attributeFilter: ['hidden'] });
 }
 // Barras vivas: los iconos crecen al pasar el ratón, el nombre sale al pasar y se reordenan manteniendo pulsado
+deslizador(document);
 lupa($('herramientas'), { eje: 'x' });
 etiquetas($('herramientas'), { lado: 'abajo' });
 reordenable($('herramientas'), { clave: 'spa.orden.herramientas', eje: 'x', grupos: '.h-grupo' });

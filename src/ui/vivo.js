@@ -6,6 +6,7 @@
 //   - Reordenar: mantener pulsado un botón y arrastrarlo a lo largo de su
 //     barra. Los demás se apartan; al soltar, se queda (y se recuerda).
 
+const SOBRE = 1.42;     // los iconos se dibujan a este tamaño y se encogen: así nunca salen borrosos al crecer
 const RADIO = 92;      // px de alcance de la lupa
 const ESPERA_REORDENAR = 380;
 
@@ -26,7 +27,7 @@ export function lupa(barra, { eje = 'x', max = 1.42, selector = 'button' } = {})
       const c = eje === 'x' ? r.left + r.width / 2 : r.top + r.height / 2;
       const d = (eje === 'x' ? ultimo.x : ultimo.y) - c;
       const f = Math.exp(-(d * d) / (2 * (RADIO / 2.2) ** 2));
-      ico.style.transform = `scale(${(1 + (max - 1) * f).toFixed(3)})`;
+      ico.style.transform = `scale(${((1 + (max - 1) * f) / SOBRE).toFixed(3)})`;
     }
   };
   const pedir = () => { if (!raf) raf = requestAnimationFrame(pintar); };
@@ -144,4 +145,27 @@ export function reordenable(barra, { clave, eje = 'x', grupos = null, alCambiar 
   };
   window.addEventListener('pointerup', soltar);
   window.addEventListener('pointercancel', soltar);
+}
+
+/**
+ * Selector segmentado: la pastilla blanca se desliza desde el botón anterior al nuevo
+ * (muelle, sin duración fija). La pastilla es el ::before del botón pulsado.
+ */
+export function deslizador(raiz = document) {
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const SEL = '.seg, .sim-pestanas';
+  const previo = new WeakMap();
+  const marcar = (e) => { const g = e.target.closest?.(SEL); if (!g) return; previo.set(g, g.querySelector('button[aria-pressed="true"]')?.getBoundingClientRect() ?? null); };
+  raiz.addEventListener('pointerdown', marcar, true);
+  new MutationObserver((lista) => {
+    for (const m of lista) {
+      const b = m.target; if (b.getAttribute('aria-pressed') !== 'true') continue;
+      const g = b.closest(SEL); const antes = g && previo.get(g); if (!antes) continue;
+      previo.delete(g);
+      const ahora = b.getBoundingClientRect(); if (!ahora.width) continue;
+      const dx = antes.left - ahora.left, sx = antes.width / ahora.width;
+      b.animate([{ transform: `translateX(${dx}px) scaleX(${sx})` }, { transform: 'none' }],
+        { duration: 420, easing: 'linear(0 0%, .1141 8.3%, .3199 16.7%, .5154 25%, .67 33.3%, .7822 41.7%, .8594 50%, .9107 58.3%, .9441 66.7%, .9653 75%, .9787 83.3%, .987 91.7%, 1)', pseudoElement: '::before' });
+    }
+  }).observe(raiz.body ?? raiz, { attributes: true, attributeFilter: ['aria-pressed'], subtree: true });
 }

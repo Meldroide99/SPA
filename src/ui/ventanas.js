@@ -84,14 +84,16 @@ export function iniciarVentanas({ reposo, apartar, colocando, escala = () => 1, 
     const sup = parseFloat(getComputedStyle(cont).getPropertyValue('--sup')) || 64;
     const supIzq = parseFloat(getComputedStyle(cont).getPropertyValue('--sup-izq')) || sup + 54;
     const libres = (lista) => lista.map((id) => document.querySelector(`.ventana[data-ventana="${id}"]`)).filter((v) => v && !v.hidden && !v.classList.contains('v-movida'));
-    let x = dock ? dock.getBoundingClientRect().right - c.left + 10 : 12;
+    let x = dock ? dock.getBoundingClientRect().right - c.left + 8 : 12;
     for (const v of libres(ordenIzq())) {
       // Los de la barra lateral salen de su botón: el giro de la animación nace a su altura
       const b = dock?.querySelector(`[data-dock="${v.dataset.ventana}"]`);
       if (b) { const rb = b.getBoundingClientRect(); v.style.setProperty('--origen-y', `${(rb.top + rb.height / 2 - c.top - supIzq) / k}px`); }
       v.style.left = `${x / k}px`; v.style.top = `${supIzq / k}px`; v.style.right = 'auto';
       if (!v.classList.contains('v-alto') && !recogida(v)) v.style.maxHeight = `${Math.max(160, c.height - supIzq - 64) / k}px`;
-      x += v.getBoundingClientRect().width + 10;
+      // Ancho real: sin el encogimiento de la animación de apertura (si no, la siguiente se montaría encima)
+      const esc = parseFloat(getComputedStyle(v).scale) || 1;
+      x += v.getBoundingClientRect().width / esc + 8;
     }
     let y = sup, derecha = 12, anchoCol = 0;
     for (const v of libres(DER)) {

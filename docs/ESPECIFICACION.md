@@ -473,3 +473,12 @@ y 180°) y asa ↻ en el mapa que se arrastra alrededor del centro, de 5 en 5°
 - Rumbo magnético (modelo WMM).
 - Puntos de control: vértices geodésicos del IGN en la zona de Guadarrama.
 - Usuarios y servidor: cargar operaciones del servidor y preguntar al modificar «¿para todos o solo para ti?».
+
+## v0.9.4 — Estilo Apple
+- Icono de **Operaciones** nuevo (ruta entre dos puntos), distinto del de Capas.
+- Iconos nítidos al pasar el ratón: se dibujan a 1,42× y se encogen (sin `will-change`); la lupa solo cambia la escala.
+- Barra lateral con más separación entre iconos (10 px).
+- Los paneles de la barra lateral se apilan sin pisarse: se mide el ancho real (sin la escala de la animación de apertura) y se pegan al dock (8 px).
+- Selectores y pestañas segmentados con pastilla que se desliza (muelle `linear()`), muelles `--suave` y `--bote`.
+- Vidrio: borde superior claro, sombra por capas, `prefers-reduced-transparency` y `prefers-contrast`.
+- Valores de fábrica: transparencia 65 %, desenfoque 10 px, tamaño 95 % (`VERSION` de apariencia = 3).

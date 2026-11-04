@@ -1295,7 +1295,7 @@ p.sim-armado { margin: 0 0 6px; padding: 6px 8px; font-size: 12px; background: #
    sobre el híbrido). Transparencia, desenfoque y tamaño, en Ajustes.
    ====================================================================== */
 :root {
-  --vidrio-op: .4; --desenfoque: 6px; --escala-ui: .95; --sup: 64px; --sup-izq: 118px; --ficha-top: 112px;
+  --vidrio-op: .35; --desenfoque: 10px; --escala-ui: .95; --sup: 64px; --sup-izq: 118px; --ficha-top: 112px;
   --vidrio-rgb: 248, 248, 250; --vidrio-borde: rgba(255,255,255,.6); --vidrio-sombra: 0 12px 34px -14px rgba(10,20,35,.38), 0 0 0 .5px rgba(10,20,35,.10);
   --acento: #0C5FA8;
 }
@@ -1651,7 +1651,7 @@ body.tema-oscuro .barra-sup .buscar input { color: #fff; }
 
 
 /* ============================================================ v0.9.3 · interfaz viva */
-:root { --muelle: cubic-bezier(.34,1.56,.64,1); --muelle-suave: cubic-bezier(.3,1.35,.6,1); }
+:root { --suave: linear(0 0%, .1141 8.3%, .3199 16.7%, .5154 25%, .67 33.3%, .7822 41.7%, .8594 50%, .9107 58.3%, .9441 66.7%, .9653 75%, .9787 83.3%, .987 91.7%, 1); --bote: linear(0 0%, .0755 6.3%, .2425 12.5%, .4358 18.8%, .6167 25%, .7663 31.3%, .8786 37.5%, .9555 43.8%, 1.0028 50%, 1.0279 56.3%, 1.0375 62.5%, 1.0375 68.8%, 1.0324 75%, 1.0252 81.3%, 1.0179 87.5%, 1.0116 93.8%, 1); --muelle: cubic-bezier(.34,1.56,.64,1); --muelle-suave: cubic-bezier(.3,1.35,.6,1); }
 
 /* Sello SPA: oro champán sobre gris */
 .barra-sup .sello-spa, .sello-spa { width: 34px; height: 34px; border-radius: 0; background: none; border: 0; padding: 0; display: block; flex: none;
@@ -1665,11 +1665,11 @@ body.tema-oscuro .barra-sup .marca-txt small { color: #CDAE78; }
 /* Barra de herramientas: solo iconos; el nombre sale al pasar el ratón */
 .h-grupo { padding: 3px; gap: 2px; }
 .herramientas button { width: 38px; height: 36px; padding: 0; display: grid; place-items: center; border: 0 !important; border-radius: 9px; transition: background .2s, color .2s; }
-.herramientas svg { width: 20px; height: 20px; }
+.herramientas svg { width: 28.4px; height: 28.4px; }
 .herramientas button > span { display: none; }
 #btn-app6 { width: 42px; }
-.herramientas svg, .dock svg { transform-origin: 50% 50%; transition: transform .22s cubic-bezier(.2,.9,.3,1.25); will-change: transform; }
-.herramientas button:active:not(:disabled) svg, .dock button:active svg { transform: scale(.82) !important; transition-duration: .1s; }
+.herramientas svg, .dock svg { transform-origin: 50% 50%; transform: scale(calc(1 / 1.42)); transition: transform .3s var(--bote); }
+.herramientas button:active:not(:disabled) svg, .dock button:active svg { transform: scale(calc(.82 / 1.42)) !important; transition-duration: .1s; }
 .herramientas .h-grupo { overflow: visible; }
 .herramientas.reordenando .h-grupo { outline: 1px dashed rgba(127,127,127,.35); outline-offset: -1px; }
 .levantado { position: relative; z-index: 3; border-radius: 12px; background: rgba(var(--vidrio-rgb), .95) !important; box-shadow: 0 10px 24px -8px rgba(0,0,0,.45), 0 0 0 1px var(--vidrio-borde); scale: 1.12; transition: scale .25s var(--muelle), box-shadow .25s; cursor: grabbing; }
@@ -1678,13 +1678,13 @@ body.tema-oscuro .barra-sup .marca-txt small { color: #CDAE78; }
 @keyframes temblor { from { rotate: -1.6deg; } to { rotate: 1.6deg; } }
 
 /* Barra lateral (dock): de aquí salen Capas, Operaciones y Objetos */
-.dock { position: absolute; z-index: 1008; left: 12px; top: 50%; translate: 0 -50%; display: flex; flex-direction: column; gap: 4px; padding: 6px; border-radius: 22px; zoom: var(--escala-ui);
+.dock { position: absolute; z-index: 1008; left: 12px; top: 50%; translate: 0 -50%; display: flex; flex-direction: column; gap: 10px; padding: 8px 6px; border-radius: 22px; zoom: var(--escala-ui);
   animation: dock-entra .7s var(--muelle-suave) both .15s; }
 @keyframes dock-entra { from { opacity: 0; transform: translateX(-24px) scale(.9); } to { opacity: 1; transform: none; } }
 .dock button { position: relative; width: 40px; height: 40px; border: 0; border-radius: 13px; background: none; color: var(--tinta-2); display: grid; place-items: center; cursor: pointer; padding: 0;
   transition: background .25s, color .25s; }
 .dock button > span { display: none; }
-.dock svg { width: 21px; height: 21px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.dock svg { width: 29.8px; height: 29.8px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
 .dock button:hover { background: var(--hundido); color: var(--tinta); }
 .dock button[aria-pressed="true"] { color: var(--tinta); }
 /* El puntito del abierto (como en el Dock) */
@@ -1725,6 +1725,24 @@ details[open] > :not(summary) { animation: desplegar .38s var(--curva); }
 .buscar-res .grupo-lugares small { color: var(--gris); }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
 @media (max-width: 760px) { .dock { top: auto; bottom: 64px; translate: none; } }
+
+/* ===== v0.9.4 · Estilo Apple ===== */
+/* Pestañas y selectores segmentados: una pastilla blanca que se desliza al cambiar */
+.seg, .sim-pestanas { background: var(--hundido, rgba(120,120,128,.16)); border-color: transparent; }
+.seg button, .sim-pestanas button { position: relative; isolation: isolate; background: none !important; letter-spacing: .005em; }
+.seg button[aria-pressed="true"], .sim-pestanas button[aria-pressed="true"] { color: var(--tinta) !important; font-weight: 600; }
+.seg button[aria-pressed="true"]::before, .sim-pestanas button[aria-pressed="true"]::before {
+  content: ""; position: absolute; inset: 0; z-index: -1; border-radius: inherit;
+  background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.16), 0 0 0 .5px rgba(0,0,0,.05);
+}
+body.tema-oscuro .seg button[aria-pressed="true"]::before, body.tema-oscuro .sim-pestanas button[aria-pressed="true"]::before { background: rgba(255,255,255,.2); box-shadow: 0 1px 3px rgba(0,0,0,.4); }
+body.tema-oscuro .seg button[aria-pressed="true"], body.tema-oscuro .sim-pestanas button[aria-pressed="true"] { color: #fff !important; }
+/* Vidrio: borde superior más claro (la luz roza el material) y sombra por capas */
+.ventana, .h-grupo, .dock, .barra-sup { box-shadow: inset 0 .5px 0 rgba(255,255,255,.55), 0 0 0 .5px var(--vidrio-borde), 0 8px 30px -10px rgba(0,0,0,.35); }
+/* Muelles al abrir y cerrar */
+.ventana[data-dock-panel] { transition-timing-function: var(--bote); }
+@media (prefers-reduced-transparency: reduce) { .vidrio, .ventana, .h-grupo, .dock, .barra-sup { --vidrio-op: .92; backdrop-filter: none !important; } }
+@media (prefers-contrast: more) { .vidrio, .ventana, .h-grupo, .dock, .barra-sup { --vidrio-op: .96; box-shadow: 0 0 0 1px currentColor; } }
 
 </style>
 </head>
@@ -1871,7 +1889,7 @@ details[open] > :not(summary) { animation: desplegar .38s var(--curva); }
       <button type="button" id="btn-capas" data-dock="capas" aria-pressed="false" aria-label="Capas">
         <svg viewBox="0 0 24 24"><path d="M12 3 2 8l10 5 10-5z"/><path d="m2 13 10 5 10-5"/></svg><span>Capas</span></button>
       <button type="button" id="btn-operaciones" data-dock="operaciones" aria-pressed="false" aria-label="Operaciones">
-        <svg viewBox="0 0 24 24"><path d="M3 7.5 12 3l9 4.5-9 4.5z"/><path d="m3 12 9 4.5 9-4.5"/><path d="m3 16.5 9 4.5 9-4.5"/></svg><span>Operaciones</span></button>
+        <svg viewBox="0 0 24 24"><circle cx="6" cy="18" r="2.2"/><circle cx="18" cy="4" r="2.2"/><path d="M8.2 18H14a3.5 3.5 0 0 0 0-7h-4a3.5 3.5 0 0 1 0-7h5.8"/></svg><span>Operaciones</span></button>
       <button type="button" id="btn-objetos" data-dock="objetos" aria-pressed="false" aria-label="Objetos">
         <svg viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11"/><rect x="3.5" y="4.5" width="3" height="3" rx=".6"/><rect x="3.5" y="10.5" width="3" height="3" rx=".6"/><rect x="3.5" y="16.5" width="3" height="3" rx=".6"/></svg><span>Objetos</span></button>
     </nav>
@@ -14065,14 +14083,16 @@ function iniciarVentanas({ reposo, apartar, colocando, escala = () => 1, alCambi
     const sup = parseFloat(getComputedStyle(cont).getPropertyValue('--sup')) || 64;
     const supIzq = parseFloat(getComputedStyle(cont).getPropertyValue('--sup-izq')) || sup + 54;
     const libres = (lista) => lista.map((id) => document.querySelector(`.ventana[data-ventana="${id}"]`)).filter((v) => v && !v.hidden && !v.classList.contains('v-movida'));
-    let x = dock ? dock.getBoundingClientRect().right - c.left + 10 : 12;
+    let x = dock ? dock.getBoundingClientRect().right - c.left + 8 : 12;
     for (const v of libres(ordenIzq())) {
       // Los de la barra lateral salen de su botón: el giro de la animación nace a su altura
       const b = dock?.querySelector(`[data-dock="${v.dataset.ventana}"]`);
       if (b) { const rb = b.getBoundingClientRect(); v.style.setProperty('--origen-y', `${(rb.top + rb.height / 2 - c.top - supIzq) / k}px`); }
       v.style.left = `${x / k}px`; v.style.top = `${supIzq / k}px`; v.style.right = 'auto';
       if (!v.classList.contains('v-alto') && !recogida(v)) v.style.maxHeight = `${Math.max(160, c.height - supIzq - 64) / k}px`;
-      x += v.getBoundingClientRect().width + 10;
+      // Ancho real: sin el encogimiento de la animación de apertura (si no, la siguiente se montaría encima)
+      const esc = parseFloat(getComputedStyle(v).scale) || 1;
+      x += v.getBoundingClientRect().width / esc + 8;
     }
     let y = sup, derecha = 12, anchoCol = 0;
     for (const v of libres(DER)) {
@@ -14323,7 +14343,7 @@ const CLAVE = 'spa.apariencia';
 const APARIENCIA_FABRICA = Object.freeze({
   tema: 'auto', transparencia: 60, desenfoque: 6, escala: 95, reposo: 8, apartar: true, barraFija: false, altitud: true,
 });
-const VERSION = 2; // v0.9.1: nuevos valores de fábrica de Balú (60 % · 6 px · 95 %)
+const VERSION = 3; // v0.9.4: valores de fábrica de Balú (65 % · 10 px · 95 %)
 
 /**
  * @param {{ fondoOscuro: () => boolean, alCambiar?: () => void }} o
@@ -15540,6 +15560,7 @@ __mods["src/ui/vivo.js"] = (function () {
 //   - Reordenar: mantener pulsado un botón y arrastrarlo a lo largo de su
 //     barra. Los demás se apartan; al soltar, se queda (y se recuerda).
 
+const SOBRE = 1.42;     // los iconos se dibujan a este tamaño y se encogen: así nunca salen borrosos al crecer
 const RADIO = 92;      // px de alcance de la lupa
 const ESPERA_REORDENAR = 380;
 
@@ -15560,7 +15581,7 @@ function lupa(barra, { eje = 'x', max = 1.42, selector = 'button' } = {}) {
       const c = eje === 'x' ? r.left + r.width / 2 : r.top + r.height / 2;
       const d = (eje === 'x' ? ultimo.x : ultimo.y) - c;
       const f = Math.exp(-(d * d) / (2 * (RADIO / 2.2) ** 2));
-      ico.style.transform = `scale(${(1 + (max - 1) * f).toFixed(3)})`;
+      ico.style.transform = `scale(${((1 + (max - 1) * f) / SOBRE).toFixed(3)})`;
     }
   };
   const pedir = () => { if (!raf) raf = requestAnimationFrame(pintar); };
@@ -15680,7 +15701,30 @@ function reordenable(barra, { clave, eje = 'x', grupos = null, alCambiar = () =>
   window.addEventListener('pointercancel', soltar);
 }
 
-return { lupa, etiquetas, reordenable };
+/**
+ * Selector segmentado: la pastilla blanca se desliza desde el botón anterior al nuevo
+ * (muelle, sin duración fija). La pastilla es el ::before del botón pulsado.
+ */
+function deslizador(raiz = document) {
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const SEL = '.seg, .sim-pestanas';
+  const previo = new WeakMap();
+  const marcar = (e) => { const g = e.target.closest?.(SEL); if (!g) return; previo.set(g, g.querySelector('button[aria-pressed="true"]')?.getBoundingClientRect() ?? null); };
+  raiz.addEventListener('pointerdown', marcar, true);
+  new MutationObserver((lista) => {
+    for (const m of lista) {
+      const b = m.target; if (b.getAttribute('aria-pressed') !== 'true') continue;
+      const g = b.closest(SEL); const antes = g && previo.get(g); if (!antes) continue;
+      previo.delete(g);
+      const ahora = b.getBoundingClientRect(); if (!ahora.width) continue;
+      const dx = antes.left - ahora.left, sx = antes.width / ahora.width;
+      b.animate([{ transform: `translateX(${dx}px) scaleX(${sx})` }, { transform: 'none' }],
+        { duration: 420, easing: 'linear(0 0%, .1141 8.3%, .3199 16.7%, .5154 25%, .67 33.3%, .7822 41.7%, .8594 50%, .9107 58.3%, .9441 66.7%, .9653 75%, .9787 83.3%, .987 91.7%, 1)', pseudoElement: '::before' });
+    }
+  }).observe(raiz.body ?? raiz, { attributes: true, attributeFilter: ['aria-pressed'], subtree: true });
+}
+
+return { lupa, etiquetas, reordenable, deslizador };
 })();
 
 // ── src/mapa/zoom-suave.js
@@ -15882,7 +15926,7 @@ const { iniciarObjetos } = __req("src/ui/objetos.js");
 const { iniciarPanelOperaciones } = __req("src/ui/panel-operaciones.js");
 const { iniciarLazo } = __req("src/ui/lazo.js");
 const { iniciarRegla } = __req("src/ui/regla.js");
-const { lupa, etiquetas, reordenable } = __req("src/ui/vivo.js");
+const { lupa, etiquetas, reordenable, deslizador } = __req("src/ui/vivo.js");
 const { zoomSuave } = __req("src/mapa/zoom-suave.js");
 const { crearBuscadorLugares } = __req("src/datos/lugares.js");
 const { FORMATOS_EXPORTAR } = __req("src/datos/exportar.js");
@@ -15981,7 +16025,7 @@ let fondoActual = null;
 let alCambiarFondo = () => {}; // la cuadrícula se pinta en blanco sobre el híbrido
 // eslint-disable-next-line prefer-const
 let importar = null;
-const VERSION = '0.9.3';
+const VERSION = '0.9.4';
 function ponerFondo(id, { automatico = false } = {}) {
   if (!capasFondo[id]) id = 'mtn';
   if (fondoActual) mapa.removeLayer(fondoActual);
@@ -16254,6 +16298,7 @@ for (const id of Object.keys(PANELES)) {
   new MutationObserver(() => $(PANELES[id].boton).setAttribute('aria-pressed', String(!panel.hidden))).observe(panel, { attributes: true, attributeFilter: ['hidden'] });
 }
 // Barras vivas: los iconos crecen al pasar el ratón, el nombre sale al pasar y se reordenan manteniendo pulsado
+deslizador(document);
 lupa($('herramientas'), { eje: 'x' });
 etiquetas($('herramientas'), { lado: 'abajo' });
 reordenable($('herramientas'), { clave: 'spa.orden.herramientas', eje: 'x', grupos: '.h-grupo' });
