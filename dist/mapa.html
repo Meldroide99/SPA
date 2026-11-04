@@ -14209,6 +14209,9 @@ function iniciarVentanas({ reposo, apartar, colocando, escala = () => 1, alCambi
     const k = escala();
     Object.assign(v.style, { left: `${x / k}px`, top: `${y / k}px`, right: 'auto', bottom: 'auto' });
     v.classList.add('v-movida');
+    // Que no se salga por abajo: el alto que quede hasta el borde (como al colocarla a mano)
+    const g = guardado[v.dataset.ventana], ch = cont.getBoundingClientRect().height, yy = Math.max(4, y);
+    if (!recogida(v)) v.style.maxHeight = g?.h ? `${Math.min(g.h, ch - yy - 8) / k}px` : `${Math.max(120, ch - yy - 12) / k}px`;
   }
   /** Muelle de 2 ejes independientes que parte de la posición y velocidad actuales. Se puede agarrar en cualquier momento. */
   function lanzar(v, desde, hasta, vel) {
