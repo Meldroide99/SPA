@@ -14084,15 +14084,25 @@ function iniciarVentanas({ reposo, apartar, colocando, escala = () => 1, alCambi
     const supIzq = parseFloat(getComputedStyle(cont).getPropertyValue('--sup-izq')) || sup + 54;
     const libres = (lista) => lista.map((id) => document.querySelector(`.ventana[data-ventana="${id}"]`)).filter((v) => v && !v.hidden && !v.classList.contains('v-movida'));
     let x = dock ? dock.getBoundingClientRect().right - c.left + 8 : 12;
+    // Ancho y alto reales, sin el encogimiento de la animación de apertura
+    // (la posición sale de su left/top, no del dibujo: mientras se abre, el dibujo está desplazado y encogido)
+    const caja = (v) => { const r = v.getBoundingClientRect(), e = parseFloat(getComputedStyle(v).scale) || 1, l = parseFloat(v.style.left), t = parseFloat(v.style.top); return { l: Number.isFinite(l) ? l * k : r.left - c.left, t: Number.isFinite(t) ? t * k : r.top - c.top, w: r.width / e, h: r.height / e }; };
+    // Obstáculos: ventanas que el usuario dejó en un sitio (arrastradas). Las nuevas buscan hueco y nunca se ponen encima.
+    const ocupado = ventanas().filter((v) => !v.hidden && v.classList.contains('v-movida')).map(caja);
     for (const v of libres(ordenIzq())) {
       // Los de la barra lateral salen de su botón: el giro de la animación nace a su altura
       const b = dock?.querySelector(`[data-dock="${v.dataset.ventana}"]`);
       if (b) { const rb = b.getBoundingClientRect(); v.style.setProperty('--origen-y', `${(rb.top + rb.height / 2 - c.top - supIzq) / k}px`); }
-      v.style.left = `${x / k}px`; v.style.top = `${supIzq / k}px`; v.style.right = 'auto';
       if (!v.classList.contains('v-alto') && !recogida(v)) v.style.maxHeight = `${Math.max(160, c.height - supIzq - 64) / k}px`;
-      // Ancho real: sin el encogimiento de la animación de apertura (si no, la siguiente se montaría encima)
-      const esc = parseFloat(getComputedStyle(v).scale) || 1;
-      x += v.getBoundingClientRect().width / esc + 8;
+      const { w, h } = caja(v);
+      for (let i = 0; i < 20; i++) {
+        const choque = ocupado.find((o) => x < o.l + o.w + 4 && x + w > o.l - 4 && supIzq < o.t + o.h && supIzq + h > o.t);
+        if (!choque) break;
+        x = choque.l + choque.w + 8;
+      }
+      v.style.left = `${x / k}px`; v.style.top = `${supIzq / k}px`; v.style.right = 'auto';
+      ocupado.push({ l: x, t: supIzq, w, h });
+      x += w + 8;
     }
     let y = sup, derecha = 12, anchoCol = 0;
     for (const v of libres(DER)) {
