@@ -482,3 +482,13 @@ y 180°) y asa ↻ en el mapa que se arrastra alrededor del centro, de 5 en 5°
 - Selectores y pestañas segmentados con pastilla que se desliza (muelle `linear()`), muelles `--suave` y `--bote`.
 - Vidrio: borde superior claro, sombra por capas, `prefers-reduced-transparency` y `prefers-contrast`.
 - Valores de fábrica: transparencia 65 %, desenfoque 10 px, tamaño 95 % (`VERSION` de apariencia = 3).
+
+### v0.9.4 · pasada completa Apple
+- **Arrastrar ventanas:** siguen al ratón 1:1; pasado el borde se estiran como una goma (`goma()`, constante .55) y vuelven.
+- **Soltar con inercia:** se mide la velocidad de los últimos 100 ms, se proyecta (`(v/1000)·.99/(1−.99)`) y un muelle de 2 ejes (respuesta .4 s; amortiguación 1, o .8 si venía lanzada) la lleva al sitio, siempre dentro de la pantalla.
+- **Interrumpible:** si se agarra en pleno vuelo, se queda donde se cogió.
+- **Levantarse:** mientras se arrastra, sombra más honda y escala 1,015.
+- **Paneles del dock:** salen de su botón sin rebote (un clic no lleva inercia) y se van por el mismo camino.
+- **Tipografía:** tracking según tamaño (títulos −.012em, texto pequeño +.01em).
+- **Vibrancia en oscuro:** texto más legible sobre el vidrio. Cambio claro↔oscuro con transición.
+- **Movimiento reducido:** sin desplazamientos ni escalas, solo fundidos.

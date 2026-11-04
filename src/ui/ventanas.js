@@ -181,6 +181,37 @@ export function iniciarVentanas({ reposo, apartar, colocando, escala = () => 1, 
   }
 
   // ---------------------------------------------------------- arrastrar y redimensionar
+  // ---------------------------------------------------------- física (Apple): goma en los bordes, inercia al soltar y muelle
+  const sinMovimiento = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const proyectar = (vel, tasa = 0.99) => (vel / 1000) * tasa / (1 - tasa);           // a dónde iría con esa velocidad
+  const goma = (exceso, dim, c = 0.55) => (exceso * dim * c) / (dim + c * Math.abs(exceso)); // cuanto más te pasas, menos sigue
+  const limites = (w, h) => { const c = cont.getBoundingClientRect(); return { x0: 4, x1: Math.max(4, c.width - w - 4), y0: 4, y1: Math.max(4, c.height - Math.min(h, 200)), cw: c.width, ch: c.height }; };
+  const blando = (p, a, b, dim) => (p < a ? a - goma(a - p, dim) : p > b ? b + goma(p - b, dim) : p);
+  const duro = (p, a, b) => Math.min(b, Math.max(a, p));
+  function colocar(v, x, y) {
+    const k = escala();
+    Object.assign(v.style, { left: `${x / k}px`, top: `${y / k}px`, right: 'auto', bottom: 'auto' });
+    v.classList.add('v-movida');
+  }
+  /** Muelle de 2 ejes independientes que parte de la posición y velocidad actuales. Se puede agarrar en cualquier momento. */
+  function lanzar(v, desde, hasta, vel) {
+    const d = datos(v), id = v.dataset.ventana; cancelAnimationFrame(d.raf);
+    const fin = () => { d.raf = 0; v.classList.remove('v-activa'); colocar(v, hasta.x, hasta.y); guardado[id] = { ...guardado[id], x: hasta.x, y: hasta.y }; guardar(); alCambiar(); };
+    if (sinMovimiento()) { fin(); return; }
+    const z = Math.hypot(vel.x, vel.y) > 400 ? 0.8 : 1, resp = 0.4; // bote solo si venía lanzada
+    const K = (2 * Math.PI / resp) ** 2, C = 4 * Math.PI * z / resp;
+    const p = { ...desde }, u = { ...vel }; let t0 = performance.now();
+    v.classList.add('v-activa');
+    const paso = (t) => {
+      const dt = Math.min(0.032, (t - t0) / 1000); t0 = t;
+      for (const e of ['x', 'y']) { for (let i = 0; i < 2; i++) { const a = -K * (p[e] - hasta[e]) - C * u[e]; u[e] += a * dt / 2; p[e] += u[e] * dt / 2; } }
+      if (Math.hypot(p.x - hasta.x, p.y - hasta.y) < 0.5 && Math.hypot(u.x, u.y) < 8) { fin(); return; }
+      colocar(v, p.x, p.y);
+      d.raf = requestAnimationFrame(paso);
+    };
+    d.raf = requestAnimationFrame(paso);
+  }
+
   let gesto = null; // { v, modo: 'mover'|'tam', dir, x0, y0, r0, activo }
   document.addEventListener('pointerdown', (e) => {
     if (e.button !== 0) return;
@@ -203,8 +234,9 @@ export function iniciarVentanas({ reposo, apartar, colocando, escala = () => 1, 
       e.preventDefault(); return;
     }
     if (e.target.closest('button, input, select, textarea, a, summary, label, [data-arrastrar], .perfil-svg') || !cabecera(v)?.contains(e.target)) return;
+    if (datos(v).raf) { cancelAnimationFrame(datos(v).raf); datos(v).raf = 0; v.classList.remove('v-activa'); }
     const r = v.getBoundingClientRect(), c = cont.getBoundingClientRect();
-    gesto = { v, modo: 'mover', x0: e.clientX, y0: e.clientY, r0: { x: r.left - c.left, y: r.top - c.top, w: r.width, h: r.height }, activo: false };
+    gesto = { v, modo: 'mover', hist: [], x0: e.clientX, y0: e.clientY, r0: { x: r.left - c.left, y: r.top - c.top, w: r.width, h: r.height }, activo: false };
   }, true);
   function empezar() {
     gesto.activo = true;
@@ -216,8 +248,14 @@ export function iniciarVentanas({ reposo, apartar, colocando, escala = () => 1, 
     const dx = e.clientX - gesto.x0, dy = e.clientY - gesto.y0;
     if (!gesto.activo) { if (Math.hypot(dx, dy) < 5) return; empezar(); }
     const { v, r0, dir = '' } = gesto, id = v.dataset.ventana;
-    if (gesto.modo === 'mover') guardado[id] = { ...guardado[id], x: r0.x + dx, y: r0.y + dy };
-    else {
+    if (gesto.modo === 'mover') {
+      const L = limites(r0.w, r0.h);
+      const x = blando(r0.x + dx, L.x0, L.x1, L.cw), y = blando(r0.y + dy, L.y0, L.y1, L.ch);
+      gesto.hist.push({ t: performance.now(), x, y }); if (gesto.hist.length > 8) gesto.hist.shift();
+      guardado[id] = { ...guardado[id], x, y };
+      colocar(v, x, y); return;
+    }
+    {
       let { x, y, w, h } = r0;
       if (dir.includes('e')) w = Math.max(MIN_W, r0.w + dx);
       if (dir.includes('s')) h = Math.max(MIN_H, r0.h + dy);
@@ -233,7 +271,15 @@ export function iniciarVentanas({ reposo, apartar, colocando, escala = () => 1, 
     if (g.activo && g.modo === 'mover') document.body.dataset.vSoltado = '1';
     document.body.classList.remove('v-redimensionando', 'v-moviendo');
     g.v.classList.remove('v-activa');
-    if (g.activo) { guardar(); datos(g.v).ultimo = performance.now(); alCambiar(); }
+    if (g.activo && g.modo === 'mover' && g.hist.length) {
+      const h = g.hist, ult = h[h.length - 1], pri = h.find((m) => ult.t - m.t <= 100) ?? ult;
+      const dt = (ult.t - pri.t) / 1000, vel = dt > 0.008 ? { x: (ult.x - pri.x) / dt, y: (ult.y - pri.y) / dt } : { x: 0, y: 0 };
+      if (performance.now() - ult.t > 80) { vel.x = 0; vel.y = 0; } // se paró antes de soltar
+      const L = limites(g.r0.w, g.r0.h);
+      const hasta = { x: duro(ult.x + proyectar(vel.x), L.x0, L.x1), y: duro(ult.y + proyectar(vel.y), L.y0, L.y1) };
+      datos(g.v).ultimo = performance.now();
+      lanzar(g.v, { x: ult.x, y: ult.y }, hasta, vel);
+    } else if (g.activo) { guardar(); datos(g.v).ultimo = performance.now(); alCambiar(); }
     setTimeout(() => { delete document.body.dataset.vSoltado; }, 0);
   }, true);
   // Al soltar tras arrastrar no debe saltar el clic (Capas, el mapa…)

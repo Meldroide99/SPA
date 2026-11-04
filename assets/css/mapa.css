@@ -984,6 +984,24 @@ body.tema-oscuro .seg button[aria-pressed="true"], body.tema-oscuro .sim-pestana
 /* Vidrio: borde superior más claro (la luz roza el material) y sombra por capas */
 .ventana, .h-grupo, .dock, .barra-sup { box-shadow: inset 0 .5px 0 rgba(255,255,255,.55), 0 0 0 .5px var(--vidrio-borde), 0 8px 30px -10px rgba(0,0,0,.35); }
 /* Muelles al abrir y cerrar */
-.ventana[data-dock-panel] { transition-timing-function: var(--bote); }
 @media (prefers-reduced-transparency: reduce) { .vidrio, .ventana, .h-grupo, .dock, .barra-sup { --vidrio-op: .92; backdrop-filter: none !important; } }
 @media (prefers-contrast: more) { .vidrio, .ventana, .h-grupo, .dock, .barra-sup { --vidrio-op: .96; box-shadow: 0 0 0 1px currentColor; } }
+
+/* Arrastrar: la ventana se levanta (sombra más honda); al soltar vuelve a posarse con muelle */
+body.v-moviendo .ventana.v-activa { box-shadow: inset 0 .5px 0 rgba(255,255,255,.55), 0 0 0 .5px var(--vidrio-borde), 0 22px 50px -14px rgba(0,0,0,.5); scale: 1.015; transition: box-shadow .25s var(--suave), scale .3s var(--suave); }
+/* Tipografía Apple: el tracking depende del tamaño (grande, más junto; pequeño, más abierto) */
+.v-cab strong, .barra-sup .marca-txt strong { letter-spacing: -.012em; }
+.ventana { letter-spacing: -.003em; }
+.ventana small, .ventana label, .seg button, .sim-pestanas button, .etiqueta-flotante, .chip, .pildora-op, .coords { letter-spacing: .01em; }
+.ventana h3, .ventana summary { letter-spacing: -.008em; }
+/* Vibrancia: sobre vidrio oscuro, texto algo más claro y con un punto más de peso */
+body.tema-oscuro .ventana, body.tema-oscuro .barra-sup, body.tema-oscuro .etiqueta-flotante { -webkit-font-smoothing: antialiased; text-shadow: 0 .5px 0 rgba(0,0,0,.25); }
+body.tema-oscuro .ventana small { color: rgba(255,255,255,.68); }
+/* Cambiar entre claro y oscuro sin fogonazo */
+.ventana, .h-grupo, .dock, .barra-sup, .etiqueta-flotante { transition: background-color .45s ease, color .45s ease, opacity .55s ease, filter .55s ease, translate .55s var(--suave), display .55s allow-discrete, box-shadow .25s ease, scale .3s var(--suave); }
+/* Paneles del dock: salen de su botón sin rebote (un clic no lleva inercia) y se van por el mismo camino */
+.ventana[data-dock-panel] { transition: opacity .38s ease, scale .5s var(--suave), translate .5s var(--suave), filter .4s ease, display .5s allow-discrete, background-color .45s ease, color .45s ease, box-shadow .25s ease; }
+@media (prefers-reduced-motion: reduce) {
+  .ventana[data-dock-panel][hidden], .ventana[hidden] { translate: none !important; scale: none !important; filter: none !important; }
+  body.v-moviendo .ventana.v-activa { scale: none; }
+}
