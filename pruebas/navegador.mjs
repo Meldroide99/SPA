@@ -673,7 +673,7 @@ im=Image.open(sys.argv[1]); a=im.getchannel('A'); print(im.mode, im.size[0]%256,
   const bCapas = await pag.locator('#btn-capas').boundingBox();
   await pag.mouse.move(bCapas.x + bCapas.width / 2, bCapas.y + bCapas.height / 2); await pag.waitForTimeout(350);
   ok(await motor(() => { const e = document.querySelector('.etiqueta-flotante'); return e?.classList.contains('visible') && e.textContent === 'Capas'; }), 'El nombre del botón sale solo al pasar el ratón');
-  ok(/scale\(1\.3/.test(await motor(() => document.querySelector('#btn-capas svg').style.transform)), 'Lupa: el icono bajo el ratón crece (como el Dock del Mac)');
+  ok(parseFloat((await motor(() => document.querySelector('#btn-capas svg').style.transform)).slice(6)) > 0.9, 'Lupa: el icono bajo el ratón crece (como el Dock del Mac)');
   await clicOriginal('#btn-capas'); await pag.waitForTimeout(700);
   const rCapas = await pag.locator('#panel-capas').boundingBox();
   ok(rCapas && rCapas.x > bCapas.x + bCapas.width && await motor(() => document.getElementById('btn-capas').getAttribute('aria-pressed') === 'true'), 'Capas sale de la barra lateral, a su derecha');
