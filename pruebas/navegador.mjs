@@ -537,7 +537,7 @@ im=Image.open(sys.argv[1]); a=im.getchannel('A'); print(im.mode, im.size[0]%256,
   ok((await plan()).elementos.filter((e) => e.paquete === op.id || e.paquete === fase).length === 3, 'Ctrl+Z los devuelve a la operación');
   await pag.selectOption('#obj-op', ''); await pag.uncheck('#obj-todos').catch(() => {});
   // Lazo: círculo alrededor de los tres puntos
-  await herr('[data-herr="lazo"]');
+  await herr('[data-herr="lazo"]'); await pag.waitForTimeout(700); // las ventanas de al lado se deslizan al hueco de la paleta
   await pag.mouse.move(cx + 80, cy); await pag.mouse.down(); await pag.mouse.move(cx + 200, cy, { steps: 6 }); await pag.mouse.move(cx + 230, cy + 20, { steps: 4 }); await pag.mouse.up(); await pag.waitForTimeout(400);
   ok(await pag.isVisible('#panel-lazo') && (await pag.locator('#lazo-cuerpo .lazo-grupo', { hasText: 'OP NORTE' }).count()) === 1, 'Lazo: lo de dentro, agrupado por operación');
   const nLazo = await pag.locator('#lazo-cuerpo [data-item]').count();
