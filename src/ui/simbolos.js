@@ -64,6 +64,9 @@ function ejemplo(m) {
   return [[5, 30], [95, 30]];
 }
 
+/** Orden alfabético en castellano (sin distinguir mayúsculas ni tildes). */
+const alfa = (a, b) => String(a ?? '').localeCompare(String(b ?? ''), 'es', { sensitivity: 'base', numeric: true });
+
 /** Miniatura de una medida o cometido. */
 export function miniMedida(m, color = AZUL, ancho = 64, alto = 38) {
   if (!m) return '';
@@ -417,8 +420,9 @@ export function iniciarSimbolos({ L, mapa, elegirHerramienta, herramienta = () =
     </div>`;
   }
   function htmlMedidas(grupos) {
-    return grupos.map((gk) => {
-      const lista = MEDIDAS.filter((m) => m.grupo === gk && !m.oculto);
+    // Desplegables y lo que tienen dentro, en orden alfabético
+    return grupos.slice().sort((a, b) => alfa(GRUPOS[a], GRUPOS[b])).map((gk) => {
+      const lista = MEDIDAS.filter((m) => m.grupo === gk && !m.oculto).sort((a, b) => alfa(a.nombre, b.nombre));
       if (!lista.length) return '';
       const abierto = est.abiertos[`m/${gk}`] ?? grupos.length === 1; // un solo grupo (Cometidos): abierto
       return `<details class="sim-grupo-det" data-grupo="m/${gk}"${abierto ? ' open' : ''}><summary>${GRUPOS[gk]} <small>${lista.length}</small></summary>${abierto ? `<div class="sim-lista-cm">${lista.map((m) => `<button type="button" class="sim-cm" data-medida="${m.id}" data-arrastrar title="${esc(m.nombre)}"><span class="sim-cm-ico">${miniMedida(m)}</span><span>${esc(m.nombre)}${m.sigla && gk !== 'cometidos' ? ` <small>${esc(m.sigla)}</small>` : ''}</span></button>`).join('')}</div>` : ''}</details>`;
@@ -565,7 +569,8 @@ export function iniciarSimbolos({ L, mapa, elegirHerramienta, herramienta = () =
       };
     }
     const m = medida(s.id); if (!m) return null;
-    const mismos = MEDIDAS.filter((x) => !x.oculto && (x.id === m.id || (x.forma === m.forma && puntosNecesarios(x) === puntosNecesarios(m) && (x.grupo === m.grupo || m.forma !== 'especial'))));
+    const mismos = MEDIDAS.filter((x) => !x.oculto && (x.id === m.id || (x.forma === m.forma && puntosNecesarios(x) === puntosNecesarios(m) && (x.grupo === m.grupo || m.forma !== 'especial'))))
+      .sort((a, b) => alfa(GRUPOS[a.grupo], GRUPOS[b.grupo]) || alfa(a.nombre, b.nombre));
     const n = puntosNecesarios(m);
     return {
       titulo: el.propiedades.nombre || m.nombre, tipo: GRUPOS[m.grupo],
