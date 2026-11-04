@@ -218,6 +218,7 @@ export function iniciarVentanas({ reposo, apartar, colocando, escala = () => 1, 
     const b = bordeEn(e.clientX, e.clientY);
     if (b) {
       e.preventDefault(); e.stopPropagation();
+      if (datos(b.v).raf) { cancelAnimationFrame(datos(b.v).raf); datos(b.v).raf = 0; b.v.classList.remove('v-activa'); }
       const r = b.v.getBoundingClientRect(), c = cont.getBoundingClientRect();
       b.v.style.zIndex = String(++zMax);
       gesto = { v: b.v, modo: 'tam', dir: b.dir, x0: e.clientX, y0: e.clientY, r0: { x: r.left - c.left, y: r.top - c.top, w: r.width, h: r.height }, activo: false };

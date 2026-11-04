@@ -565,7 +565,7 @@ im=Image.open(sys.argv[1]); a=im.getchannel('A'); print(im.mode, im.size[0]%256,
   ok(pl.operaciones.length > nOps && recibida && enRecibida === nLazo && pl.operaciones.some((o) => o.nombre === 'Salto 1' && dentroDe(recibida.id).has(o.id)), `Paquete SPA recibido: se abre como operación nueva y editable, con sus fases (${enRecibida} objetos)`);
   // Ventanas: mover por la cabecera y cambiar de tamaño desde la esquina
   const v0 = await pag.locator('#panel-objetos').boundingBox();
-  await pag.mouse.move(v0.x + 120, v0.y + 16); await pag.mouse.down(); await pag.mouse.move(v0.x + 320, v0.y + 96, { steps: 6 }); await pag.mouse.up();
+  await pag.mouse.move(v0.x + 120, v0.y + 16); await pag.mouse.down(); await pag.mouse.move(v0.x + 320, v0.y + 96, { steps: 6 }); await pag.waitForTimeout(150); await pag.mouse.up(); await pag.waitForTimeout(700);
   const v1 = await pag.locator('#panel-objetos').boundingBox();
   ok(Math.abs(v1.x - v0.x - 200) < 3 && Math.abs(v1.y - v0.y - 80) < 3, 'Ventana movida arrastrando su cabecera');
   await pag.mouse.move(v1.x + v1.width + 4, v1.y + v1.height + 4); await pag.mouse.down(); await pag.mouse.move(v1.x + v1.width + 204, v1.y + v1.height + 64, { steps: 6 }); await pag.mouse.up();
