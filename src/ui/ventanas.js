@@ -75,7 +75,11 @@ export function iniciarVentanas({ reposo, apartar, colocando, escala = () => 1, 
   // Izquierda: una al lado de otra. Derecha: Capas arriba y la ficha y la regla debajo.
   // Izquierda: los paneles de la barra lateral (en su orden) y después el resto. Derecha: la ficha y la regla.
   const dock = document.getElementById('dock');
-  const ordenIzq = () => [...(dock ? [...dock.querySelectorAll('[data-dock]')].map((b) => b.dataset.dock) : []), 'simbolos', 'lazo', 'creador'];
+  // Orden de apertura: la que se abre va a la derecha de las que ya hay (las abiertas no se mueven)
+  const apertura = [];
+  const ordenIzq = () => [...(dock ? [...dock.querySelectorAll('[data-dock]')].map((b) => b.dataset.dock) : []), 'simbolos', 'lazo', 'creador']
+    .sort((a, b) => apertura.indexOf(a) - apertura.indexOf(b));
+  const SUAVE = 'linear(0 0%, .1141 8.3%, .3199 16.7%, .5154 25%, .67 33.3%, .7822 41.7%, .8594 50%, .9107 58.3%, .9441 66.7%, .9653 75%, .9787 83.3%, .987 91.7%, 1)';
   const DER = ['ficha', 'regla'];
   let tApilar = 0;
   function apilar() {
@@ -87,7 +91,7 @@ export function iniciarVentanas({ reposo, apartar, colocando, escala = () => 1, 
     let x = dock ? dock.getBoundingClientRect().right - c.left + 8 : 12;
     // Ancho y alto reales, sin el encogimiento de la animación de apertura
     // (la posición sale de su left/top, no del dibujo: mientras se abre, el dibujo está desplazado y encogido)
-    const caja = (v) => { const r = v.getBoundingClientRect(), e = parseFloat(getComputedStyle(v).scale) || 1, l = parseFloat(v.style.left), t = parseFloat(v.style.top); return { l: Number.isFinite(l) ? l * k : r.left - c.left, t: Number.isFinite(t) ? t * k : r.top - c.top, w: r.width / e, h: r.height / e }; };
+    const caja = (v) => { const r = v.getBoundingClientRect(), sc = String(getComputedStyle(v).scale).split(' ').map(parseFloat), e = sc[0] || 1, eh = sc[1] || e, l = parseFloat(v.style.left), t = parseFloat(v.style.top); return { l: Number.isFinite(l) ? l * k : r.left - c.left, t: Number.isFinite(t) ? t * k : r.top - c.top, w: r.width / e, h: r.height / eh }; };
     // Obstáculos: ventanas que el usuario dejó en un sitio (arrastradas). Las nuevas buscan hueco y nunca se ponen encima.
     const ocupado = ventanas().filter((v) => !v.hidden && v.classList.contains('v-movida')).map(caja);
     for (const v of libres(ordenIzq())) {
@@ -101,7 +105,13 @@ export function iniciarVentanas({ reposo, apartar, colocando, escala = () => 1, 
         if (!choque) break;
         x = choque.l + choque.w + 8;
       }
+      // Si ya estaba a la vista y cambia de sitio (se cerró una de al lado), se desliza en vez de saltar
+      const antesX = parseFloat(v.style.left) * k, d = datos(v);
       v.style.left = `${x / k}px`; v.style.top = `${supIzq / k}px`; v.style.right = 'auto';
+      if (!d.recien && Number.isFinite(antesX) && Math.abs(antesX - x) > 1 && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        d.desliz?.cancel(); d.desliz = v.animate([{ transform: `translateX(${(antesX - x) / k}px)` }, { transform: 'none' }], { duration: 560, delay: 70, easing: SUAVE, fill: 'backwards' });
+      }
+      d.recien = false;
       ocupado.push({ l: x, t: supIzq, w, h });
       x += w + 8;
     }
@@ -124,6 +134,9 @@ export function iniciarVentanas({ reposo, apartar, colocando, escala = () => 1, 
     let antes = v.hidden;
     new MutationObserver(() => {
       pedirApilar();
+      const id = v.dataset.ventana, i = apertura.indexOf(id);
+      if (v.hidden) { if (i >= 0) apertura.splice(i, 1); }
+      else if (antes) { if (i >= 0) apertura.splice(i, 1); apertura.push(id); datos(v).recien = true; }
       if (!v.hidden) {
         datos(v).ultimo = performance.now();
         if (antes) {

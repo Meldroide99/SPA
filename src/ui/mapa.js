@@ -22,7 +22,7 @@ import { iniciarObjetos } from './objetos.js';
 import { iniciarPanelOperaciones } from './panel-operaciones.js';
 import { iniciarLazo } from './lazo.js';
 import { iniciarRegla } from './regla.js';
-import { lupa, etiquetas, reordenable, deslizador } from './vivo.js';
+import { lupa, etiquetas, reordenable, deslizador, brinco } from './vivo.js';
 import { zoomSuave } from '../mapa/zoom-suave.js';
 import { crearBuscadorLugares } from '../datos/lugares.js';
 import { FORMATOS_EXPORTAR } from '../datos/exportar.js';
@@ -395,6 +395,8 @@ for (const id of Object.keys(PANELES)) {
 }
 // Barras vivas: los iconos crecen al pasar el ratón, el nombre sale al pasar y se reordenan manteniendo pulsado
 deslizador(document);
+brinco($('dock'), { tipo: 'salto', eje: 'x' });
+brinco($('herramientas'), { tipo: 'pop' });
 lupa($('herramientas'), { eje: 'x' });
 etiquetas($('herramientas'), { lado: 'abajo' });
 reordenable($('herramientas'), { clave: 'spa.orden.herramientas', eje: 'x', grupos: '.h-grupo' });
@@ -422,6 +424,8 @@ ventanas = iniciarVentanas({
   alCambiar: () => recolocarEtiquetas(),
 });
 $('ap-recolocar').addEventListener('click', () => ventanas.recolocar());
+// Pinchar un objeto (aunque sea el mismo otra vez): su ficha siempre se ve, aunque se hubiera recogido
+document.addEventListener('spa:ficha', () => requestAnimationFrame(() => { const f = $('panel-elemento'); if (!f.hidden) ventanas.usada(f); }));
 
 // Barra de herramientas: aparece al acercar el ratón arriba (en táctil, siempre)
 const tactil = window.matchMedia('(hover: none)').matches;

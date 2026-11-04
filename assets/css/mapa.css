@@ -1005,3 +1005,15 @@ body.tema-oscuro .ventana small { color: rgba(255,255,255,.68); }
   .ventana[data-dock-panel][hidden], .ventana[hidden] { translate: none !important; scale: none !important; filter: none !important; }
   body.v-moviendo .ventana.v-activa { scale: none; }
 }
+
+/* Botones: se hunden al pulsar y rebotan al soltar (bien visible) */
+.v-x, .v-pin, .pm-acciones button, .seg button, .sim-pestanas button, .barra-sup .btn-ajustes, .barra-sup .buscar button, .pildora-op, .fondos button, .chip, .op-cat summary, .aviso-breve button, .sim-cm, .sim-rejilla button { transition: transform .55s var(--bote), background .2s, color .2s, opacity .2s; }
+.v-x:active, .v-pin:active, .pm-acciones button:active, .seg button:active, .sim-pestanas button:active, .barra-sup .btn-ajustes:active, .barra-sup .buscar button:active, .pildora-op:active, .fondos button:active, .chip:active, .aviso-breve button:active, .sim-cm:active, .sim-rejilla button:active { transform: scale(.86); transition-duration: .12s; transition-timing-function: ease-out; }
+.dock button::after { transition: opacity .3s ease, scale .5s var(--bote); }
+.dock button[aria-pressed="false"]::after { scale: 0; }
+.dock button[aria-pressed="true"]::after { scale: 1; }
+/* Ventanas de la barra lateral: salen finitas de su botón y en ~0,7 s se ponen a su tamaño, con un pequeño rebote */
+.ventana[data-dock-panel] { transition: opacity .3s ease, scale .72s var(--bote), translate .72s var(--bote), filter .45s ease, display .72s allow-discrete, background-color .45s ease, color .45s ease, box-shadow .25s ease; }
+.ventana[data-dock-panel][hidden] { opacity: 0; scale: .22 .7; translate: -34px 0; filter: blur(6px); transition: opacity .32s ease, scale .38s var(--suave), translate .38s var(--suave), filter .32s ease, display .4s allow-discrete; }
+@starting-style { .ventana[data-dock-panel]:not([hidden]) { opacity: 0; scale: .22 .7; translate: -34px 0; filter: blur(6px); } }
+@media (prefers-reduced-motion: reduce) { .ventana[data-dock-panel], .ventana[data-dock-panel][hidden] { scale: none !important; translate: none !important; filter: none !important; transition: opacity .25s ease, display .25s allow-discrete !important; } }

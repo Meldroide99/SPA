@@ -169,3 +169,26 @@ export function deslizador(raiz = document) {
     }
   }).observe(raiz.body ?? raiz, { attributes: true, attributeFilter: ['aria-pressed'], subtree: true });
 }
+
+/**
+ * Brinco al pulsar (como el Dock del Mac al abrir una app): el icono salta y vuelve con muelle.
+ * Usa las propiedades `translate` y `scale` del svg, que se suman a la lupa (que usa `transform`).
+ * @param {HTMLElement} barra
+ * @param {{tipo:'salto'|'pop', eje?:'x'|'y'}} o
+ */
+export function brinco(barra, { tipo = 'pop', eje = 'x' } = {}) {
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const BOTE = 'linear(0 0%, .0755 6.3%, .2425 12.5%, .4358 18.8%, .6167 25%, .7663 31.3%, .8786 37.5%, .9555 43.8%, 1.0028 50%, 1.0279 56.3%, 1.0375 62.5%, 1.0375 68.8%, 1.0324 75%, 1.0252 81.3%, 1.0179 87.5%, 1.0116 93.8%, 1)';
+  barra.addEventListener('click', (e) => {
+    const b = e.target.closest('button'); if (!b || b.disabled || barra.classList.contains('reordenando')) return;
+    const ico = b.querySelector('svg'); if (!ico) return;
+    if (tipo === 'salto') {
+      // Sale hacia el mapa, cae y da un botecito más pequeño
+      const d = eje === 'y' ? (v) => `0 ${v}px` : (v) => `${v}px 0`;
+      ico.animate([{ translate: d(0) }, { translate: d(11), offset: .28 }, { translate: d(0), offset: .55 }, { translate: d(4), offset: .72 }, { translate: d(0) }],
+        { duration: 620, easing: 'cubic-bezier(.3,.7,.4,1)' });
+    } else {
+      ico.animate([{ scale: '1' }, { scale: '.78', offset: .25 }, { scale: '1' }], { duration: 520, easing: BOTE, composite: 'replace' });
+    }
+  });
+}
