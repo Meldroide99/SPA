@@ -17,6 +17,7 @@
 
 import { puntosDe, puntosCirculo } from './plan.js';
 import { medir, puntosGeodesica } from '../geo/index.js';
+import { fusionar } from '../opord/documento.js';
 
 export const ESTADOS_OP = Object.freeze({
   curso: { nombre: 'En curso', corto: 'En curso' },
@@ -140,6 +141,13 @@ export function esVisible(plan, el, vista = {}) {
   const ocultos = vista.ocultos instanceof Set ? vista.ocultos : new Set(vista.ocultos ?? []);
   const cadena = el.paquete ? ruta(plan, el.paquete).map((o) => o.id) : [];
   if (vista.sueltosOcultos && !cadena.length) return false;
+  // Vigente en todas las fases: se ve aunque su fase esté oculta, mientras se vea su operación
+  if (el.propiedades?.permanente && cadena.length) {
+    const raizId = cadena[0];
+    if (ocultos.has(raizId)) return false;
+    if (vista.solo && buscarPaquete(plan, vista.solo) && ruta(plan, vista.solo)[0]?.id !== raizId) return false;
+    return true;
+  }
   if (cadena.some((id) => ocultos.has(id))) return false;
   if (vista.solo && buscarPaquete(plan, vista.solo) && !cadena.includes(vista.solo)) return false;
   return true;
@@ -254,8 +262,13 @@ export function crearPaqueteSpa(plan, objetos, { nombre = 'Paquete SPA', autor =
     formato: 'spa-paquete', version: 1, nombre, autor, creado: ahora(), datum: 'WGS84',
     operaciones: paquetes(plan).filter((o) => ids.has(o.id)).map((o) => JSON.parse(JSON.stringify(o))),
     elementos: objetos.map((e) => JSON.parse(JSON.stringify(e))),
+    // OPORD y anexos de esas operaciones (con su registro de cambios)
+    documentos: (plan.documentos ?? []).filter((d) => ids.has(d.operacion)).map((d) => JSON.parse(JSON.stringify(d))),
   };
 }
+
+/** Documentos del plan (OPORD y anexos). */
+export const documentos = (plan) => (plan.documentos ??= []);
 
 export const esPaqueteSpa = (o) => Boolean(o && (o.formato === 'spa-paquete' || o.formato === 'spa-plan') && Array.isArray(o.elementos));
 
@@ -277,12 +290,75 @@ export function abrirPaquete(plan, pq, { estado = 'curso' } = {}) {
     const o = pendientes.shift();
     if (o.padre && ops.some((x) => x.id === o.padre) && !mapa.has(o.padre)) { pendientes.push(o); continue; }
     const padre = o.padre && mapa.has(o.padre) ? mapa.get(o.padre) : raizNueva.id;
-    const c = { ...o, id: uuid(), padre, estado: null, origen: raizNueva.origen, modificado: ahora() };
+    const c = { ...o, id: uuid(), idOrigen: o.idOrigen ?? o.id, padre, estado: null, origen: raizNueva.origen, modificado: ahora() };
     paquetes(plan).push(c); mapa.set(o.id, c.id);
   }
   for (const e of pq.elementos) {
     if (!e?.geometria) continue;
-    plan.elementos.push({ ...JSON.parse(JSON.stringify(e)), id: uuid(), paquete: mapa.get(e.paquete) ?? raizNueva.id });
+    plan.elementos.push({ ...JSON.parse(JSON.stringify(e)), id: uuid(), idOrigen: e.idOrigen ?? e.id, paquete: mapa.get(e.paquete) ?? raizNueva.id });
+  }
+  // OPORD y anexos: ids nuevos, pero se recuerda el de origen para poder recibir actualizaciones
+  const docs = (pq.documentos ?? []).filter((d) => d?.formato === 'spa-opord');
+  const mDocs = new Map(docs.map((d) => [d.id, uuid()]));
+  for (const d of docs) {
+    const c = JSON.parse(JSON.stringify(d));
+    Object.assign(c, { id: mDocs.get(d.id), idOrigen: d.idOrigen ?? d.id, operacion: mapa.get(d.operacion) ?? raizNueva.id, padre: d.padre ? mDocs.get(d.padre) ?? null : null, anexos: (d.anexos ?? []).map((a) => mDocs.get(a)).filter(Boolean) });
+    for (const n of Object.values(c.nodos ?? {})) if (n.enlaces) n.enlaces = n.enlaces.map((a) => mDocs.get(a)).filter(Boolean);
+    documentos(plan).push(c);
   }
   return raizNueva;
+}
+
+/** ¿Este paquete es una nueva versión de algo que ya se recibió? Devuelve la operación local (o null). */
+export function yaRecibido(plan, pq) {
+  if (!esPaqueteSpa(pq)) return null;
+  const ids = new Set((pq.operaciones ?? []).map((o) => o.idOrigen ?? o.id));
+  return paquetes(plan).find((o) => o.idOrigen && ids.has(o.idOrigen)) ?? null;
+}
+
+/**
+ * Actualiza lo ya recibido con un paquete más nuevo del mismo origen: cambia
+ * lo que haya cambiado, añade lo nuevo y mete los cambios de las OPORD (cada
+ * campo con el más reciente). Lo que el usuario añadió por su cuenta se queda.
+ * @returns {{operaciones:number, objetos:number, cambiosOpord:number}}
+ */
+export function actualizarDesdePaquete(plan, pq) {
+  const porOrigen = (lista, id) => lista.find((x) => x.idOrigen === id) ?? null;
+  const cuenta = { operaciones: 0, objetos: 0, cambiosOpord: 0 };
+  const mapa = new Map();
+  const ops = (pq.operaciones ?? []).filter((o) => o?.id);
+  const pendientes = [...ops]; let vueltas = 0;
+  while (pendientes.length && vueltas++ < 1000) {
+    const o = pendientes.shift();
+    const origen = o.idOrigen ?? o.id;
+    const local = porOrigen(paquetes(plan), origen);
+    if (local) {
+      mapa.set(o.id, local.id);
+      if ((o.version ?? 1) > (local.versionOrigen ?? 0)) { Object.assign(local, { nombre: o.nombre, notas: o.notas, inicio: o.inicio, fin: o.fin, versionOrigen: o.version ?? 1, modificado: ahora() }); cuenta.operaciones++; }
+      continue;
+    }
+    if (o.padre && ops.some((x) => x.id === o.padre) && !mapa.has(o.padre)) { pendientes.push(o); continue; }
+    const padre = o.padre ? mapa.get(o.padre) ?? null : null;
+    if (!padre) continue; // una operación raíz nueva: eso es un paquete nuevo, no una actualización
+    const c = { ...JSON.parse(JSON.stringify(o)), id: uuid(), idOrigen: origen, padre, estado: null, versionOrigen: o.version ?? 1, modificado: ahora() };
+    paquetes(plan).push(c); mapa.set(o.id, c.id); cuenta.operaciones++;
+  }
+  for (const e of pq.elementos ?? []) {
+    if (!e?.geometria) continue;
+    const origen = e.idOrigen ?? e.id;
+    const local = porOrigen(plan.elementos, origen);
+    const paquete = mapa.get(e.paquete) ?? null;
+    if (local) {
+      if ((e.version ?? 1) > (local.versionOrigen ?? local.version ?? 1)) {
+        Object.assign(local, JSON.parse(JSON.stringify({ geometria: e.geometria, propiedades: e.propiedades, simbolo: e.simbolo, tipo: e.tipo })), { versionOrigen: e.version ?? 1, paquete: paquete ?? local.paquete, modificado: ahora() });
+        cuenta.objetos++;
+      }
+    } else if (paquete) { plan.elementos.push({ ...JSON.parse(JSON.stringify(e)), id: uuid(), idOrigen: origen, versionOrigen: e.version ?? 1, paquete }); cuenta.objetos++; }
+  }
+  for (const d of pq.documentos ?? []) {
+    const origen = d.idOrigen ?? d.id;
+    const local = porOrigen(documentos(plan), origen);
+    if (local) cuenta.cambiosOpord += fusionar(local, d.cambios ?? []);
+  }
+  return cuenta;
 }

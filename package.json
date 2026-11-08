@@ -5,7 +5,7 @@
   "description": "Herramienta de planeamiento sobre mapa (S3 · Lauria)",
   "type": "module",
   "scripts": {
-    "test": "node --test pruebas/unitarias.test.mjs pruebas/plan.test.mjs pruebas/datos.test.mjs pruebas/buscador.test.mjs pruebas/escritores.test.mjs pruebas/creador.test.mjs pruebas/simbolos.test.mjs pruebas/operaciones.test.mjs pruebas/lugares.test.mjs && node pruebas/banco.mjs",
+    "test": "node --test pruebas/unitarias.test.mjs pruebas/plan.test.mjs pruebas/datos.test.mjs pruebas/buscador.test.mjs pruebas/escritores.test.mjs pruebas/creador.test.mjs pruebas/simbolos.test.mjs pruebas/operaciones.test.mjs pruebas/lugares.test.mjs pruebas/opord.test.mjs && node pruebas/banco.mjs",
     "prueba:navegador": "node pruebas/navegador.mjs",
     "informe": "node pruebas/banco.mjs --informe",
     "empaquetar": "node herramientas/empaquetar.mjs calculadora.html && node herramientas/empaquetar.mjs mapa.html",

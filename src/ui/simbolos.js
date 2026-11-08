@@ -511,7 +511,7 @@ export function iniciarSimbolos({ L, mapa, elegirHerramienta, herramienta = () =
     if (ev.target.id === 'sim-buscar' && ev.key === 'Enter') { panel.querySelector('.sim-lista-cm button')?.click(); }
     if (ev.key === 'Escape') { if (est.busqueda) { est.busqueda = ''; pintarPanel(); } else abrir(null, false); }
   });
-  document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape' && armada && !/^(INPUT|TEXTAREA)$/.test(document.activeElement?.tagName)) desarmar(); });
+  document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape' && armada && !(/^(INPUT|TEXTAREA)$/.test(document.activeElement?.tagName) || document.activeElement?.isContentEditable)) desarmar(); });
   // Con una unidad elegida, la paleta se vuelve translúcida al salir al mapa
   mapa.getContainer().addEventListener('pointerenter', () => document.body.classList.add('sobre-mapa'));
   mapa.getContainer().addEventListener('pointerleave', () => document.body.classList.remove('sobre-mapa'));

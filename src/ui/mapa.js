@@ -544,7 +544,7 @@ const regla = iniciarRegla({ L, mapa, alturas, dibujo, fmt: { metros, coord, rum
 $('pm-deshacer').addEventListener('click', () => regla.quitarUltimo());
 $('pm-nueva').addEventListener('click', () => regla.nueva());
 document.addEventListener('keydown', (e) => {
-  if (/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement?.tagName)) return;
+  if ((/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement?.tagName) || document.activeElement?.isContentEditable)) return;
   if (e.key === 'Escape' && herramienta === 'zona-mapa') { elegirHerramienta('consultar'); return; }
   if (e.key === 'Escape' && herramienta === 'medir') regla.escape();
   if (e.key === 'Enter' && herramienta === 'medir') regla.terminar();

@@ -1022,3 +1022,5 @@ body.tema-oscuro .ventana small { color: rgba(255,255,255,.68); }
 .el-relleno output { min-width: 40px; text-align: right; font-variant-numeric: tabular-nums; font-size: 12px; opacity: .8; }
 /* Saltos ocultos porque lo está su operación: ojo tachado y más tenue */
 .op-nodo.oculto-arriba .op-ojo { opacity: .55; }
+.el-perm { display: flex; align-items: center; gap: 8px; font-size: 12.5px; margin: 2px 0 6px; cursor: pointer; }
+.el-perm input { accent-color: var(--oro, #B8945E); }

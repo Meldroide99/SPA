@@ -348,7 +348,7 @@ export function iniciarVentanas({ reposo, apartar, colocando, escala = () => 1, 
     alCambiar();
   }
   function abrirRecogida(v) { datos(v).ultimo = performance.now(); recoger(v, false); }
-  const enUso = (v) => v.matches(':hover') || (v.contains(document.activeElement) && /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName)) || v.querySelector('.sel-vis-lista:not([hidden])');
+  const enUso = (v) => v.matches(':hover') || (v.contains(document.activeElement) && (/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName) || document.activeElement.isContentEditable)) || v.querySelector('.sel-vis-lista:not([hidden])');
   for (const ev of ['pointerover', 'pointermove', 'focusin', 'keydown', 'wheel']) {
     document.addEventListener(ev, (e) => {
       const v = e.target.closest?.('.ventana[data-ventana]'); if (!v) return;

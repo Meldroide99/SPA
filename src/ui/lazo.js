@@ -269,7 +269,7 @@ export function iniciarLazo({ L, mapa, dibujo, simbolos, importar, fmt, herramie
     alCambiarPaneles();
   }
   document.addEventListener('keydown', (e) => {
-    if (e.key !== 'Escape' || /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement?.tagName)) return;
+    if (e.key !== 'Escape' || (/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement?.tagName) || document.activeElement?.isContentEditable)) return;
     if (herramienta() === 'lazo') { trazo = null; if (!circulo) pintarCirculo(null); elegirHerramienta('consultar'); }
   });
 

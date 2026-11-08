@@ -578,7 +578,8 @@ export function iniciarDibujo({ L, mapa, herramienta, elegirHerramienta, fmt, al
     return `<label class="el-op"><span class="el-et">Operación</span><select id="el-paquete" class="v-select">
       <option value="">Ninguna</option>
       ${ops.map(({ o }) => `<option value="${o.id}" ${o.id === actual ? 'selected' : ''}>${esc(nombreRuta(plan, o.id))}</option>`).join('')}
-      <option value="__nueva">+ Nueva operación…</option></select></label>`;
+      <option value="__nueva">+ Nueva operación…</option></select></label>
+      ${actual ? `<label class="el-perm"><input type="checkbox" id="el-permanente" ${el.propiedades.permanente ? 'checked' : ''}><span>Vigente en todas las fases</span></label>` : ''}`;
   }
 
   function marcarPerfil(p) {
@@ -643,6 +644,7 @@ export function iniciarDibujo({ L, mapa, herramienta, elegirHerramienta, fmt, al
     }
     if (el?.simbolo && simbolos?.manejarFicha(ev, el, tocarYPintar(el))) return;
     if (ev.target.id === 'el-nombre' && el) { const v = ev.target.value.trim(); cambio('Cambiar nombre', () => { el.propiedades.nombre = v; tocar(el); }); }
+    if (ev.target.id === 'el-permanente' && el) { const v = ev.target.checked; cambio(v ? 'Vigente en todas las fases' : 'Solo en su fase', () => { el.propiedades.permanente = v || undefined; tocar(el); }); }
     if (ev.target.id === 'el-paquete' && el) {
       const v = ev.target.value;
       if (v === '__nueva') {
@@ -766,7 +768,7 @@ export function iniciarDibujo({ L, mapa, herramienta, elegirHerramienta, fmt, al
 
   // ---------------------------------------------------------- teclado
   document.addEventListener('keydown', (e) => {
-    const escribiendo = /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement?.tagName);
+    const escribiendo = (/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement?.tagName) || document.activeElement?.isContentEditable);
     const mod = e.ctrlKey || e.metaKey;
     if (mod && !escribiendo && e.key.toLowerCase() === 'z') { e.preventDefault(); if (e.shiftKey) rehacer(); else deshacer(); return; }
     if (mod && !escribiendo && e.key.toLowerCase() === 'y') { e.preventDefault(); rehacer(); return; }
@@ -800,6 +802,8 @@ export function iniciarDibujo({ L, mapa, herramienta, elegirHerramienta, fmt, al
       return cambio(desc, (p) => { for (const e of elementos) p.elementos.push(e); return elementos; });
     },
     refrescar() { pintarTodo(); pintarPanel(); avisar(); },
+    /** Guarda el plan en este navegador sin repintar ni dejar paso de deshacer (lo usa la OPORD, que lleva su propio registro). */
+    guardar() { try { localStorage.setItem(CLAVE_PLAN, JSON.stringify(plan)); } catch { /* sin sitio */ } },
     /** Vuelve a pintar el mapa (al cambiar el zoom: tamaños y rótulos). */
     repintar() { if (!arrastrandoAlgo()) pintarTodo(); },
     crearConSimbolo, puntosDe,

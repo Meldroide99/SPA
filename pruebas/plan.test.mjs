@@ -115,8 +115,8 @@ test('perfil: muestras sobre la geodésica, distancia acumulada exacta', async (
   cerca(m.at(-1).lat, C.lat, 1e-12); cerca(m.at(-1).lon, C.lon, 1e-12);
   for (let i = 1; i < m.length; i++) assert.ok(m[i].d - m[i - 1].d <= 100 + 1e-9);
   const el = nuevoElemento('linea', [A, B], { bando: 'enemigo' });
-  assert.deepEqual(estiloDe(el), { color: '#C0392B', trazo: 'continuo', grosor: 3 });
+  assert.deepEqual(estiloDe(el), { color: '#C0392B', trazo: 'continuo', grosor: 3, relleno: 10 });
   el.propiedades.estado = 'previsto'; assert.equal(estiloDe(el).trazo, 'discontinuo');
   el.propiedades.color = '#123456'; el.propiedades.trazo = 'punteado'; el.propiedades.grosor = 5;
-  assert.deepEqual(estiloDe(el), { color: '#123456', trazo: 'punteado', grosor: 5 });
+  assert.deepEqual(estiloDe(el), { color: '#123456', trazo: 'punteado', grosor: 5, relleno: 10 });
 });
