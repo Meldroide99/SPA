@@ -755,6 +755,7 @@ im=Image.open(sys.argv[1]); a=im.getchannel('A'); print(im.mode, im.size[0]%256,
   ok((await motor(() => [...document.querySelectorAll('.op-matriz tbody td.op-fija')].map((t) => t.textContent.trim()).join(','))) === 'GC,SGR', 'OPORD: organización con Intro y Tab; la matriz de misiones sale sola');
   const guardada = await motor(() => { const d = window.__spa.dibujo.plan().documentos.find((x) => x.tipo === 'opord'); return Object.values(d.nodos).find((n) => n.k === 'mision').texto; });
   ok(/Tomar los pasos/.test(guardada), 'OPORD: lo escrito queda guardado en la operación');
+  ok(await motor(() => document.querySelectorAll('.vo-escala .vo-hoja').length > 0 && [...document.querySelectorAll('.vo-escala [data-nodo]')].some((e) => e.textContent.includes('Tomar los pasos'))), 'OPORD: el documento se ve al lado, rellenándose en hojas A4 (como en S1)');
   await pag.click('#opord-concepto'); await pag.waitForTimeout(500);
   ok(await motor(() => document.getElementById('panel-opord').classList.contains('en-concepto') && window.__spa.dibujo.activo === 'op-opord'), 'OPORD: «Concepto» enseña la operación en el mapa y lo que se dibuja entra en ella');
   await pag.click('#opord-concepto'); await pag.waitForTimeout(300);
