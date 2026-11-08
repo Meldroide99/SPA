@@ -702,9 +702,11 @@ im=Image.open(sys.argv[1]); a=im.getchannel('A'); print(im.mode, im.size[0]%256,
   await pag.mouse.wheel(0, 100); await pag.waitForTimeout(1600);
   ok(await motor(() => window.__spa.mapa.getZoom()) === 15, 'Un golpe de rueda = un nivel');
   // Panel táctil: poco a poco y se asienta en el entero siguiente
+  const zAntes = await motor(() => window.__spa.mapa.getZoom());
   for (let i = 0; i < 8; i++) { await pag.mouse.wheel(0, -12); await pag.waitForTimeout(16); }
-  await pag.waitForTimeout(1600);
-  ok(await motor(() => window.__spa.mapa.getZoom()) === 16, 'Panel táctil: continuo y se asienta en el nivel siguiente');
+  // Espera a que se asiente (con el ordenador cargado puede tardar algo más)
+  let zTactil = 0; for (let i = 0; i < 30; i++) { await pag.waitForTimeout(100); zTactil = await motor(() => window.__spa.mapa.getZoom()); if (Number.isInteger(zTactil) && zTactil !== zAntes) break; }
+  ok(zTactil === zAntes + 1, `Panel táctil: continuo y se asienta en el nivel siguiente (${zAntes} → ${zTactil})`);
   // Ficha de una unidad: solo 4 bandos
   const idU = await motor(() => { const c = window.__spa.mapa.getCenter(); return window.__spa.dibujo.crearConSimbolo({ clase: 'unidad', conjunto: '10', identidad: 'amigo', icono: '121100', escalon: 'seccion' }, [{ lat: c.lat, lon: c.lng }], 'punto', 'S').id; });
   await motor((id) => window.__spa.dibujo.seleccionar(id), idU); await pag.waitForTimeout(400);
