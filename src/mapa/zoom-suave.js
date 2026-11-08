@@ -16,7 +16,7 @@
  */
 export function zoomSuave(L, mapa, { sensibilidad = 0.0032, suavidad = 0.2 } = {}) {
   const cont = mapa.getContainer();
-  let objetivo = null, raf = 0, anclaPx = null, anclaLL = null, tQuieto = 0, moviendo = false, zInicio = 0, tPrev = 0;
+  let objetivo = null, continuo = null, raf = 0, anclaPx = null, anclaLL = null, tQuieto = 0, moviendo = false, zInicio = 0, tPrev = 0;
 
   function asentar(z) {
     const d = z - zInicio;
@@ -41,7 +41,7 @@ export function zoomSuave(L, mapa, { sensibilidad = 0.0032, suavidad = 0.2 } = {
     mapa._move(centro, nz, { pinch: true, round: false });
     if (fin && objetivo === Math.round(objetivo)) {
       // Último paso sin «pinch»: las capas tiran los niveles de teselas viejos (si no, se acumularían)
-      mapa._move(centro, nz); moviendo = false; objetivo = null; tPrev = 0; mapa._moveEnd(true); return;
+      mapa._move(centro, nz); moviendo = false; objetivo = null; continuo = null; tPrev = 0; mapa._moveEnd(true); return;
     }
     if (fin) return; // espera a que pare la rueda para asentarse en un zoom entero
     raf = requestAnimationFrame(paso);
@@ -51,11 +51,18 @@ export function zoomSuave(L, mapa, { sensibilidad = 0.0032, suavidad = 0.2 } = {
     if (e.ctrlKey && !e.deltaMode) { /* pellizco del panel táctil: también vale */ }
     e.preventDefault();
     const delta = e.deltaMode === 1 ? e.deltaY * 33 : e.deltaMode === 2 ? e.deltaY * 400 : e.deltaY;
-    if (objetivo === null) zInicio = mapa.getZoom();
-    const actual = objetivo ?? mapa.getZoom();
+    if (objetivo === null) { zInicio = mapa.getZoom(); continuo = null; }
     // Rueda de ratón (golpes de ~100): un nivel por golpe, deslizado. Panel táctil (poco a poco): continuo.
     const golpe = !e.ctrlKey && Math.abs(delta) >= 50;
-    const nuevo = golpe ? Math.round(actual) - Math.sign(delta) : actual - delta * sensibilidad * (e.ctrlKey ? 3 : 1);
+    let nuevo;
+    if (golpe) { continuo = null; nuevo = Math.round(objetivo ?? mapa.getZoom()) - Math.sign(delta); }
+    else {
+      // El panel táctil suma sobre su propia cuenta, sin redondear: si el mapa ya se estaba asentando
+      // (ordenador lento) no se sube ni se baja un nivel de más
+      continuo = (continuo ?? objetivo ?? mapa.getZoom()) - delta * sensibilidad * (e.ctrlKey ? 3 : 1);
+      continuo = Math.max(mapa.getMinZoom(), Math.min(mapa.getMaxZoom(), continuo));
+      nuevo = continuo;
+    }
     objetivo = Math.max(mapa.getMinZoom(), Math.min(mapa.getMaxZoom(), nuevo));
     anclaPx = mapa.mouseEventToContainerPoint(e);
     anclaLL = mapa.containerPointToLatLng(anclaPx);
@@ -66,5 +73,5 @@ export function zoomSuave(L, mapa, { sensibilidad = 0.0032, suavidad = 0.2 } = {
   }, { passive: false });
 
   // Si otro movimiento (arrastrar, botones, buscar) empieza, se cancela el de la rueda
-  mapa.on('movestart', () => { if (!moviendo && raf) { cancelAnimationFrame(raf); raf = 0; objetivo = null; } });
+  mapa.on('movestart', () => { if (!moviendo && raf) { cancelAnimationFrame(raf); raf = 0; objetivo = null; continuo = null; } });
 }
