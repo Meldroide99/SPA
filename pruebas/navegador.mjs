@@ -757,8 +757,8 @@ im=Image.open(sys.argv[1]); a=im.getchannel('A'); print(im.mode, im.size[0]%256,
   ok(await motor(() => document.getElementById('panel-opord').classList.contains('en-concepto') && window.__spa.dibujo.activo === 'op-opord'), 'OPORD: «Concepto» enseña la operación en el mapa y lo que se dibuja entra en ella');
   await pag.click('#opord-concepto'); await pag.waitForTimeout(300);
   await pag.click('#opord-exportar'); await pag.waitForTimeout(300);
-  const [desc] = await Promise.all([pag.waitForEvent('download', { timeout: 15000 }), pag.click('#dialogo button[value="descargar"]')]);
-  ok(/\.zip$/.test(desc.suggestedFilename()), `OPORD: se exporta junto en un ZIP (${desc.suggestedFilename()})`);
+  const [descOpord] = await Promise.all([pag.waitForEvent('download', { timeout: 15000 }), pag.click('#dialogo button[value="descargar"]')]);
+  ok(/\.zip$/.test(descOpord.suggestedFilename()), `OPORD: se exporta junto en un ZIP (${descOpord.suggestedFilename()})`);
   await pag.click('#opord-cerrar'); await pag.waitForTimeout(300);
 }
 
