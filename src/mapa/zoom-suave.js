@@ -36,8 +36,13 @@ export function zoomSuave(L, mapa, { sensibilidad = 0.0032, suavidad = 0.2 } = {
     const desplaz = anclaPx.subtract(tam.divideBy(2));
     const centro = mapa.unproject(mapa.project(anclaLL, nz).subtract(desplaz), nz);
     if (!moviendo) { moviendo = true; mapa._moveStart(true, false); }
-    mapa._move(centro, nz);
-    if (fin && objetivo === Math.round(objetivo)) { moviendo = false; objetivo = null; tPrev = 0; mapa._moveEnd(true); return; }
+    // {pinch:true}: como el pellizco nativo de Leaflet, las capas de teselas no se vacían ni piden teselas a mitad
+    // del gesto (solo escalan las que ya tienen); al terminar (_moveEnd) se cargan las del zoom final
+    mapa._move(centro, nz, { pinch: true, round: false });
+    if (fin && objetivo === Math.round(objetivo)) {
+      // Último paso sin «pinch»: las capas tiran los niveles de teselas viejos (si no, se acumularían)
+      mapa._move(centro, nz); moviendo = false; objetivo = null; tPrev = 0; mapa._moveEnd(true); return;
+    }
     if (fin) return; // espera a que pare la rueda para asentarse en un zoom entero
     raf = requestAnimationFrame(paso);
   }

@@ -9,7 +9,7 @@
 
 import {
   ESTADOS_OP, hijos, buscarPaquete, nuevoPaquete, objetosDe, asignar, moverPaquete, borrarPaquete,
-  duplicarPaquete, descendientes, nombreRuta, tocarPaquete, paquetes, CATEGORIAS, categoriaDe,
+  duplicarPaquete, descendientes, nombreRuta, ruta, tocarPaquete, paquetes, CATEGORIAS, categoriaDe,
 } from '../plan/operaciones.js';
 import { preguntar } from './dialogo.js';
 import { abrirMenu } from './objetos.js';
@@ -36,6 +36,9 @@ export function iniciarPanelOperaciones({ dibujo, simbolos = null, exportar, ver
   const guardarUi = () => { try { localStorage.setItem(CLAVE, JSON.stringify(ui)); } catch { /* nada */ } };
   const vista = () => dibujo.vista;
   const oculto = (id) => vista().ocultos.includes(id);
+  // Oculto de verdad: él o alguno por encima (si se oculta la operación, sus saltos también salen tachados)
+  const ocultoEf = (id) => ruta(plan(), id).some((o) => oculto(o.id));
+  const porArriba = (id) => !oculto(id) && ocultoEf(id);
 
   // ---------------------------------------------------------- pintar
   function nodo(o, niv) {
@@ -46,9 +49,9 @@ export function iniciarPanelOperaciones({ dibujo, simbolos = null, exportar, ver
     const activo = dibujo.activo === o.id;
     const solo = vista().solo === o.id;
     const sub = [activo ? '● pintando aquí' : '', hs.length ? `${hs.length} fase${hs.length > 1 ? 's' : ''}` : '', o.origen && o.origen !== 'local' ? o.origen : ''].filter(Boolean).join(' · ');
-    let html = `<div class="op-nodo${activo ? ' activo' : ''}${solo ? ' solo' : ''}${oculto(o.id) ? ' oculto' : ''}" data-op="${o.id}" draggable="true" style="--niv:${niv}">
+    let html = `<div class="op-nodo${activo ? ' activo' : ''}${solo ? ' solo' : ''}${ocultoEf(o.id) ? ' oculto' : ''}${porArriba(o.id) ? ' oculto-arriba' : ''}" data-op="${o.id}" draggable="true" style="--niv:${niv}">
       <button type="button" class="op-flecha" data-acc="abrir" aria-expanded="${abierto}" ${hs.length || propios.length ? '' : 'style="visibility:hidden"'} aria-label="Abrir">${FLECHA}</button>
-      <button type="button" class="op-ojo" data-acc="ojo" aria-pressed="${!oculto(o.id)}" title="${oculto(o.id) ? 'Mostrar' : 'Ocultar'}">${oculto(o.id) ? OJO_NO : OJO}</button>
+      <button type="button" class="op-ojo" data-acc="ojo" aria-pressed="${!ocultoEf(o.id)}" title="${ocultoEf(o.id) ? 'Mostrar' : 'Ocultar'}">${ocultoEf(o.id) ? OJO_NO : OJO}</button>
       <button type="button" class="op-nom" data-acc="activar" title="${esc(o.nombre)}"><b>${esc(o.nombre)}</b>${sub ? `<small>${esc(sub)}</small>` : ''}</button>
       <span class="op-cuenta" title="Objetos (con los de sus fases)">${total}</span>
       <button type="button" class="op-mas" data-acc="menu" aria-label="Más opciones">⋯</button></div>`;
@@ -138,6 +141,16 @@ export function iniciarPanelOperaciones({ dibujo, simbolos = null, exportar, ver
   function conmutarOjo(id) {
     if (!id) { dibujo.ponerVista({ sueltosOcultos: !vista().sueltosOcultos }); return; }
     const v = vista();
+    if (porArriba(id)) {
+      // Está oculto porque lo está su operación: se enseña solo este salto (se destapa el camino y sus hermanos quedan ocultos)
+      let ocultos = [...v.ocultos];
+      for (const o of ruta(plan(), id)) {
+        if (!ocultos.includes(o.id)) continue;
+        ocultos = ocultos.filter((x) => x !== o.id);
+        for (const h of hijos(plan(), o.id)) if (!ruta(plan(), id).some((r) => r.id === h.id) && !ocultos.includes(h.id)) ocultos.push(h.id);
+      }
+      dibujo.ponerVista({ ocultos }); return;
+    }
     dibujo.ponerVista({ ocultos: oculto(id) ? v.ocultos.filter((x) => x !== id) : [...v.ocultos, id], solo: v.solo && descendientes(plan(), id).includes(v.solo) && !oculto(id) ? null : v.solo });
   }
   async function renombrar(o) {

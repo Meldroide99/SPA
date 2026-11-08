@@ -133,10 +133,17 @@ export function iniciarVentanas({ reposo, apartar, colocando, escala = () => 1, 
     ro.observe(v);
     let antes = v.hidden;
     new MutationObserver(() => {
-      pedirApilar();
       const id = v.dataset.ventana, i = apertura.indexOf(id);
       if (v.hidden) { if (i >= 0) apertura.splice(i, 1); }
-      else if (antes) { if (i >= 0) apertura.splice(i, 1); apertura.push(id); datos(v).recien = true; }
+      else if (antes) {
+        if (i >= 0) apertura.splice(i, 1); apertura.push(id); datos(v).recien = true;
+        // Sale de detrás de las que ya están abiertas (como un cajón), nunca por encima de ellas
+        const otras = visibles().filter((x) => x !== v);
+        if (otras.length) v.style.zIndex = String(Math.min(...otras.map((x) => Number(getComputedStyle(x).zIndex) || 1000)) - 1);
+        // Se coloca ya, antes de pintarse: ni un fotograma en el sitio de otra
+        apilar();
+      }
+      pedirApilar();
       if (!v.hidden) {
         datos(v).ultimo = performance.now();
         if (antes) {

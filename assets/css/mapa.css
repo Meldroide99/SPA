@@ -1017,3 +1017,8 @@ body.tema-oscuro .ventana small { color: rgba(255,255,255,.68); }
 .ventana[data-dock-panel][hidden] { opacity: 0; scale: .22 .7; translate: -34px 0; filter: blur(6px); transition: opacity .32s ease, scale .38s var(--suave), translate .38s var(--suave), filter .32s ease, display .4s allow-discrete; }
 @starting-style { .ventana[data-dock-panel]:not([hidden]) { opacity: 0; scale: .22 .7; translate: -34px 0; filter: blur(6px); } }
 @media (prefers-reduced-motion: reduce) { .ventana[data-dock-panel], .ventana[data-dock-panel][hidden] { scale: none !important; translate: none !important; filter: none !important; transition: opacity .25s ease, display .25s allow-discrete !important; } }
+/* Relleno de áreas y zonas */
+.el-relleno input[type="range"] { flex: 1; min-width: 0; accent-color: var(--oro, #B8945E); }
+.el-relleno output { min-width: 40px; text-align: right; font-variant-numeric: tabular-nums; font-size: 12px; opacity: .8; }
+/* Saltos ocultos porque lo está su operación: ojo tachado y más tenue */
+.op-nodo.oculto-arriba .op-ojo { opacity: .55; }

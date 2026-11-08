@@ -62,7 +62,8 @@ export function capaForma(L, f) {
   const halo = { pane, color: sel ? '#E0B252' : '#ffffff', weight: grosor + (sel ? 6 : 4), opacity: sel ? 0.95 : 0.65, interactive: false, lineJoin: 'round', lineCap: 'round' };
   g.addLayer(L.polyline(relleno ? [...coords, coords[0]] : coords, halo));
   const base = { pane, color: f.color, weight: grosor + (sel ? 1 : 0), opacity: 1, dashArray: patron(f.trazo, grosor), lineJoin: 'round', lineCap: 'round', bubblingMouseEvents: true };
-  principal = relleno ? L.polygon(coords, { ...base, fillColor: f.color, fillOpacity: sel ? 0.18 : 0.1 }) : L.polyline(coords, base);
+  const op = Math.max(0, Math.min(1, (f.relleno ?? 10) / 100));
+  principal = relleno ? L.polygon(coords, { ...base, fillColor: f.color, fillOpacity: sel ? Math.min(1, op + 0.08) : op }) : L.polyline(coords, base);
   g.addLayer(principal);
   if (f.tipo === 'circulo') g.addLayer(L.circleMarker([f.puntos[0].lat, f.puntos[0].lon], { pane, radius: 2.5, color: f.color, fillColor: f.color, fillOpacity: 1, weight: 1, interactive: false }));
   if (f.nombre) {

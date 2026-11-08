@@ -171,7 +171,7 @@ export function iniciarSimbolos({ L, mapa, elegirHerramienta, herramienta = () =
   }
 
   /** Capa de un elemento con símbolo (o null si no tiene). */
-  function pintar(el, puntos, { seleccionado, color, previsto, arrastrable }) {
+  function pintar(el, puntos, { seleccionado, color, previsto, arrastrable, relleno }) {
     const s = el.simbolo; if (!s) return null;
     const g = L.layerGroup();
     if (s.clase === 'unidad') {
@@ -218,7 +218,8 @@ export function iniciarSimbolos({ L, mapa, elegirHerramienta, herramienta = () =
       principal = L.marker(pts[0], { pane: 'elementos', draggable: Boolean(arrastrable), keyboard: false, bubblingMouseEvents: true, icon: L.divIcon({ className: `asa-simbolo${seleccionado ? ' sel' : ''}`, iconSize: [26, 26] }) });
       for (const l of geo.lineas) g.addLayer(L.polyline(l.pts, { pane: 'elementos', color: colorM, weight: 14, opacity: 0, bubblingMouseEvents: true }).on('click', (e) => principal.fire('click', e)));
     } else if (tipoElemento(m) === 'area') {
-      principal = L.polygon(pts, { pane: 'elementos', color: colorM, weight: 14, opacity: 0, fillColor: colorM, fillOpacity: seleccionado ? 0.12 : 0.04, bubblingMouseEvents: true });
+      const op = relleno != null ? Math.max(0, Math.min(1, relleno / 100)) : 0.04; // relleno elegido en la ficha (por defecto casi hueco)
+      principal = L.polygon(pts, { pane: 'elementos', color: colorM, weight: 14, opacity: 0, fillColor: colorM, fillOpacity: seleccionado ? Math.min(1, op + 0.08) : op, bubblingMouseEvents: true });
     } else {
       principal = L.polyline(geo.lineas.length ? geo.lineas.map((l) => l.pts) : pts, { pane: 'elementos', color: colorM, weight: 16, opacity: 0, bubblingMouseEvents: true });
     }

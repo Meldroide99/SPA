@@ -24,6 +24,11 @@ export function htmlTrazo({ trazo, grosor }, campo) {
     <div class="el-fila"><span class="el-et">Grosor</span><div class="seg" data-campo="${campo}-grosor">${GROSORES.map((g) => `<button type="button" data-v="${g}" aria-pressed="${g === grosor}"><span class="muestra-grosor" style="height:${g}px"></span></button>`).join('')}</div></div>`;
 }
 
+/** Transparencia del interior (áreas, círculos y zonas): 0 % = hueco, 100 % = lleno. */
+export function htmlRelleno({ relleno = 10 }, campo) {
+  return `<div class="el-fila el-relleno"><span class="el-et">Relleno</span><input type="range" min="0" max="100" step="5" data-campo="${campo}-relleno" value="${relleno}" aria-label="Opacidad del relleno"><output>${relleno} %</output></div>`;
+}
+
 /** Línea de altitud de un punto (se rellena cuando llega el dato). */
 export function htmlAltitud(id = 'el-altitud') {
   return `<div class="el-altitud"><span class="el-et">Altitud</span><b id="${id}">…</b></div>`;

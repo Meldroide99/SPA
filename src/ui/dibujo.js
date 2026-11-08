@@ -18,7 +18,7 @@ import {
 import { capaForma, esc, ICONOS } from './formas.js';
 import { esVisible, buscarPaquete, nombreRuta, asignar, paquetes, nuevoPaquete } from '../plan/operaciones.js';
 import { preguntar } from './dialogo.js';
-import { tomarFicha, alPerderFicha, htmlColor, htmlTrazo, htmlAltitud, rellenarAltitud, htmlLinea, rellenarPerfil } from './ficha.js';
+import { tomarFicha, alPerderFicha, htmlColor, htmlTrazo, htmlRelleno, htmlAltitud, rellenarAltitud, htmlLinea, rellenarPerfil } from './ficha.js';
 
 const CLAVE_PLAN = 'spa.plan.actual';
 const CLAVE_VISTA = 'spa.vista.paquetes';   // qué paquetes ve este usuario (no va en el plan)
@@ -97,9 +97,9 @@ export function iniciarDibujo({ L, mapa, herramienta, elegirHerramienta, fmt, al
     capasDe.get(el.id)?.remove();
     const est = estiloDe(el);
     const sel = el.id === seleccion;
-    const conSimbolo = el.simbolo && simbolos?.pintar(el, puntos, { seleccionado: sel, color: est.color, previsto: el.propiedades.estado === 'previsto', arrastrable: sel && el.tipo === 'punto' });
+    const conSimbolo = el.simbolo && simbolos?.pintar(el, puntos, { seleccionado: sel, color: est.color, relleno: el.propiedades.relleno, previsto: el.propiedades.estado === 'previsto', arrastrable: sel && el.tipo === 'punto' });
     const { grupo, principal } = conSimbolo || capaForma(L, {
-      tipo: el.tipo, puntos, radio, color: est.color, trazo: est.trazo, grosor: est.grosor,
+      tipo: el.tipo, puntos, radio, color: est.color, trazo: est.trazo, grosor: est.grosor, relleno: est.relleno,
       nombre: el.propiedades.nombre, previsto: el.propiedades.estado === 'previsto', seleccionado: sel,
       arrastrable: sel && el.tipo === 'punto',
     });
@@ -531,10 +531,10 @@ export function iniciarDibujo({ L, mapa, herramienta, elegirHerramienta, fmt, al
     } else if (el.tipo === 'linea') {
       cuerpo = `${htmlLinea(pts, fmt)}${htmlTrazo(est, 'el')}`;
     } else if (el.tipo === 'area') {
-      cuerpo = `<div class="pm-total"><div class="grande">${formatearArea(m.area)}</div><div class="peq">Perímetro ${fmt.metros(m.perimetro)}</div></div>${htmlTrazo(est, 'el')}`;
+      cuerpo = `<div class="pm-total"><div class="grande">${formatearArea(m.area)}</div><div class="peq">Perímetro ${fmt.metros(m.perimetro)}</div></div>${htmlTrazo(est, 'el')}${htmlRelleno(est, 'el')}`;
     } else {
       cuerpo = `<form class="el-radio" id="el-radio"><label>Radio <input type="number" min="1" step="any" inputmode="decimal" id="el-radio-m" value="${Number(el.propiedades.radio.toFixed(1))}"></label><span>m</span><button type="submit">Aplicar</button></form>
-        <dl class="el-datos"><dt>Superficie</dt><dd>${formatearArea(m.area)}</dd><dt>Centro</dt><dd>${esc(fmt.coord(pts[0]))}</dd></dl>${htmlTrazo(est, 'el')}`;
+        <dl class="el-datos"><dt>Superficie</dt><dd>${formatearArea(m.area)}</dd><dt>Centro</dt><dd>${esc(fmt.coord(pts[0]))}</dd></dl>${htmlTrazo(est, 'el')}${htmlRelleno(est, 'el')}`;
     }
     const nVert = el.tipo === 'linea' || el.tipo === 'area';
     const fs = el.simbolo && simbolos?.ficha(el);
@@ -545,6 +545,7 @@ export function iniciarDibujo({ L, mapa, herramienta, elegirHerramienta, fmt, al
       panel.innerHTML = `<div class="pm-cab"><strong><span class="muestra-bando" style="--c:${est.color}"></span>${esc(fs.titulo)}</strong><span>${esc(fs.tipo)}</span></div>
         ${fs.html}
         ${el.simbolo.clase === 'medida' ? htmlColor({ bando: el.propiedades.bando, color: el.propiedades.color }, 'el-bando') : ''}
+        ${el.simbolo.clase === 'medida' && (el.tipo === 'area' || el.tipo === 'circulo') ? htmlRelleno({ relleno: el.propiedades.relleno ?? 0 }, 'el') : ''}
         ${estado}
         <label class="el-nombre">Nombre <input id="el-nombre" value="${esc(el.propiedades.nombre)}" placeholder="${el.simbolo.clase === 'unidad' ? 'Opcional' : `${esc(simbolos?.siglaDe?.(el) || 'Ej.: PL ROJA')} (si lo dejas vacío)`}" maxlength="60"></label>
         ${htmlPaquete(el)}
@@ -622,9 +623,24 @@ export function iniciarDibujo({ L, mapa, herramienta, elegirHerramienta, fmt, al
     if (acc === 'duplicar' && el) duplicar(el);
     if (acc === 'cerrar') seleccionar(null);
   });
+  // Relleno: se ve en vivo al mover el deslizador; al soltar queda un solo paso de deshacer
+  let rellenoAntes = null;
+  panel.addEventListener('input', (ev) => {
+    if (!esMio() || ev.target.dataset.campo !== 'el-relleno') return;
+    const el = seleccion && buscar(seleccion); if (!el) return;
+    if (rellenoAntes === null) rellenoAntes = el.propiedades.relleno;
+    el.propiedades.relleno = Number(ev.target.value);
+    ev.target.nextElementSibling.textContent = `${ev.target.value} %`;
+    pintarElemento(el);
+  });
   panel.addEventListener('change', (ev) => {
     if (!esMio()) return;
     const el = seleccion && buscar(seleccion);
+    if (ev.target.dataset.campo === 'el-relleno' && el) {
+      const v = Number(ev.target.value); el.propiedades.relleno = rellenoAntes; rellenoAntes = null;
+      cambio('Cambiar relleno', () => { el.propiedades.relleno = v; tocar(el); });
+      return;
+    }
     if (el?.simbolo && simbolos?.manejarFicha(ev, el, tocarYPintar(el))) return;
     if (ev.target.id === 'el-nombre' && el) { const v = ev.target.value.trim(); cambio('Cambiar nombre', () => { el.propiedades.nombre = v; tocar(el); }); }
     if (ev.target.id === 'el-paquete' && el) {

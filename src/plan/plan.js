@@ -49,6 +49,7 @@ export function estiloDe(el) {
     color: p.color || BANDOS[p.bando]?.color || BANDOS.propio.color,
     trazo: p.trazo || (p.estado === 'previsto' ? 'discontinuo' : 'continuo'),
     grosor: p.grosor || 3,
+    relleno: p.relleno ?? 10, // % de opacidad del interior (áreas y círculos)
   };
 }
 
