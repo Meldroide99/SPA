@@ -492,3 +492,57 @@ y 180°) y asa ↻ en el mapa que se arrastra alrededor del centro, de 5 en 5°
 - **Tipografía:** tracking según tamaño (títulos −.012em, texto pequeño +.01em).
 - **Vibrancia en oscuro:** texto más legible sobre el vidrio. Cambio claro↔oscuro con transición.
 - **Movimiento reducido:** sin desplazamientos ni escalas, solo fundidos.
+
+## v0.10.0 — OPORD (Fase 6, primera entrega)
+
+### Arreglos previos
+- **Zoom con la rueda fluido:** durante el gesto las capas de teselas no se vacían (`_move` con `{pinch:true}`, como el pellizco nativo); al terminar se cargan las del zoom final y se tiran las viejas.
+- **Relleno de áreas, círculos y zonas APP-6:** deslizador «Relleno» en la ficha (0–100 %, por defecto 10 % en dibujos y casi hueco en zonas).
+- **Ojo de las fases:** si la operación está oculta, sus fases salen tachadas; pinchar el ojo de una fase enseña solo esa.
+- **Ventanas de la barra lateral:** se colocan antes de pintarse y salen por detrás de las ya abiertas (como un cajón); nunca por encima.
+
+### Plantillas (src/opord/plantillas.js)
+- **OPORD de brigada**, sacada del modelo de Balú (OPORD_TXT_GT.pdf): estructura completa de 5 párrafos con sus subapartados, títulos en inglés y en castellano (el documento elige idioma).
+- **Corregido respecto al modelo:**
+  - títulos montados sobre las marcas «RESTRICTED» y cortados («Commander's», «Missions to Maneuver Units»);
+  - numeración repetida («a. A. Enemy»);
+  - erratas («headquartes», «DEPHT», «POSITIONNAL», «Genera»);
+  - el «(1) Reinforcements» que iba en la misma línea que «g. Movement Control»;
+  - cabeceras de tabla partidas («ATTACHEMEN TS/DETACH», «UNIT T»);
+  - tamaños de letra distintos para el mismo nivel (c. Fires y d. Engineering);
+  - los formularios MEDEVAC y MEDSITREP, que iban pegados como imagen en el 4.c.(6): ahora son anexos aparte y enlazados.
+- **Añadido (estándar OTAN, se puede quitar):** «Elementos vigentes en todas las fases» en las instrucciones de coordinación, acuse de recibo con firma y lista de anexos.
+- **OPORD de compañía (provisional):** 5 párrafos estándar, a la espera del modelo de la unidad.
+- **Anexos:** MEDEVAC 9 líneas y MEDSITREP (sacados del modelo, con totales automáticos), Plan de fuegos, Plan PACE y anexo en blanco.
+
+### Modelo (src/opord/documento.js)
+- La OPORD vive en `plan.documentos`, unida a su operación. Los anexos van aparte, enlazados en los dos sentidos y con letra automática.
+- **Claves estables por apartado:** al cambiar de plantilla todo pasa a su sitio, y lo que no encaja va a «Sin sitio en esta plantilla».
+- **Fases = fases de la operación:** un apartado «Fase n» por cada una, con su GDH guardado en la operación, numerados seguidos entre «Descripción» y «Fase siguiente». Si se borra una fase, lo escrito se conserva marcado.
+- **Varios usuarios:** cada cambio se registra con autor, hora y reloj lógico; `fusionar()` se queda con el más reciente de cada campo.
+- **Paquete SPA:** lleva la operación, sus fases, la OPORD y los anexos. Al recibirlo otra vez se actualiza lo que ya se tenía (por `idOrigen`) en vez de duplicarlo.
+
+### Editor (src/ui/opord.js)
+- Botón OPORD en la barra lateral, «Hacer/Abrir la OPORD» en el menú de cada operación, y un icono de documento en las operaciones que tienen OPORD.
+- La ventana va a la derecha, con una hoja de papel. Tiene pestañas para la OPORD y cada anexo, chips de fases e índice numerado.
+- **Todo editable en el sitio:**
+  - textos con negrita, cursiva y listas;
+  - títulos (doble clic);
+  - tablas con filas y columnas, GDH validado y MGRS pinchando en el mapa;
+  - formularios de los anexos.
+- **Menú ⋯ de cada apartado:** subapartados, tablas (libre, fuegos, PACE, puestos de mando, por fases), anexo enlazado, subir, bajar y quitar (con deshacer).
+- **Organización operativa:**
+  - lista que se escribe con Intro (otra unidad), Tab (dentro), Mayús+Tab (fuera) y Retroceso (quitar);
+  - relación de mando y «cedida por» en cada unidad, y «Desde el mapa» para traer las unidades dibujadas;
+  - organigrama debajo de la lista;
+  - las agregaciones salen solas de las unidades cedidas.
+- **Matriz de misiones:** filas = unidades de maniobra de la organización, columnas = fases más la columna ECD/BPT.
+- **Concepto:**
+  - la ventana se encoge y el mapa enseña la operación o la fase elegida, con lo vigente en todas las fases;
+  - lo que se dibuja entra en esa fase;
+  - el cuadro enseña el texto de la fase y los cometidos de cada unidad en ella.
+- **Exportar:**
+  - OPORD y anexos en PDF, Word, Excel y TXT, enlazados entre sí;
+  - concepto en paquete de datos ATAK (ZIP), KMZ o paquete SPA;
+  - todo junto en un ZIP o por separado, y «Enviar…» cuando el navegador deja compartir archivos.
+- Los objetos se pueden marcar «Vigente en todas las fases» desde su ficha o desde la OPORD.

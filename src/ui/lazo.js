@@ -289,6 +289,21 @@ export function iniciarLazo({ L, mapa, dibujo, simbolos, importar, fmt, herramie
         if (!resultado && !panel.hidden) { panel.hidden = true; alCambiarPaneles(); }
       }
     },
+    /**
+     * Archivo con unos objetos del plan en un formato (KMZ, ZIP de ATAK, paquete SPA…), sin abrir el panel.
+     * Lo usa la OPORD para el concepto de la operación. `paquete`: paquete SPA ya hecho (para 'spa').
+     */
+    archivoDe(ids, formato, nombre = 'Concepto', paquete = null) {
+      const items = ids.map((id) => plan().elementos.find((e) => e.id === id)).filter(Boolean).map((el) => {
+        const pts = dibujo.puntosDe(el);
+        return {
+          nombre: dibujo.titulo(el), tipo: el.tipo, puntos: pts, radio: el.propiedades.radio, color: estiloDe(el).color,
+          categoria: CATEGORIAS[categoriaDe(el, medidaDe)].nombre, paquete: el.paquete && buscarPaquete(plan(), el.paquete) ? nombreRuta(plan(), el.paquete) : '',
+          bando: el.propiedades.bando, estado: el.propiedades.estado, sidc: simbolos?.sidcDe?.(el) ?? '', notas: el.propiedades.notas,
+        };
+      });
+      return crearArchivo(formato, items, { nombre, paquete });
+    },
     /** Abre el panel para exportar o enviar unos objetos del plan (desde Objetos u Operaciones). */
     exportar(ids, nombre = 'Objetos SPA') {
       circulo = null; pintarCirculo(null);

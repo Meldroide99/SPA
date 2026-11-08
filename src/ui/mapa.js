@@ -15,12 +15,13 @@ import { prepararRejillas } from '../geo/rejillas.js';
 import { crsDesdeEpsg } from '../geo/crs.js';
 import { buscar, leerCoordenadaFlexible } from './difuso.js';
 import { TIPOS } from '../plan/plan.js';
-import { esPaqueteSpa, abrirPaquete } from '../plan/operaciones.js';
+import { esPaqueteSpa, abrirPaquete, yaRecibido, actualizarDesdePaquete } from '../plan/operaciones.js';
 import { iniciarVentanas } from './ventanas.js';
 import { iniciarApariencia } from './apariencia.js';
 import { iniciarObjetos } from './objetos.js';
 import { iniciarPanelOperaciones } from './panel-operaciones.js';
 import { iniciarLazo } from './lazo.js';
+import { iniciarOpord } from './opord.js';
 import { iniciarRegla } from './regla.js';
 import { lupa, etiquetas, reordenable, deslizador, brinco } from './vivo.js';
 import { zoomSuave } from '../mapa/zoom-suave.js';
@@ -121,7 +122,8 @@ let fondoActual = null;
 let alCambiarFondo = () => {}; // la cuadrícula se pinta en blanco sobre el híbrido
 // eslint-disable-next-line prefer-const
 let importar = null;
-const VERSION = '0.9.4';
+let opord = null; // editor de OPORD (más abajo)
+const VERSION = '0.10.0';
 function ponerFondo(id, { automatico = false } = {}) {
   if (!capasFondo[id]) id = 'mtn';
   if (fondoActual) mapa.removeLayer(fondoActual);
@@ -315,6 +317,14 @@ importar = iniciarImportar({
     let pq; try { pq = JSON.parse(texto); } catch { return false; }
     if (!esPaqueteSpa(pq)) return false;
     pq.nombre ||= nombreArchivo.replace(/\.(spa\.json|json|spa)$/i, '');
+    // ¿Ya se había recibido? Entonces es una actualización: se pone al día en vez de duplicarlo
+    const previa = yaRecibido(dibujo.plan(), pq);
+    if (previa) {
+      const r = dibujo.cambio(`Actualizar «${previa.nombre}»`, (p) => actualizarDesdePaquete(p, pq));
+      dibujo.avisoBreve(`«${previa.nombre}» actualizada: ${r.objetos} objeto${r.objetos === 1 ? '' : 's'}, ${r.cambiosOpord} cambio${r.cambiosOpord === 1 ? '' : 's'} en la OPORD`);
+      opord?.refrescar();
+      return true;
+    }
     const o = dibujo.cambio(`Abrir paquete «${pq.nombre}»`, (p) => abrirPaquete(p, pq));
     dibujo.avisoBreve(`«${o.nombre}» abierto`);
     setTimeout(() => { ponerPanel('operaciones', true); operaciones.mostrar(o.id); dibujo.encuadrar(dibujo.plan().elementos.filter((e) => e.paquete && e.paquete === o.id || dibujo.plan().operaciones.some((x) => x.id === e.paquete && x.padre === o.id)).map((e) => e.id)); }, 0);
@@ -371,8 +381,14 @@ const objetos = iniciarObjetos({ dibujo, simbolos, exportar: (ids, nombre) => la
 const operaciones = iniciarPanelOperaciones({
   dibujo, simbolos, exportar: (ids, nombre) => lazo.exportar(ids, nombre),
   verEnObjetos: (id) => { ponerPanel('objetos', true); objetos.filtrarPaquete(id); },
+  abrirOpord: (id) => opord?.abrir(id),
+  tieneOpord: (id) => Boolean(opord?.tiene(id)),
   alCambiarPaneles: () => recolocarEtiquetas(),
 });
+// OPORD: botón de la barra lateral (abre la de la operación activa) y ventana a la derecha
+opord = iniciarOpord({ L, mapa, dibujo, lazo, alCambiarPaneles: () => recolocarEtiquetas() });
+$('btn-opord').addEventListener('click', (e) => opord.abrirDesdeBoton(e.currentTarget));
+new MutationObserver(() => $('btn-opord').setAttribute('aria-pressed', String(!$('panel-opord').hidden))).observe($('panel-opord'), { attributes: true, attributeFilter: ['hidden'] });
 const capas = { abrir: (si) => ponerPanelCapas(si), get abierto() { return !$('panel-capas').hidden; } };
 const PANELES = { capas: { api: capas, boton: 'btn-capas' }, operaciones: { api: operaciones, boton: 'btn-operaciones' }, objetos: { api: objetos, boton: 'btn-objetos' } };
 function ponerPanel(id, abierto) {

@@ -731,6 +731,35 @@ im=Image.open(sys.argv[1]); a=im.getchannel('A'); print(im.mode, im.size[0]%256,
   ok(await motor(() => document.body.classList.contains('tema-oscuro')), 'Tema automático: cristal oscuro sobre el híbrido');
   await motor(() => document.querySelector('#panel-capas .fondo[data-id="mtn"]').click()); await pag.waitForTimeout(150);
   ok(!(await motor(() => document.body.classList.contains('tema-oscuro'))), '…y claro sobre el topográfico');
+
+  // OPORD: se hace desde la barra lateral, se escribe, se monta la organización con Intro y Tab y se exporta
+  await motor(() => {
+    const d = window.__spa.dibujo;
+    d.cambio('OPORD de prueba', (pl) => {
+      const op = { id: 'op-opord', nombre: 'WINGO3', padre: null, estado: 'curso', notas: '', autor: '', origen: 'local', version: 1 };
+      pl.operaciones.push(op, { ...op, id: 'op-f0', nombre: 'Infiltración', padre: op.id, estado: null, inicio: '031500Z MAY 26' }, { ...op, id: 'op-f1', nombre: 'Recce', padre: op.id, estado: null });
+    });
+    d.ponerActivo('op-opord');
+  });
+  await pag.click('#btn-opord'); await pag.waitForTimeout(400);
+  await pag.click('#dialogo button[value="opord-brigada"]'); await pag.waitForTimeout(600);
+  ok(await pag.isVisible('#panel-opord') && (await pag.locator('#opord-docs button[data-doc]').count()) === 3, 'OPORD: se crea con sus anexos MEDEVAC y MEDSITREP enlazados');
+  ok((await pag.locator('#opord-fases button').count()) === 3, 'OPORD: las fases de la operación salen como T0, T1');
+  await pag.locator('.op-sec', { has: pag.locator('.op-tit', { hasText: /^MISIÓN$/ }) }).locator('.op-texto').first().click();
+  await pag.keyboard.type('Tomar los pasos del río.'); await pag.waitForTimeout(600);
+  await pag.click('[data-acc="u-nueva"]'); await pag.keyboard.type('6 BLB'); await pag.keyboard.press('Enter'); await pag.keyboard.press('Tab');
+  await pag.keyboard.type('GC'); await pag.keyboard.press('Enter'); await pag.keyboard.type('SGR'); await pag.waitForTimeout(600);
+  await pag.locator('#opord-indice a').first().click(); await pag.waitForTimeout(400);
+  ok((await motor(() => [...document.querySelectorAll('.op-matriz tbody td.op-fija')].map((t) => t.textContent.trim()).join(','))) === 'GC,SGR', 'OPORD: organización con Intro y Tab; la matriz de misiones sale sola');
+  const guardada = await motor(() => { const d = window.__spa.dibujo.plan().documentos.find((x) => x.tipo === 'opord'); return Object.values(d.nodos).find((n) => n.k === 'mision').texto; });
+  ok(/Tomar los pasos/.test(guardada), 'OPORD: lo escrito queda guardado en la operación');
+  await pag.click('#opord-concepto'); await pag.waitForTimeout(500);
+  ok(await motor(() => document.getElementById('panel-opord').classList.contains('en-concepto') && window.__spa.dibujo.activo === 'op-opord'), 'OPORD: «Concepto» enseña la operación en el mapa y lo que se dibuja entra en ella');
+  await pag.click('#opord-concepto'); await pag.waitForTimeout(300);
+  await pag.click('#opord-exportar'); await pag.waitForTimeout(300);
+  const [desc] = await Promise.all([pag.waitForEvent('download', { timeout: 15000 }), pag.click('#dialogo button[value="descargar"]')]);
+  ok(/\.zip$/.test(desc.suggestedFilename()), `OPORD: se exporta junto en un ZIP (${desc.suggestedFilename()})`);
+  await pag.click('#opord-cerrar'); await pag.waitForTimeout(300);
 }
 
 if (CAPTURAS) {

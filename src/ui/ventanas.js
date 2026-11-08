@@ -116,6 +116,9 @@ export function iniciarVentanas({ reposo, apartar, colocando, escala = () => 1, 
       x += w + 8;
     }
     let y = sup, derecha = 12, anchoCol = 0;
+    // Con la OPORD abierta a la derecha, la ficha y la regla se ponen a su izquierda
+    const op = ventanas().find((v) => v.dataset.ventana === 'opord' && !v.hidden && !v.classList.contains('v-movida'));
+    if (op) derecha += op.getBoundingClientRect().width + 10;
     for (const v of libres(DER)) {
       // Sin sitio debajo: otra columna a la izquierda, arriba
       if (y > sup && c.height - y - 64 < 260) { derecha += anchoCol + 10; y = sup; anchoCol = 0; }
@@ -366,7 +369,7 @@ export function iniciarVentanas({ reposo, apartar, colocando, escala = () => 1, 
     const s = reposo(); if (!s || gesto || colocando()) return;
     const t = performance.now();
     for (const v of visibles()) {
-      if (v.dataset.ventana === 'creador' || fijada(v) || recogida(v) || enUso(v)) continue;
+      if (v.dataset.ventana === 'creador' || v.dataset.ventana === 'opord' || fijada(v) || recogida(v) || enUso(v)) continue; // la OPORD es un documento: no se recoge sola
       if (t - datos(v).ultimo > s * 1000) {
         if (v.hasAttribute('data-dock-panel')) v.hidden = true; // vuelve a su barra lateral, despacio
         else recoger(v, true);

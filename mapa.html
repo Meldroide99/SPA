@@ -154,6 +154,8 @@
         <svg viewBox="0 0 24 24"><circle cx="6" cy="18" r="2.2"/><circle cx="18" cy="4" r="2.2"/><path d="M8.2 18H14a3.5 3.5 0 0 0 0-7h-4a3.5 3.5 0 0 1 0-7h5.8"/></svg><span>Operaciones</span></button>
       <button type="button" id="btn-objetos" data-dock="objetos" aria-pressed="false" aria-label="Objetos">
         <svg viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11"/><rect x="3.5" y="4.5" width="3" height="3" rx=".6"/><rect x="3.5" y="10.5" width="3" height="3" rx=".6"/><rect x="3.5" y="16.5" width="3" height="3" rx=".6"/></svg><span>Objetos</span></button>
+      <button type="button" id="btn-opord" aria-pressed="false" aria-label="OPORD">
+        <svg viewBox="0 0 24 24"><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5"/><path d="M10 12h6M10 15.5h6M10 19h4"/></svg><span>OPORD</span></button>
     </nav>
     <div class="menu-app6 vidrio" id="menu-app6" role="menu" hidden>
       <button type="button" role="menuitem" data-simbolos="unidades"><svg viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="12" rx="1"/><path d="M3 7l18 12M3 19 21 7M10 4h4"/></svg><span><b>Unidades</b><small>Unidades, material, instalaciones…</small></span></button>
@@ -178,6 +180,18 @@
       <div class="v-cab"><strong>Operaciones</strong><span class="v-sub" id="op-cuenta"></span><button type="button" class="v-x" id="operaciones-cerrar" title="Cerrar" aria-label="Cerrar">×</button></div>
       <div class="v-cuerpo" id="operaciones-cuerpo"></div>
     </aside>
+
+    <!-- OPORD: orden de operaciones de la operación, con sus anexos (documentos aparte, enlazados) -->
+    <section class="ventana panel-opord" id="panel-opord" data-ventana="opord" hidden aria-label="OPORD">
+      <div class="v-cab"><strong id="opord-tit">OPORD</strong><span class="v-sub" id="opord-sub"></span>
+        <button type="button" class="opord-btn" id="opord-concepto" aria-pressed="false" title="Ver y editar el concepto en el mapa"><svg viewBox="0 0 24 24"><path d="M3 6.5 9 4l6 2.5L21 4v13.5L15 20l-6-2.5L3 20z"/><path d="M9 4v13.5M15 6.5V20"/></svg><span>Concepto</span></button>
+        <button type="button" class="opord-btn" id="opord-exportar" title="Exportar o enviar"><svg viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M4 17v3h16v-3"/></svg><span>Exportar</span></button>
+        <button type="button" class="opord-btn solo" id="opord-mas" aria-label="Más opciones">⋯</button>
+        <button type="button" class="v-x" id="opord-cerrar" title="Cerrar" aria-label="Cerrar">×</button></div>
+      <div class="opord-barras"><div class="seg opord-docs" id="opord-docs"></div><div class="seg opord-fases" id="opord-fases"></div></div>
+      <div class="v-cuerpo opord-cuerpo"><nav class="opord-indice" id="opord-indice" aria-label="Índice"></nav><article class="opord-hoja" id="opord-hoja"></article></div>
+      <div class="opord-aviso" id="opord-aviso" hidden></div>
+    </section>
 
     <!-- Lazo: selección en círculo para exportar o enviar -->
     <aside class="ventana panel-lazo" id="panel-lazo" data-ventana="lazo" hidden aria-label="Lazo">

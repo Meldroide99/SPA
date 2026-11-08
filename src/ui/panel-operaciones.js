@@ -27,7 +27,7 @@ const FLECHA = '<svg viewBox="0 0 10 10"><path d="M3 1.5 7.5 5 3 8.5z"/></svg>';
  * @param {(id:string|null) => void} o.verEnObjetos abre Objetos filtrado por esa operación
  * @param {() => void} [o.alCambiarPaneles]
  */
-export function iniciarPanelOperaciones({ dibujo, simbolos = null, exportar, verEnObjetos, alCambiarPaneles = () => {} }) {
+export function iniciarPanelOperaciones({ dibujo, simbolos = null, exportar, verEnObjetos, abrirOpord = () => {}, tieneOpord = () => false, alCambiarPaneles = () => {} }) {
   const $ = (id) => document.getElementById(id);
   const panel = $('panel-operaciones'), cuerpo = $('operaciones-cuerpo');
   const plan = () => dibujo.plan();
@@ -53,6 +53,7 @@ export function iniciarPanelOperaciones({ dibujo, simbolos = null, exportar, ver
       <button type="button" class="op-flecha" data-acc="abrir" aria-expanded="${abierto}" ${hs.length || propios.length ? '' : 'style="visibility:hidden"'} aria-label="Abrir">${FLECHA}</button>
       <button type="button" class="op-ojo" data-acc="ojo" aria-pressed="${!ocultoEf(o.id)}" title="${ocultoEf(o.id) ? 'Mostrar' : 'Ocultar'}">${ocultoEf(o.id) ? OJO_NO : OJO}</button>
       <button type="button" class="op-nom" data-acc="activar" title="${esc(o.nombre)}"><b>${esc(o.nombre)}</b>${sub ? `<small>${esc(sub)}</small>` : ''}</button>
+      ${!o.padre && tieneOpord(o.id) ? `<button type="button" class="op-doc" data-acc="opord" title="Abrir la OPORD" aria-label="Abrir la OPORD"><svg viewBox="0 0 24 24"><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5"/><path d="M10 12h6M10 15.5h6"/></svg></button>` : ''}
       <span class="op-cuenta" title="Objetos (con los de sus fases)">${total}</span>
       <button type="button" class="op-mas" data-acc="menu" aria-label="Más opciones">⋯</button></div>`;
     if (abierto) {
@@ -176,6 +177,7 @@ export function iniciarPanelOperaciones({ dibujo, simbolos = null, exportar, ver
     const raiz = !o.padre;
     const estados = Object.entries(ESTADOS_OP).filter(([k]) => raiz && k !== (o.estado ?? 'curso'));
     abrirMenu(boton, `<div class="om-tit">${esc(o.nombre)}</div>
+      <button type="button" data-v="opord">${tieneOpord(raiz ? o.id : nombreRutaIds(o.id).at(-1)) ? 'Abrir la OPORD' : 'Hacer la OPORD…'}</button>
       <button type="button" data-v="activar">● Pintar aquí</button>
       <button type="button" data-v="solo">${dibujo.vista.solo === o.id ? 'Dejar de ver solo esta' : 'Ver solo esta'}</button>
       <button type="button" data-v="encuadrar">Encuadrar en el mapa</button>
@@ -189,6 +191,7 @@ export function iniciarPanelOperaciones({ dibujo, simbolos = null, exportar, ver
       <button type="button" data-v="exportar">Exportar o enviar…</button>
       <div class="om-sep"></div>
       <button type="button" data-v="borrar" class="peligro">Borrar…</button>`, async (v) => {
+      if (v === 'opord') abrirOpord(o.id);
       if (v === 'activar') dibujo.ponerActivo(o.id);
       if (v === 'solo') dibujo.ponerVista({ solo: dibujo.vista.solo === o.id ? null : o.id, ocultos: dibujo.vista.ocultos.filter((x) => !descendientes(plan(), o.id).includes(x) && !nombreRutaIds(o.id).includes(x)) });
       if (v === 'encuadrar') dibujo.encuadrar(objetosDe(plan(), o.id).map((e) => e.id));
@@ -222,6 +225,7 @@ export function iniciarPanelOperaciones({ dibujo, simbolos = null, exportar, ver
     const id = n.dataset.op || null, o = id ? buscarPaquete(plan(), id) : null;
     if (acc === 'abrir') { const k = id ?? '__sueltos'; ui.abiertos[k] = !ui.abiertos[k]; guardarUi(); pintar(); }
     if (acc === 'ojo') conmutarOjo(id);
+    if (acc === 'opord') abrirOpord(id);
     if (acc === 'activar') { dibujo.ponerActivo(id); if (id) { ui.abiertos[id] = true; guardarUi(); }  }
     if (acc === 'menu' && o) menu(t.closest('button'), o);
   });
