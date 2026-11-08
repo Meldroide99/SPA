@@ -177,7 +177,7 @@ body.herr-visibles .herr-pista { opacity: 0; }
 /* Cuadrícula: intensidad */
 .intensidad { display: flex; align-items: center; gap: 8px; padding: 0 4px 8px 30px; font-size: 11.5px; color: var(--gris); }
 .intensidad input { flex: 1; accent-color: var(--noche); min-width: 0; }
-.intensidad output { font: 11.5px var(--mono); width: 4ch; text-align: right; }
+.intensidad output { font: 11.5px var(--mono); width: 6ch; text-align: right; white-space: nowrap; flex: none; }
 .sup-auto { border-top: 0; margin-top: 4px; }
 
 /* Plan: lista de elementos */
@@ -539,7 +539,7 @@ p.sim-armado { margin: 0 0 6px; padding: 6px 8px; font-size: 12px; background: #
    sobre el híbrido). Transparencia, desenfoque y tamaño, en Ajustes.
    ====================================================================== */
 :root {
-  --vidrio-op: .35; --desenfoque: 10px; --escala-ui: .95; --sup: 64px; --sup-izq: 118px; --ficha-top: 112px;
+  --vidrio-op: .7; --desenfoque: 8px; --escala-ui: 1; --sup: 64px; --sup-izq: 118px; --ficha-top: 112px;
   --vidrio-rgb: 248, 248, 250; --vidrio-borde: rgba(255,255,255,.6); --vidrio-sombra: 0 12px 34px -14px rgba(10,20,35,.38), 0 0 0 .5px rgba(10,20,35,.10);
   --acento: #0C5FA8;
 }

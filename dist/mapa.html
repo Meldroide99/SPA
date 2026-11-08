@@ -933,7 +933,7 @@ body.herr-visibles .herr-pista { opacity: 0; }
 /* Cuadrícula: intensidad */
 .intensidad { display: flex; align-items: center; gap: 8px; padding: 0 4px 8px 30px; font-size: 11.5px; color: var(--gris); }
 .intensidad input { flex: 1; accent-color: var(--noche); min-width: 0; }
-.intensidad output { font: 11.5px var(--mono); width: 4ch; text-align: right; }
+.intensidad output { font: 11.5px var(--mono); width: 6ch; text-align: right; white-space: nowrap; flex: none; }
 .sup-auto { border-top: 0; margin-top: 4px; }
 
 /* Plan: lista de elementos */
@@ -1295,7 +1295,7 @@ p.sim-armado { margin: 0 0 6px; padding: 6px 8px; font-size: 12px; background: #
    sobre el híbrido). Transparencia, desenfoque y tamaño, en Ajustes.
    ====================================================================== */
 :root {
-  --vidrio-op: .35; --desenfoque: 10px; --escala-ui: .95; --sup: 64px; --sup-izq: 118px; --ficha-top: 112px;
+  --vidrio-op: .7; --desenfoque: 8px; --escala-ui: 1; --sup: 64px; --sup-izq: 118px; --ficha-top: 112px;
   --vidrio-rgb: 248, 248, 250; --vidrio-borde: rgba(255,255,255,.6); --vidrio-sombra: 0 12px 34px -14px rgba(10,20,35,.38), 0 0 0 .5px rgba(10,20,35,.10);
   --acento: #0C5FA8;
 }
@@ -15794,9 +15794,9 @@ __mods["src/ui/apariencia.js"] = (function () {
 
 const CLAVE = 'spa.apariencia';
 const APARIENCIA_FABRICA = Object.freeze({
-  tema: 'auto', transparencia: 60, desenfoque: 6, escala: 95, reposo: 8, apartar: true, barraFija: false, altitud: true,
+  tema: 'auto', transparencia: 30, desenfoque: 8, escala: 100, reposo: 8, apartar: true, barraFija: false, altitud: true,
 });
-const VERSION = 3; // v0.9.4: valores de fábrica de Balú (65 % · 10 px · 95 %)
+const VERSION = 4; // v0.10.2: valores de fábrica de Balú (30 % · 8 px · 100 % y tema automático)
 
 /**
  * @param {{ fondoOscuro: () => boolean, alCambiar?: () => void }} o
@@ -15806,7 +15806,7 @@ function iniciarApariencia({ fondoOscuro, alCambiar = () => {} }) {
   let ap = { ...APARIENCIA_FABRICA };
   try {
     const g = JSON.parse(localStorage.getItem(CLAVE) || '{}');
-    if (!(g.version >= VERSION)) { delete g.transparencia; delete g.desenfoque; delete g.escala; }
+    if (!(g.version >= VERSION)) { delete g.transparencia; delete g.desenfoque; delete g.escala; delete g.tema; }
     Object.assign(ap, g, { version: VERSION });
   } catch { /* sin almacenamiento */ }
   const guardar = () => { try { localStorage.setItem(CLAVE, JSON.stringify(ap)); } catch { /* nada */ } };
@@ -19251,7 +19251,7 @@ let alCambiarFondo = () => {}; // la cuadrícula se pinta en blanco sobre el hí
 // eslint-disable-next-line prefer-const
 let importar = null;
 let opord = null; // editor de OPORD (más abajo)
-const VERSION = '0.10.1';
+const VERSION = '0.10.2';
 function ponerFondo(id, { automatico = false } = {}) {
   if (!capasFondo[id]) id = 'mtn';
   if (fondoActual) mapa.removeLayer(fondoActual);

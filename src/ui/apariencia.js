@@ -4,9 +4,9 @@
 
 const CLAVE = 'spa.apariencia';
 export const APARIENCIA_FABRICA = Object.freeze({
-  tema: 'auto', transparencia: 60, desenfoque: 6, escala: 95, reposo: 8, apartar: true, barraFija: false, altitud: true,
+  tema: 'auto', transparencia: 30, desenfoque: 8, escala: 100, reposo: 8, apartar: true, barraFija: false, altitud: true,
 });
-const VERSION = 3; // v0.9.4: valores de fábrica de Balú (65 % · 10 px · 95 %)
+const VERSION = 4; // v0.10.2: valores de fábrica de Balú (30 % · 8 px · 100 % y tema automático)
 
 /**
  * @param {{ fondoOscuro: () => boolean, alCambiar?: () => void }} o
@@ -16,7 +16,7 @@ export function iniciarApariencia({ fondoOscuro, alCambiar = () => {} }) {
   let ap = { ...APARIENCIA_FABRICA };
   try {
     const g = JSON.parse(localStorage.getItem(CLAVE) || '{}');
-    if (!(g.version >= VERSION)) { delete g.transparencia; delete g.desenfoque; delete g.escala; }
+    if (!(g.version >= VERSION)) { delete g.transparencia; delete g.desenfoque; delete g.escala; delete g.tema; }
     Object.assign(ap, g, { version: VERSION });
   } catch { /* sin almacenamiento */ }
   const guardar = () => { try { localStorage.setItem(CLAVE, JSON.stringify(ap)); } catch { /* nada */ } };

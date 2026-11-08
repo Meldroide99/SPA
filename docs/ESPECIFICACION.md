@@ -559,3 +559,8 @@ y 180°) y asa ↻ en el mapa que se arrastra alrededor del centro, de 5 en 5°
   - pinchar en la hoja lleva a ese apartado del formulario.
 - **Barra de la hoja:** número de páginas, zoom (− Ajustar +) y exportar solo el documento que se ve (OPORD o anexo) en Word o PDF.
 - **Según el ancho:** ancha, índice | formulario | hoja; media, formulario | hoja; estrecha, solo el formulario. En «Concepto» la hoja se esconde.
+
+## v0.10.2 — Valores de fábrica
+- Transparencia **30 %**, desenfoque **8 px**, tamaño **100 %** y tema **automático** (VERSION de apariencia = 4: quien tenga valores guardados de antes pasa a estos, también el tema).
+- Corregido: los valores de la v0.9.4 (65 · 10 · 95) no se llegaron a aplicar en Ajustes; ahora el código y el CSS coinciden.
+- El número de los deslizadores de Ajustes ya no se parte («100 %» en una línea).
