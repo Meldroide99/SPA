@@ -426,7 +426,7 @@ im=Image.open(sys.argv[1]); a=im.getchannel('A'); print(im.mode, im.size[0]%256,
   ok(await pag.locator('#panel-simbolos .sim-grupo-det').count() > 5, 'Material: árbol completo de la APP-6(E)');
   // Arrastrar la unidad desde la vista previa hasta el mapa (encima de la zona que tapa la paleta)
   const v = await pag.locator('#panel-simbolos .sim-vista').boundingBox();
-  await pag.mouse.move(v.x + 30, v.y + 30); await pag.mouse.down(); await pag.mouse.move(v.x + 60, v.y + 50, { steps: 3 });
+  await pag.mouse.move(v.x + 30, v.y + 30); await pag.mouse.down(); await pag.mouse.move(v.x + 60, v.y + 50, { steps: 3 }); await pag.waitForTimeout(250); // deja terminar el fundido
   const opac = Number(await motor(() => getComputedStyle(document.querySelector('#panel-simbolos')).opacity));
   await pag.mouse.move(cx - 250, cy + 100, { steps: 6 }); await pag.mouse.up(); await pag.waitForTimeout(300);
   ok(opac < 0.5, `Al arrastrar, la paleta se difumina y deja ver el mapa (opacidad ${opac.toFixed(2)})`);
