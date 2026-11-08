@@ -184,12 +184,19 @@
     <!-- OPORD: orden de operaciones de la operación, con sus anexos (documentos aparte, enlazados) -->
     <section class="ventana panel-opord" id="panel-opord" data-ventana="opord" hidden aria-label="OPORD">
       <div class="v-cab"><strong id="opord-tit">OPORD</strong><span class="v-sub" id="opord-sub"></span>
+        <button type="button" class="opord-btn" id="opord-vista-btn" aria-pressed="true" title="Ver el documento rellenándose al lado"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="8" height="16" rx="1.5"/><path d="M14 4h5.5A1.5 1.5 0 0 1 21 5.5v13a1.5 1.5 0 0 1-1.5 1.5H14"/><path d="M15.5 8.5h3M15.5 12h3M15.5 15.5h2"/></svg><span>Documento</span></button>
         <button type="button" class="opord-btn" id="opord-concepto" aria-pressed="false" title="Ver y editar el concepto en el mapa"><svg viewBox="0 0 24 24"><path d="M3 6.5 9 4l6 2.5L21 4v13.5L15 20l-6-2.5L3 20z"/><path d="M9 4v13.5M15 6.5V20"/></svg><span>Concepto</span></button>
         <button type="button" class="opord-btn" id="opord-exportar" title="Exportar o enviar"><svg viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M4 17v3h16v-3"/></svg><span>Exportar</span></button>
         <button type="button" class="opord-btn solo" id="opord-mas" aria-label="Más opciones">⋯</button>
         <button type="button" class="v-x" id="opord-cerrar" title="Cerrar" aria-label="Cerrar">×</button></div>
       <div class="opord-barras"><div class="seg opord-docs" id="opord-docs"></div><div class="seg opord-fases" id="opord-fases"></div></div>
-      <div class="v-cuerpo opord-cuerpo"><nav class="opord-indice" id="opord-indice" aria-label="Índice"></nav><article class="opord-hoja" id="opord-hoja"></article></div>
+      <div class="v-cuerpo opord-cuerpo"><nav class="opord-indice" id="opord-indice" aria-label="Índice"></nav><article class="opord-hoja" id="opord-hoja"></article>
+        <section class="opord-vista" aria-label="Documento">
+          <div class="ov-barra"><span class="ov-estado"><span class="ov-luz"></span><span id="ov-paginas">—</span></span>
+            <span class="ov-zoom" aria-label="Zoom"><button type="button" data-z="-" aria-label="Alejar">−</button><button type="button" data-z="a" id="ov-zoom-txt" title="Ajustar al ancho">Ajustar</button><button type="button" data-z="+" aria-label="Acercar">+</button></span>
+            <span class="ov-acc"><button type="button" class="opord-btn" data-exp="docx">Word</button><button type="button" class="opord-btn ov-pdf" data-exp="pdf">PDF</button></span></div>
+          <div class="ov-hojas" id="opord-vista-hojas"></div>
+        </section></div>
       <div class="opord-aviso" id="opord-aviso" hidden></div>
     </section>
 

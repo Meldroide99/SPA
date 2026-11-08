@@ -91,48 +91,48 @@ export function bloques(doc, ctx = {}) {
     const niv = r.nivel ?? nivel;
     let tit = titulo(n, idi);
     if (n.fase) { const f = fases.find((x) => x.id === n.fase); tit = f ? tituloFase(f, idi) : `${n.titulo || tx.sinFase}`; }
-    if (n.tipo === 'firma') { out.push({ t: 'titulo', nivel: 0, rotulo: '', texto: tx.acuse, sinNumero: true }); }
-    else out.push({ t: 'titulo', nivel: niv, rotulo: r.rotulo, texto: tit });
-    if (n.intro) out.push({ t: 'parrafo', nivel: niv, lineas: [n.intro[idi] ?? n.intro.es], estilo: 'intro' });
+    if (n.tipo === 'firma') { out.push({ nodo: n.id, t: 'titulo', nivel: 0, rotulo: '', texto: tx.acuse, sinNumero: true }); }
+    else out.push({ nodo: n.id, t: 'titulo', nivel: niv, rotulo: r.rotulo, texto: tit });
+    if (n.intro) out.push({ nodo: n.id, t: 'parrafo', nivel: niv, lineas: [n.intro[idi] ?? n.intro.es], estilo: 'intro' });
     const lineas = htmlALineas(n.texto);
-    if (lineas.length) out.push({ t: 'parrafo', nivel: niv, lineas });
+    if (lineas.length) out.push({ nodo: n.id, t: 'parrafo', nivel: niv, lineas });
     if (n.tipo === 'org') {
       const ls = orgEnLineas(doc);
-      if (ls.length) out.push({ t: 'arbol', nivel: niv, lineas: ls.map((l) => ({ nivel: l.nivel, texto: l.texto })) });
+      if (ls.length) out.push({ nodo: n.id, t: 'arbol', nivel: niv, lineas: ls.map((l) => ({ nivel: l.nivel, texto: l.texto })) });
     }
     if (n.tipo === 'agregaciones') {
       const filas = [...agregacionesAuto(doc), ...n.tabla.filas];
-      out.push({ t: 'tabla', nivel: niv, cols: n.tabla.cols.map((x) => x[idi] ?? x.es), filas: filas.map((f) => n.tabla.cols.map((x) => valorCelda(f.c?.[x.k], idi))).filter((f) => f.some((v) => v.trim())), vacia: 2 });
+      out.push({ nodo: n.id, t: 'tabla', nivel: niv, cols: n.tabla.cols.map((x) => x[idi] ?? x.es), filas: filas.map((f) => n.tabla.cols.map((x) => valorCelda(f.c?.[x.k], idi))).filter((f) => f.some((v) => v.trim())), vacia: 2 });
     } else if (n.tabla) {
       const t = tablaPlana(n.tabla, idi);
-      if (n.tabla.previo) out.push({ t: 'tabla', nivel: niv, cols: ['', ''], filas: n.tabla.previo.map((cp) => [cp[idi] ?? cp.es, String(n.tabla.valoresPrevio?.[cp.k] ?? '')]), sinCabecera: true });
-      out.push({ t: 'tabla', nivel: niv, cols: t.cols, filas: t.filas, totales: t.totales, vacia: 2 });
+      if (n.tabla.previo) out.push({ nodo: n.id, t: 'tabla', nivel: niv, cols: ['', ''], filas: n.tabla.previo.map((cp) => [cp[idi] ?? cp.es, String(n.tabla.valoresPrevio?.[cp.k] ?? '')]), sinCabecera: true });
+      out.push({ nodo: n.id, t: 'tabla', nivel: niv, cols: t.cols, filas: t.filas, totales: t.totales, vacia: 2 });
     }
     if (n.tipo === 'matriz') {
       const us = [...unidadesManiobra(doc).map((u) => ({ id: u.id, nombre: u.nombre })), ...(n.matriz.filas ?? [])];
       const cols = [tx.unidad, ...fases.map((f) => sinPartirGdh(`${tituloFase(f, idi, { corto: true })}${f.inicio || f.fin ? `: ${[f.inicio, f.fin].filter(Boolean).join(' – ')}` : ''}`)), tx.bpt];
-      out.push({ t: 'tabla', nivel: niv, cols, filas: us.map((u) => [u.nombre, ...fases.map((f) => n.matriz.celdas?.[u.id]?.[f.id] ?? ''), n.matriz.bpt?.[u.id] ?? '']), primeraNegrita: true, vacia: 1 });
+      out.push({ nodo: n.id, t: 'tabla', nivel: niv, cols, filas: us.map((u) => [u.nombre, ...fases.map((f) => n.matriz.celdas?.[u.id]?.[f.id] ?? ''), n.matriz.bpt?.[u.id] ?? '']), primeraNegrita: true, vacia: 1 });
     }
     if (n.tipo === 'matrizFases') {
       const cab = n.matriz.cabecera?.[idi] ?? (idi === 'en' ? 'Element' : 'Elemento');
       const cols = [cab, ...fases.map((f) => sinPartirGdh(`${tituloFase(f, idi, { corto: true })}${f.inicio || f.fin ? `: ${[f.inicio, f.fin].filter(Boolean).join(' – ')}` : ''}`))];
-      out.push({ t: 'tabla', nivel: niv, cols, filas: (n.matriz.filas ?? []).map((fl) => [fl.nombre ?? '', ...fases.map((f) => n.matriz.celdas?.[fl.id]?.[f.id] ?? '')]), primeraNegrita: true, vacia: 2 });
+      out.push({ nodo: n.id, t: 'tabla', nivel: niv, cols, filas: (n.matriz.filas ?? []).map((fl) => [fl.nombre ?? '', ...fases.map((f) => n.matriz.celdas?.[fl.id]?.[f.id] ?? '')]), primeraNegrita: true, vacia: 2 });
     }
     if (n.tipo === 'permanentes') {
       const ps = ctx.permanentes ?? [];
-      out.push({ t: 'parrafo', nivel: niv, lineas: ps.length ? ps.map((p) => `• ${p.nombre}`) : [`— ${tx.permanentes}`] });
+      out.push({ nodo: n.id, t: 'parrafo', nivel: niv, lineas: ps.length ? ps.map((p) => `• ${p.nombre}`) : [`— ${tx.permanentes}`] });
     }
     if (n.tipo === 'formulario') {
-      out.push({ t: 'tabla', nivel: niv, cols: ['', ''], filas: n.campos.map((cp) => [cp[idi] ?? cp.es, valorCampo(cp, n.valores?.[cp.k], idi)]), sinCabecera: true, anchos: [0.42, 0.58] });
+      out.push({ nodo: n.id, t: 'tabla', nivel: niv, cols: ['', ''], filas: n.campos.map((cp) => [cp[idi] ?? cp.es, valorCampo(cp, n.valores?.[cp.k], idi)]), sinCabecera: true, anchos: [0.42, 0.58] });
     }
     if (n.tipo === 'anexos' && doc.tipo === 'opord') {
-      for (const a of anexosDe(doc.anexos)) out.push({ t: 'enlace', nivel: 0, texto: `${tx.anexo} ${letraAnexo(doc, a.id)} — ${a.cabecera.titulo || ANEXOS[a.plantilla]?.[idi] || ''}`, archivo: ctx.archivoDe?.(a) });
+      for (const a of anexosDe(doc.anexos)) out.push({ nodo: n.id, t: 'enlace', nivel: 0, texto: `${tx.anexo} ${letraAnexo(doc, a.id)} — ${a.cabecera.titulo || ANEXOS[a.plantilla]?.[idi] || ''}`, archivo: ctx.archivoDe?.(a) });
     }
     if (n.tipo === 'firma') {
       const f = n.firma ?? {};
-      out.push({ t: 'firma', lineas: [f.jefe, f.empleo, f.cargo].filter(Boolean), defecto: tx.firma });
+      out.push({ nodo: n.id, t: 'firma', lineas: [f.jefe, f.empleo, f.cargo].filter(Boolean), defecto: tx.firma });
     }
-    for (const a of anexosDe(n.enlaces ?? [])) out.push({ t: 'enlace', nivel: niv, texto: `${tx.vease} ${tx.anexo} ${opord ? letraAnexo(opord, a.id) : ''} — ${a.cabecera.titulo || ANEXOS[a.plantilla]?.[idi] || ''}`, archivo: ctx.archivoDe?.(a), sangria: true });
+    for (const a of anexosDe(n.enlaces ?? [])) out.push({ nodo: n.id, t: 'enlace', nivel: niv, texto: `${tx.vease} ${tx.anexo} ${opord ? letraAnexo(opord, a.id) : ''} — ${a.cabecera.titulo || ANEXOS[a.plantilla]?.[idi] || ''}`, archivo: ctx.archivoDe?.(a), sangria: true });
   });
   out.push({ t: 'clasificacionFin', texto: c.clasificacion || '' });
   return out;

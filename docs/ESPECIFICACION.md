@@ -546,3 +546,16 @@ y 180°) y asa ↻ en el mapa que se arrastra alrededor del centro, de 5 en 5°
   - concepto en paquete de datos ATAK (ZIP), KMZ o paquete SPA;
   - todo junto en un ZIP o por separado, y «Enviar…» cuando el navegador deja compartir archivos.
 - Los objetos se pueden marcar «Vigente en todas las fases» desde su ficha o desde la OPORD.
+
+## v0.10.1 — La OPORD se ve rellenándose al lado (como en S1)
+- **Botón «Documento»** en la OPORD, encendido de fábrica: formulario a la izquierda y, a la derecha, las hojas A4 tal y como saldrán.
+- **Las hojas** salen de los mismos bloques que el PDF y el Word, con:
+  - clasificación arriba y abajo, título en las páginas siguientes y «Página X de Y»;
+  - tablas largas partidas con la cabecera repetida;
+  - un título nunca solo al pie de una hoja.
+- **Mientras se escribe:**
+  - la hoja se pone al día al momento y lo que cambia brilla un instante;
+  - el apartado que se está escribiendo se resalta en la hoja y esta se desplaza hasta él;
+  - pinchar en la hoja lleva a ese apartado del formulario.
+- **Barra de la hoja:** número de páginas, zoom (− Ajustar +) y exportar solo el documento que se ve (OPORD o anexo) en Word o PDF.
+- **Según el ancho:** ancha, índice | formulario | hoja; media, formulario | hoja; estrecha, solo el formulario. En «Concepto» la hoja se esconde.

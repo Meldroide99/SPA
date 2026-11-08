@@ -1238,3 +1238,72 @@ body.eligiendo-punto .leaflet-container { cursor: crosshair !important; }
 .op-cab-anexo { grid-template-columns: 1fr minmax(160px, 220px); }
 .op-cab-anexo .op-volver { grid-column: 1; }
 .op-cab-anexo .op-quitar-anexo { grid-column: 2; }
+
+/* ===== OPORD: el documento rellenándose al lado (como en S1) ===== */
+.panel-opord.con-vista:not(.en-concepto) { width: min(1560px, calc(100vw - 92px)); }
+.opord-vista { display: none; }
+.panel-opord.con-vista:not(.en-concepto) .opord-cuerpo { grid-template-columns: minmax(130px, 170px) minmax(360px, 1fr) minmax(420px, 1.12fr); }
+.panel-opord.con-vista:not(.en-concepto) .opord-vista { display: flex; }
+@container opord (max-width: 1180px) {
+  .panel-opord.con-vista:not(.en-concepto) .opord-cuerpo { grid-template-columns: minmax(340px, 1fr) minmax(380px, 1.05fr); }
+  .panel-opord.con-vista .opord-indice { display: none; }
+}
+@container opord (max-width: 780px) {
+  .panel-opord.con-vista:not(.en-concepto) .opord-cuerpo { grid-template-columns: 1fr; }
+  .panel-opord.con-vista .opord-vista { display: none !important; }
+}
+.opord-vista { flex-direction: column; min-width: 0; min-height: 0; border-left: .5px solid var(--linea); background: #E6E7EA; }
+body.tema-oscuro .opord-vista { background: #1A1C20; }
+.ov-barra { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-bottom: .5px solid var(--linea); background: color-mix(in srgb, var(--superficie, #fff) 70%, transparent); }
+.ov-estado { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--gris); font-variant-numeric: tabular-nums; min-width: 72px; }
+.ov-luz { width: 7px; height: 7px; border-radius: 50%; background: var(--ok, #2E8B57); opacity: .7; }
+.ov-luz.latido { animation: ov-latido .6s var(--suave); }
+@keyframes ov-latido { from { transform: scale(1.9); opacity: 1; } to { transform: scale(1); opacity: .7; } }
+.ov-zoom { display: inline-flex; margin-left: auto; border-radius: 8px; background: var(--hundido); }
+.ov-zoom button { height: 26px; min-width: 26px; padding: 0 8px; border: 0; background: none; font: 600 12px var(--sans); color: var(--tinta); cursor: pointer; font-variant-numeric: tabular-nums; }
+.ov-acc { display: inline-flex; gap: 6px; }
+.ov-pdf { background: var(--noche) !important; color: #fff !important; }
+.ov-hojas { flex: 1 1 auto; overflow: auto; padding: 14px 14px 30px; scroll-behavior: auto; }
+.vo-escala { zoom: var(--z, .7); width: 794px; margin: 0 auto; }
+
+/* La hoja (también en el medidor, fuera de la vista) */
+.vo-medida { position: absolute; left: -30000px; top: 0; visibility: hidden; pointer-events: none; }
+.vo-hoja { position: relative; width: 794px; height: 1123px; margin: 0 auto 18px; background: #fff; color: #111; box-shadow: 0 1px 2px rgba(0,0,0,.12), 0 10px 30px -12px rgba(0,0,0,.28); font: 13.33px/1.36 Arial, Helvetica, sans-serif; letter-spacing: 0; overflow: hidden; }
+.vo-cont { position: absolute; top: 96px; left: 76px; right: 68px; bottom: 84px; }
+.vo-medida .vo-cont { bottom: auto; }
+.vo-cla { font-weight: 700; font-size: 13.33px; }
+.vo-cla-arr { position: absolute; top: 44px; left: 0; right: 0; text-align: center; }
+.vo-sub { position: absolute; top: 62px; left: 76px; right: 68px; text-align: center; font-size: 10px; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.vo-pie { position: absolute; bottom: 34px; left: 76px; right: 68px; display: flex; align-items: baseline; }
+.vo-cla-aba { flex: 1; text-align: center; }
+.vo-num { position: absolute; right: 0; font-size: 10.7px; }
+.vo-cab { display: flex; justify-content: space-between; gap: 24px; margin: 0 0 18px; font-size: 12.7px; line-height: 1.32; }
+.vo-cab .vo-der { text-align: right; flex: none; max-width: 40%; }
+.vo-neg { font-weight: 700; }
+.vo-grande { font-size: 14.67px; }
+.vo-tit { position: relative; margin: 7px 0 3px; font-weight: 700; font-size: 14px; line-height: 1.3; }
+.vo-tit.vo-n0 { margin-top: 14px; font-size: 16px; }
+.vo-tit.vo-n1 { font-size: 14.67px; }
+.vo-rot { display: inline-block; width: var(--col); margin-left: calc(-1 * var(--col)); }
+.vo-par { margin: 0 0 5px; }
+.vo-par > div { margin: 0 0 3px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.vo-bala { position: relative; padding-left: 16px; }
+.vo-bala::before { content: '•'; position: absolute; left: 0; }
+.vo-intro { font-style: italic; text-decoration: underline; text-underline-offset: 2px; }
+.vo-arbol { margin: 2px 0 6px; }
+.vo-arbol > div { position: relative; margin: 0 0 2px; }
+.vo-rama { display: inline-block; width: 8px; height: 6px; margin: 0 4px 2px -11px; border-left: .7px solid #444; border-bottom: .7px solid #444; vertical-align: middle; }
+.vo-tabla { border-collapse: collapse; margin: 4px 0 10px; font-size: 11.33px; line-height: 1.28; table-layout: auto; }
+.vo-tabla th, .vo-tabla td { border: .6px solid #8A8F99; padding: 3px 4px; vertical-align: top; text-align: left; overflow-wrap: anywhere; }
+.vo-tabla th { background: #E7E9EE; font-weight: 700; text-align: center; vertical-align: middle; }
+.vo-tot td { font-weight: 700; }
+.vo-enl { margin: 2px 0 4px; color: #1F4E9A; text-decoration: underline; text-underline-offset: 2px; }
+.vo-firma { margin: 40px 0 0; text-align: right; font-weight: 700; }
+/* Interacción: pinchar lleva al formulario; lo que cambia brilla; lo que se escribe se resalta */
+.vo-escala [data-nodo] { cursor: pointer; border-radius: 3px; transition: background .3s, box-shadow .3s; }
+.vo-escala [data-nodo]:hover { background: rgba(31, 78, 154, .05); }
+.vo-escala .vo-activo { background: rgba(235, 203, 148, .3) !important; box-shadow: 0 0 0 3px rgba(235, 203, 148, .3); }
+.vo-nuevo { animation: vo-brillo 1.6s var(--suave); }
+@keyframes vo-brillo { 0% { background: rgba(235, 203, 148, .75); box-shadow: 0 0 0 3px rgba(235, 203, 148, .75); } 100% { background: transparent; box-shadow: 0 0 0 3px transparent; } }
+.op-sec.destello > .op-sec-cab { animation: vo-brillo 1.4s var(--suave); border-radius: 8px; }
+@media (prefers-reduced-motion: reduce) { .vo-nuevo, .op-sec.destello > .op-sec-cab, .ov-luz.latido { animation: none; } }

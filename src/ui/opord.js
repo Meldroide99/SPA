@@ -17,7 +17,8 @@ import {
 } from '../opord/documento.js';
 
 const D = { agregacionesAuto, anadirNodo, anadirRepetido, cambiarPlantilla, conContenido, crearAnexo, crearOpordCompleta, deshacer, editar, enlazarAnexo, esGdh, fasesDe, gdh, hijasDe, htmlALineas, letraAnexo, limpiarHtml, moverNodo, nodosVivos, normalizarGdh, numerar, padreDe, porClave, quitarNodo, recorrer, sincronizarFases, titulo, tituloDocumento, tituloFase, tocar, unidadesManiobra, uuid };
-import { archivosOpord, zipDe, baseArchivo } from '../opord/exportar.js';
+import { archivosOpord, zipDe, baseArchivo, bloques as bloquesDoc, aPdf, aDocx } from '../opord/exportar.js';
+import { crearVista } from './vista-opord.js';
 import {
   hijos, buscarPaquete, nuevoPaquete, tocarPaquete, objetosDe, crearPaqueteSpa, documentos, paquetes, descendientes,
 } from '../plan/operaciones.js';
@@ -35,7 +36,7 @@ export function iniciarOpord({ L, mapa, dibujo, lazo, alCambiarPaneles = () => {
   const $ = (id) => document.getElementById(id);
   const panel = $('panel-opord'), hoja = $('opord-hoja'), indice = $('opord-indice');
   const plan = () => dibujo.plan();
-  let ui = { idioma: null, autor: '', exp: { docs: ['pdf', 'docx'], concepto: ['zip', 'spa'], zip: true } };
+  let ui = { idioma: null, autor: '', vista: true, exp: { docs: ['pdf', 'docx'], concepto: ['zip', 'spa'], zip: true } };
   try { ui = { ...ui, ...JSON.parse(localStorage.getItem(CLAVE_UI) || '{}') }; } catch { /* nada */ }
   const guardarUi = () => { try { localStorage.setItem(CLAVE_UI, JSON.stringify(ui)); } catch { /* nada */ } };
   const autor = () => ui.autor || 'Yo';
@@ -53,7 +54,37 @@ export function iniciarOpord({ L, mapa, dibujo, lazo, alCambiarPaneles = () => {
   const idi = () => (actual()?.idioma === 'en' ? 'en' : 'es');
   const permanentes = () => (st.op ? objetosDe(plan(), st.op).filter((e) => e.propiedades?.permanente) : []);
   let tGuardar = 0;
-  const guardarPronto = () => { clearTimeout(tGuardar); tGuardar = setTimeout(() => dibujo.guardar(), 350); };
+  const guardarPronto = () => { clearTimeout(tGuardar); tGuardar = setTimeout(() => dibujo.guardar(), 350); vistaPronto(); };
+
+  // ---------------------------------------------------------- el documento al lado (como en S1)
+  const vista = crearVista($('opord-vista-hojas'), { alPinchar: (id) => irAlApartado(id) });
+  let tVista = 0;
+  function vistaPronto(ms = 120) { clearTimeout(tVista); tVista = setTimeout(pintarVista, ms); }
+  function contexto(op) { return { anexos: anexos(op), opord: op, paquetes: paquetes(plan()), permanentes: permanentes().map((e) => ({ nombre: dibujo.titulo(e) })) }; }
+  function pintarVista() {
+    if (panel.hidden || !ui.vista || st.concepto) return;
+    const d = actual(); if (!d) return;
+    const op = opord();
+    const en = d.idioma === 'en';
+    const n = vista.pintar(bloquesDoc(d, contexto(op)), { titulo: D.tituloDocumento(d, op), pagina: en ? 'Page' : 'Página', de: en ? 'of' : 'de' });
+    $('ov-paginas').textContent = `${n} ${n === 1 ? 'página' : 'páginas'}`;
+    const luz = panel.querySelector('.ov-luz'); luz.classList.remove('latido'); void luz.offsetWidth; luz.classList.add('latido');
+  }
+  /** Pinchar en la hoja: lleva a ese apartado en el formulario y deja escribir. */
+  function irAlApartado(id) {
+    const s = hoja.querySelector(`.op-sec[data-id="${id}"]`); if (!s) return;
+    s.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    s.classList.remove('destello'); void s.offsetWidth; s.classList.add('destello');
+    const campo = s.querySelector(':scope > .op-sec-cuerpo :is(.op-texto, textarea, input, select)');
+    campo?.focus({ preventScroll: true });
+  }
+  function ponerVista(si) {
+    ui.vista = si; guardarUi();
+    $('opord-vista-btn').setAttribute('aria-pressed', String(si));
+    panel.classList.toggle('con-vista', si);
+    if (si) vistaPronto(0);
+    alCambiarPaneles();
+  }
 
   /** Cambio propio: queda en el registro del documento, se puede deshacer y se guarda. */
   function editar(doc, nodo, campo, valor) {
@@ -134,6 +165,8 @@ export function iniciarOpord({ L, mapa, dibujo, lazo, alCambiarPaneles = () => {
     const scroll = hoja.scrollTop;
     hoja.innerHTML = st.concepto ? htmlConcepto(d) : htmlDocumento(d);
     pintarIndice(d);
+    panel.classList.toggle('con-vista', ui.vista);
+    vistaPronto(40);
     hoja.scrollTop = scroll;
     autoAltura(hoja);
   }
@@ -413,7 +446,7 @@ export function iniciarOpord({ L, mapa, dibujo, lazo, alCambiarPaneles = () => {
     // Unidades (organización operativa y agregaciones)
     if (el.dataset.uCampo) { programar(`u.${el.closest('[data-u]')?.dataset.u ?? el.dataset.u}.${el.dataset.uCampo}`, () => cambiarUnidad(d, el.closest('[data-u]')?.dataset.u ?? el.dataset.u, el.dataset.uCampo, el.type === 'checkbox' ? el.checked : el.value)); return; }
     const id = nodoDe(el); if (!id) return;
-    if (el.dataset.campo === 'texto') { programar(`t.${id}`, () => editar(d, id, 'texto', D.limpiarHtml(el.innerHTML))); return; }
+    if (el.dataset.campo === 'texto') { programar(`t.${id}`, () => editar(d, id, 'texto', D.limpiarHtml(el.innerHTML)), 220); return; }
     if (el.dataset.ruta) {
       if (el.classList.contains('op-gdh')) el.classList.toggle('mal', Boolean(el.value.trim()) && !D.esGdh(el.value));
       const v = el.type === 'checkbox' ? el.checked : el.type === 'number' ? (el.value === '' ? '' : Number(el.value)) : el.value;
@@ -685,6 +718,22 @@ export function iniciarOpord({ L, mapa, dibujo, lazo, alCambiarPaneles = () => {
     hoja.querySelector(`#sec-${a.dataset.ir}`)?.scrollIntoView({ block: 'start', behavior: 'smooth' });
   });
   $('opord-concepto').addEventListener('click', () => { vaciarPendientes(); ponerConcepto(!st.concepto); });
+  $('opord-vista-btn').setAttribute('aria-pressed', String(ui.vista));
+  $('opord-vista-btn').addEventListener('click', () => { vaciarPendientes(); ponerVista(!ui.vista); });
+  // El apartado que se escribe se resalta en la hoja
+  hoja.addEventListener('focusin', (e) => { const id = nodoDe(e.target); if (id) vista.activar(id); });
+  panel.querySelector('.ov-zoom').addEventListener('click', (e) => { const b = e.target.closest('[data-z]'); if (!b) return; $('ov-zoom-txt').textContent = vista.zoom(b.dataset.z === 'a' ? 'ajustar' : b.dataset.z === '+' ? 0.1 : -0.1); });
+  // Exportar solo el documento que se ve (OPORD o anexo)
+  panel.querySelector('.ov-acc').addEventListener('click', async (e) => {
+    const b = e.target.closest('[data-exp]'); if (!b) return;
+    vaciarPendientes();
+    const d = actual(); const op = opord(); if (!d) return;
+    const ext = b.dataset.exp;
+    const ctx = { ...contexto(op), archivoDe: (x) => `${baseArchivo(x, op)}.${ext}` };
+    const blob = ext === 'pdf' ? await aPdf(d, ctx) : await aDocx(d, ctx);
+    descargar({ blob, nombre: `${baseArchivo(d, op)}.${ext}` });
+    avisar(`«${baseArchivo(d, op)}.${ext}» descargado`);
+  });
   $('opord-cerrar').addEventListener('click', () => { vaciarPendientes(); cerrar(); });
   $('opord-exportar').addEventListener('click', () => { vaciarPendientes(); exportar(); });
   $('opord-mas').addEventListener('click', (e) => {
