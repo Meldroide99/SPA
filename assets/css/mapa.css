@@ -1307,3 +1307,103 @@ body.tema-oscuro .opord-vista { background: #1A1C20; }
 @keyframes vo-brillo { 0% { background: rgba(235, 203, 148, .75); box-shadow: 0 0 0 3px rgba(235, 203, 148, .75); } 100% { background: transparent; box-shadow: 0 0 0 3px transparent; } }
 .op-sec.destello > .op-sec-cab { animation: vo-brillo 1.4s var(--suave); border-radius: 8px; }
 @media (prefers-reduced-motion: reduce) { .vo-nuevo, .op-sec.destello > .op-sec-cab, .ov-luz.latido { animation: none; } }
+
+/* Desplegables legibles: el navegador pinta su lista con el tema que toca y las opciones llevan colores propios */
+:root { color-scheme: light; }
+body.tema-oscuro { color-scheme: dark; }
+select option, select optgroup { background: #fff; color: #16181b; }
+body.tema-oscuro select option, body.tema-oscuro select optgroup { background: #25282d; color: #f1f2f4; }
+.obj-menu { color: var(--tinta); }
+
+/* ===== v0.11: OPORD a pantalla completa, letra del modelo, clasificación con su cuadro ===== */
+/* Al hacer una OPORD no se hace otra cosa: ocupa toda la pantalla (el concepto la vuelve estrecha, junto al mapa) */
+.panel-opord:not(.en-concepto) { top: 8px !important; left: 8px !important; right: 8px !important; bottom: 8px !important; width: auto !important; max-width: none !important; min-width: 0; z-index: 1150 !important; translate: none; }
+.panel-opord:not(.en-concepto) .opord-cuerpo { grid-template-columns: minmax(170px, 220px) minmax(0, 1fr) !important; }
+.panel-opord.con-vista:not(.en-concepto) .opord-cuerpo { grid-template-columns: minmax(160px, 210px) minmax(380px, 1fr) minmax(460px, 1.08fr) !important; }
+@container opord (max-width: 1180px) { .panel-opord.con-vista:not(.en-concepto) .opord-cuerpo { grid-template-columns: minmax(360px, 1fr) minmax(400px, 1fr) !important; } }
+@container opord (max-width: 780px) { .panel-opord:not(.en-concepto) .opord-cuerpo, .panel-opord.con-vista:not(.en-concepto) .opord-cuerpo { grid-template-columns: 1fr !important; } }
+.panel-opord:not(.en-concepto) .opord-hoja { padding: 14px 20px 80px; font-size: 15px; line-height: 1.5; }
+.panel-opord:not(.con-vista):not(.en-concepto) .opord-hoja > * { max-width: 980px; margin-left: auto; margin-right: auto; }
+.panel-opord:not(.en-concepto) .opord-indice { font-size: 13px; padding: 12px 6px 30px 10px; }
+.panel-opord:not(.en-concepto) .op-cab input, .panel-opord:not(.en-concepto) .op-cab select { height: 34px; font-size: 14px; }
+.panel-opord:not(.en-concepto) .op-cab label { font-size: 12px; }
+.panel-opord:not(.en-concepto) .op-sec[style*="--n:0"] > .op-sec-cab .op-tit, .panel-opord:not(.en-concepto) .op-sec[style*="--n:0"] > .op-sec-cab .op-rot { font-size: 16px; }
+.panel-opord:not(.en-concepto) .op-tabla { font-size: 13.5px; }
+.panel-opord:not(.en-concepto) .op-tabla textarea, .panel-opord:not(.en-concepto) .op-tabla input, .panel-opord:not(.en-concepto) .op-tabla select { font-size: 14px; }
+.panel-opord:not(.en-concepto) .opord-barras { padding: 8px 14px; }
+.panel-opord:not(.en-concepto) .v-cab strong { font-size: 16px; }
+
+/* Clasificación: su cuadro de color al lado */
+.op-c-clasif .op-c-par { gap: 8px; }
+.op-clasif-cuadro { flex: none; width: 18px; height: 18px; border-radius: 5px; background: var(--c, #5B6573); box-shadow: inset 0 0 0 .5px rgba(0,0,0,.2); transition: background .3s; }
+.op-c-marcar { display: flex; align-items: center; gap: 5px; margin-top: 2px; font-size: 11.5px; color: var(--gris); }
+.op-c-marcar input { width: auto !important; height: auto !important; accent-color: var(--noche); }
+
+/* Organización operativa gráfica */
+.op-org { display: block !important; margin: 6px 0 12px; }
+.op-org-lienzo { overflow: auto; padding: 10px; border-radius: 12px; background: var(--hundido); cursor: default; touch-action: none; }
+.op-org-lienzo svg { display: block; margin: 0 auto; max-width: none; user-select: none; }
+.op-org-lienzo text { fill: var(--tinta, #111); }
+body.tema-oscuro .op-org-lienzo text { fill: #f1f2f4; }
+.op-org-lienzo .org-hit { fill: transparent; stroke: transparent; transition: fill .2s, stroke .2s; }
+.op-org-lienzo g[data-u] { cursor: grab; }
+.op-org-lienzo g[data-u]:hover .org-hit { fill: rgba(31, 78, 154, .07); }
+.op-org-lienzo g.sel .org-hit { fill: rgba(235, 203, 148, .35); stroke: var(--oro-claro, #EBCB94); stroke-width: 1.2; }
+.op-org-lienzo g.destino .org-hit { fill: rgba(46, 139, 87, .18); stroke: var(--ok, #2E8B57); stroke-width: 1.4; }
+.op-org-lienzo g.arrastrando { opacity: .75; cursor: grabbing; pointer-events: none; }
+.op-org-ins { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 8px; padding: 8px; border-radius: 12px; background: var(--hundido); animation: aparecer .25s var(--bote); }
+.op-org-ins input, .op-org-ins select { height: 32px; min-width: 0; padding: 0 9px; border: .5px solid var(--linea-2); border-radius: 8px; background: var(--superficie, #fff); font: 14px var(--sans); color: var(--tinta); }
+.op-org-ins .op-org-nom { flex: 1 1 160px; font-weight: 700; }
+.op-org-ins select { flex: 0 1 auto; max-width: 220px; }
+.op-org-ins .op-org-de { flex: 0 1 150px; }
+.op-org-ins .op-org-mat { display: flex; align-items: center; gap: 4px; font-size: 12.5px; color: var(--gris); }
+.op-org-acc { display: flex; gap: 6px; margin-left: auto; }
+.op-org-acc button { border: 0; border-radius: 8px; background: var(--superficie, #fff); padding: 6px 11px; font: 600 12.5px var(--sans); color: var(--tinta); cursor: pointer; transition: transform .45s var(--bote); }
+.op-org-acc button.peligro { color: var(--error); }
+.op-org-acc button:active { transform: scale(.93); transition-duration: .1s; }
+
+/* Calco */
+.op-img { margin: 6px 0 10px; border-radius: 12px; outline: none; }
+.op-img:focus-visible { box-shadow: 0 0 0 2px var(--oro-claro); }
+.op-img img { display: block; max-width: 100%; max-height: 420px; margin: 0 auto; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,.15); }
+.op-img-vacia { display: grid; place-items: center; height: 140px; border: 1.5px dashed var(--linea-2); border-radius: 12px; color: var(--gris); font-weight: 600; letter-spacing: .04em; }
+.op-img-elegir { border: 0; border-radius: 7px; background: var(--hundido); padding: 4px 10px; font: 600 12px var(--sans); color: var(--tinta); cursor: pointer; }
+
+/* Vista del documento: letra del modelo, cuadro de clasificación, etiquetas, organigrama y calco */
+.vo-escala[data-letra="Tahoma"] .vo-hoja, .vo-medida[data-letra="Tahoma"] .vo-hoja { font-family: Tahoma, Verdana, 'DejaVu Sans', sans-serif; }
+.vo-hoja .vo-cla, .vo-hoja .vo-pie, .vo-hoja .vo-sub { font-family: Arial, Helvetica, sans-serif; }
+.vo-marca { display: inline-block; margin-left: 9px; padding: 0 5px; border-radius: 3px; background: var(--c); color: #fff; font: 700 8.5px/13px Arial, Helvetica, sans-serif; letter-spacing: .02em; vertical-align: 2px; text-transform: none; }
+.vo-nota { font-weight: 400; }
+.vo-et { font-weight: 700; }
+.vo-et.fina { font-weight: 400; }
+.vo-sigue { padding-left: 16px; }
+.vo-org { margin: 4px 0 10px; }
+.vo-org svg { display: block; max-width: 100%; height: auto; }
+.vo-img img { display: block; max-width: 100%; max-height: 520px; margin: 0 auto 8px; }
+.vo-tabla-tit { margin: 6px 0 3px; font-weight: 700; text-align: center; }
+.vo-tabla.vo-unida td.vo-centro { text-align: center; vertical-align: middle; }
+/* OPORD de una hoja: la cuadrícula del modelo */
+.vo-cuadricula .vo-cont { top: 56px; left: 30px; right: 30px; bottom: 50px; }
+.vo-cuadricula .vo-cla-arr { top: 26px; color: var(--cla); }
+.vo-cuadricula .vo-pie { bottom: 22px; left: 30px; right: 30px; }
+.vo-cuadricula .vo-cla-aba { color: var(--cla); }
+.vq { --s: 12px; font-size: var(--s); line-height: 1.24; border: 1px solid #000; }
+.vq-titulo { padding: 3px 6px; border-bottom: 1px solid #000; text-align: center; font-weight: 700; font-size: calc(var(--s) * 1.55); }
+.vq-fila { display: flex; border-top: 1px solid #000; }
+.vq-titulo + .vq-fila { border-top: 0; }
+.vq-col { min-width: 0; padding: 4px 5px; }
+.vq-col + .vq-col { border-left: 1px solid #000; }
+.vq-info .vq-col { padding: 2px 5px; text-align: center; font-size: calc(var(--s) * .95); }
+.vq-calco { min-height: 220px; padding: 0; display: flex; align-items: center; justify-content: center; }
+.vq-calco .vo-img img { max-height: 470px; margin: 0; }
+.vq-tit { margin: 3px 0 1px; font-weight: 700; }
+.vq-tit:first-child { margin-top: 0; }
+.vq-tit.vq-n0 span { text-decoration: underline; text-underline-offset: 2px; font-size: 1.04em; }
+.vq-tit i { font-style: normal; font-weight: 400; }
+.vq-tit.vq-centro { text-align: center; }
+.vq-tit.vq-centro span { text-decoration: none; }
+.vq .vo-tabla { width: 100%; margin: 2px 0 2px; font-size: calc(var(--s) * .95); }
+.vq .vo-tabla th, .vq .vo-tabla td { border-color: #000; padding: 1px 3px; }
+.vq .vo-tabla-tit { margin-top: 0; }
+.vq .vo-org { margin: 2px 0 0; }
+.vq .vo-org svg { margin: 0 auto; }

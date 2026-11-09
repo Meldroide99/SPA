@@ -117,11 +117,13 @@ test('Cambiar de plantilla: pasa lo que encaja y lo demás va a «Sin sitio»', 
 
 test('Anexos enlazados en los dos sentidos, con letra', () => {
   const { opord, anexos } = crearOpordCompleta('opord-brigada', { numero: '01', nombre: 'WINGO3' });
-  assert.equal(anexos.length, 2);
-  assert.equal(anexos[0].padre, opord.id); assert.equal(letraAnexo(opord, anexos[1].id), 'B');
-  assert.ok(porClave(opord, 'log.ejec.sanidad').enlaces.includes(anexos[0].id));
+  assert.equal(anexos.length, 0, 'MEDEVAC y MEDSITREP no son parte de la OPORD');
+  const f = crearAnexo('fuegos'); enlazarAnexo(opord, f, { nodo: porClave(opord, 'fuegos').id });
   const p = crearAnexo('pace'); enlazarAnexo(opord, p);
-  assert.match(tituloDocumento(p, opord), /^ANNEX C TO OPORD 01 – WINGO3/);
+  assert.equal(f.padre, opord.id); assert.equal(letraAnexo(opord, p.id), 'B');
+  assert.ok(porClave(opord, 'fuegos').enlaces.includes(f.id));
+  assert.match(tituloDocumento(p, opord), /^ANNEX B TO OPORD 01 – WINGO3/);
+  assert.equal(porClave(opord, 'sit.ene.plae').intro, undefined, 'sin «Comunes a todas las PLAE»');
 });
 
 test('Texto, GDH y limpieza de HTML', () => {
@@ -134,7 +136,8 @@ test('Texto, GDH y limpieza de HTML', () => {
 });
 
 test('Exportar: TXT, Word, Excel y PDF bien formados', async () => {
-  const { opord, anexos } = crearOpordCompleta('opord-brigada', { numero: '01', nombre: 'WINGO3' });
+  const { opord } = crearOpordCompleta('opord-brigada', { numero: '01', nombre: 'WINGO3' });
+  const anexos = [crearAnexo('fuegos')]; enlazarAnexo(opord, anexos[0], { nodo: porClave(opord, 'fuegos').id });
   editar(opord, porClave(opord, 'mision').id, 'texto', '<p>Cruzar el río NEMAN con ñ y tildes: áéíóú.</p>');
   porClave(opord, 'orgop').org.unidades = [{ id: 'b', nombre: '6 BLB', padre: null }, { id: 'g', nombre: 'GC', padre: 'b' }];
   const ctx = { anexos, paquetes: [], permanentes: [] };
@@ -166,7 +169,8 @@ test('Paquete SPA con OPORD: se recibe una vez y luego se actualiza sin duplicar
   const op = nuevoPaquete(A, 'WINGO3'); const f1 = nuevoPaquete(A, 'Fase 1', { padre: op.id });
   const el = { id: 'e1', tipo: 'punto', version: 1, paquete: f1.id, geometria: { type: 'Point', coordinates: [-4, 40.7] }, propiedades: { nombre: 'PC' } };
   A.elementos.push(el);
-  const { opord, anexos } = crearOpordCompleta('opord-compania', { operacion: op.id, nombre: 'WINGO3' });
+  const { opord } = crearOpordCompleta('opord-compania', { operacion: op.id, nombre: 'WINGO3' });
+  const anexos = [crearAnexo('pace')]; enlazarAnexo(opord, anexos[0]);
   A.documentos = [opord, ...anexos];
   editar(opord, porClave(opord, 'mision').id, 'texto', 'v1', 'jefe');
   // Receptor: primera vez
@@ -196,4 +200,114 @@ test('Paquete SPA con OPORD: se recibe una vez y luego se actualiza sin duplicar
   assert.equal(esVisible(A, el, { ocultos: [op.id] }), false);
   el.propiedades.permanente = false;
   assert.equal(esVisible(A, el, { solo: f2.id }), false);
+});
+
+// ---------------------------------------------------------------- v0.11
+import { bloques, celdasUnidas } from '../src/opord/exportar.js';
+import { disponer, trazadoPdf, svgAPdf } from '../src/opord/organigrama.js';
+import { palabraFase } from '../src/opord/documento.js';
+import { colorClasificacion } from '../src/opord/plantillas.js';
+import { readFileSync, existsSync } from 'node:fs';
+
+const UNIDADES = [
+  { id: 'r', nombre: 'II/4', simbolo: { escalon: 'batallon', icono: '121100' } },
+  { id: 'a', nombre: '7', padre: 'r', simbolo: { escalon: 'compania', icono: '121100' } },
+  { id: 'a1', nombre: '', padre: 'a', simbolo: { escalon: 'seccion', icono: '121100' } },
+  { id: 'a2', nombre: 'Pn', padre: 'a1', relacion: 'TACOM' },
+  { id: 'b', nombre: '8', padre: 'r' },
+  { id: 'c', nombre: 'MM', padre: 'r', relacion: 'TACOM', de: 'BON II' },
+];
+
+test('OPORD de una hoja: numeración 1./A., etiquetas, saltos y cuadrícula', () => {
+  const paquetes = [{ id: 'op', nombre: 'Op', padre: null }, { id: 'f1', nombre: 'Ocupar', padre: 'op' }, { id: 'f2', nombre: 'Observar', padre: 'op' }];
+  const { opord } = crearOpordCompleta('opord-cia-hoja', { operacion: 'op', nombre: 'Prueba', numero: '001' });
+  sincronizarFases(opord, paquetes);
+  const r = rotulos(opord);
+  assert.equal(r.sit, '1.'); assert.equal(r.mision, '2.'); assert.equal(r.ejec, '3.'); assert.equal(r['ejec.intencion'], 'A.');
+  assert.equal(r.coord, 'D.'); assert.equal(r.log, '4.'); assert.equal(r.mando, '5.');
+  assert.equal(r['sit.ene.mlcoa'], '', 'las etiquetas no llevan número'); assert.equal(r.fuegos, '');
+  const fases = fasesDe(paquetes, 'op');
+  assert.equal(palabraFase(opord, fases[0]), 'Salto 1');
+  editar(opord, porClave(opord, 'sit.ene.mlcoa').id, 'texto', 'Infiltrarse');
+  editar(opord, porClave(opord, 'orgop').id, 'org.unidades', UNIDADES);
+  const bl = bloques(opord, { paquetes });
+  const ml = bl.find((b) => b.etiqueta?.texto === 'MLCOA:');
+  assert.ok(ml && ml.etiqueta.color === '#C8102E' && ml.lineas[0] === 'Infiltrarse');
+  assert.ok(bl.find((b) => b.etiqueta?.texto === 'Salto 1:' && b.vineta));
+  assert.equal(bl.hoja.length, 4, 'las cuatro filas del modelo');
+  const [f1, f2, f3, f4] = bl.hoja;
+  assert.ok(f1[0].bloques.some((b) => b.etiqueta?.texto === 'MLCOA:'), 'situación arriba a la izquierda');
+  assert.ok(f1[1].bloques.some((b) => b.t === 'titulo' && b.nota === '(según matriz)'), 'C. remite a la matriz');
+  assert.ok(f2[1].bloques.some((b) => b.t === 'titulo' && /COORDINACI/i.test(b.texto)) || f2[1].bloques.some((b) => /coordinaci/i.test(b.texto ?? '')));
+  assert.ok(f3[0].bloques.some((b) => b.t === 'titulo' && b.texto === 'FUEGOS'));
+  assert.ok(f4[0].bloques.some((b) => b.t === 'organigrama'));
+  const matriz = f4[1].bloques.find((b) => b.t === 'tabla');
+  assert.ok(matriz?.fusionar); assert.deepEqual(matriz.cols, ['', 'SALTO 1', 'SALTO 2', 'Posteriormente']);
+  assert.equal(matriz.titulo, 'MATRIZ DE COMETIDOS');
+});
+
+test('Celdas iguales unidas (matriz de cometidos)', () => {
+  const c = celdasUnidas([['TF 7', 'Ocupar', 'Observar', 'Relevo'], ['TF 8', 'Ocupar', 'Observar', 'Relevo'], ['MM', 'Apoyar', 'Apoyar', '']], 4);
+  const ocupar = c.find((x) => x.texto === 'Ocupar'); assert.equal(ocupar.fs, 2); assert.equal(ocupar.cs, 1);
+  const apoyar = c.find((x) => x.texto === 'Apoyar'); assert.equal(apoyar.cs, 2); assert.equal(apoyar.fs, 1);
+  assert.equal(c.filter((x) => x.c === 0).length, 3, 'la primera columna nunca se une');
+  assert.equal(c.reduce((s, x) => s + x.fs * x.cs, 0), 12, 'cubre la tabla entera sin repetir');
+});
+
+test('Organigrama: la que manda arriba, columnas y dependencias', () => {
+  const d = disponer(UNIDADES);
+  const caja = (id) => d.cajas.find((c) => c.u.id === id);
+  assert.ok(caja('r').raiz); assert.equal(caja('r').nombre.ancla, 'end', 'el nombre de la que manda, a su izquierda');
+  assert.ok(caja('a').y > caja('r').y); assert.equal(caja('a').y, caja('b').y, 'subordinadas en fila');
+  assert.ok(caja('b').x > caja('a').x && caja('c').x > caja('b').x);
+  assert.ok(caja('a1').y > caja('a').y && caja('a1').x > caja('a').x, 'lo que cuelga, debajo y metido');
+  assert.equal(caja('c').sub.texto, 'TACOM · de BON II');
+  assert.ok(d.lineas.length >= 7);
+  for (const c of d.cajas) assert.ok(c.x >= 0 && c.x + c.w <= d.ancho + 0.01);
+  assert.deepEqual(disponer([]).cajas, []);
+});
+
+test('SVG → PDF: trazados con arcos y relativos', () => {
+  const p = trazadoPdf('M10,10 l5,5 h3 v2 a2,2 0 1,0 4,0 Z', (x, y) => [x, -y]);
+  assert.match(p, /^10\.00 -10\.00 m 15\.00 -15\.00 l 18\.00 -15\.00 l 18\.00 -17\.00 l .* c .* c h$/);
+  const ops = svgAPdf('<svg><path d="M0,0 L1,1" fill="none" stroke="#000" stroke-width="2"/><path d="M0,0 L1,0 L1,1 Z" fill="rgb(128,224,255)" stroke="none"/></svg>', (x, y) => [x, y], 1);
+  assert.match(ops, /0\.000 0\.000 0\.000 RG 2\.00 w .* S/); assert.match(ops, /0\.502 0\.878 1\.000 rg .* f/);
+});
+
+test('Clasificación con su color y cuadro junto a los títulos', async () => {
+  assert.equal(colorClasificacion('confidencial'), '#1F4E9A'); assert.equal(colorClasificacion('NATO RESTRICTED'), '#C8102E');
+  const { opord } = crearOpordCompleta('opord-brigada', {});
+  opord.cabecera.clasificacion = 'NATO RESTRICTED';
+  const bl = bloques(opord, {});
+  assert.ok(bl.filter((b) => b.t === 'titulo' && b.marca?.color === '#C8102E').length > 10);
+  assert.equal(bl.letra, 'Tahoma');
+  editar(opord, '_cab', 'marcar', false);
+  assert.ok(!bloques(opord, {}).some((b) => b.marca), 'se puede quitar');
+  const xmlDoc = async (blob) => { const u = new Uint8Array(await blob.arrayBuffer()); return Buffer.from(u).toString('latin1'); };
+  editar(opord, '_cab', 'marcar', true);
+  const docx = await xmlDoc(await aDocx(opord, {}));
+  assert.ok(docx.includes('word/styles.xml'));
+});
+
+test('PDF: OPORD de una hoja, organigrama en vectores, calco y letra incrustada', async () => {
+  const paquetes = [{ id: 'op', nombre: 'Op', padre: null }, { id: 'f1', nombre: 'Ocupar', padre: 'op' }];
+  const { opord } = crearOpordCompleta('opord-cia-hoja', { operacion: 'op', nombre: 'Prueba', numero: '001' });
+  sincronizarFases(opord, paquetes);
+  editar(opord, porClave(opord, 'orgop').id, 'org.unidades', UNIDADES);
+  // JPEG mínimo de 1×1 (cabecera SOF0 legible)
+  const jpg = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAAMCAgICAgMCAgIDAwMDBAYEBAQEBAgGBgUGCQgKCgkICQkKDA8MCgsOCwkJDRENDg8QEBEQCgwSExIQEw8QEBD/yQALCAABAAEBAREA/8wABgAQEAX/2gAIAQEAAD8A0s8g/9k=';
+  editar(opord, porClave(opord, 'ejec.calco').id, 'imagen', { datos: jpg, ancho: 1, alto: 1 });
+  const pdf = Buffer.from(new Uint8Array(await (await aPdf(opord, { paquetes })).arrayBuffer())).toString('latin1');
+  assert.match(pdf, /\/Count 1 /, 'una hoja');
+  assert.match(pdf, /\/Subtype \/Image \/Width 1 \/Height 1/);
+  assert.match(pdf, /MATRIZ DE COMETIDOS/); assert.match(pdf, /ORGANIZACI\\323N OPERATIVA/);
+  assert.match(pdf, /0\.502 0\.878 1\.000 rg/, 'símbolos APP-6 (marco azul) dibujados');
+  const docx = Buffer.from(new Uint8Array(await (await aDocx(opord, { paquetes, imagenes: { [porClave(opord, 'orgop').id]: { png: new Uint8Array([137, 80, 78, 71]), ancho: 200, alto: 100 } } })).arrayBuffer())).toString('latin1');
+  assert.ok(/word\/media\/imagen\d\.png/.test(docx) && /word\/media\/imagen\d\.jpeg/.test(docx), 'organigrama y calco en Word');
+  const ttf = '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf', ttfB = '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf';
+  if (existsSync(ttf) && existsSync(ttfB)) {
+    const b = crearOpord('opord-brigada', {});
+    const p2 = Buffer.from(new Uint8Array(await (await aPdf(b, { fuentesPdf: { normal: readFileSync(ttf), negrita: readFileSync(ttfB), nombre: 'Prueba' } })).arrayBuffer())).toString('latin1');
+    assert.match(p2, /\/Subtype \/TrueType \/BaseFont \/Prueba /); assert.match(p2, /\/FontFile2 /);
+  }
 });

@@ -692,12 +692,13 @@ im=Image.open(sys.argv[1]); a=im.getchannel('A'); print(im.mode, im.size[0]%256,
   // Zoom con la rueda: fluido y se asienta en un zoom entero
   await vista(40.80, -4.02, 13); await pag.waitForTimeout(300);
   await pag.mouse.move(cx, cy);
+  await motor(() => { window.__anims = 0; window.__spa.mapa.on('zoomanim', () => { window.__anims++; }); });
   for (let i = 0; i < 3; i++) { await pag.mouse.wheel(0, -100); await pag.waitForTimeout(25); }
-  await pag.waitForTimeout(120);
-  const zMedio = await motor(() => window.__spa.mapa.getZoom());
+  await pag.waitForTimeout(60);
   await pag.waitForTimeout(1500);
   const zFin = await motor(() => window.__spa.mapa.getZoom());
-  ok(zMedio > 13 && zMedio < 16 && !Number.isInteger(zMedio) && zFin === 16, `Zoom con la rueda fluido (pasa por ${zMedio.toFixed(2)}): tres golpes, tres niveles (${zFin})`);
+  const animando = await motor(() => window.__anims);
+  ok(animando >= 1 && zFin === 16, `Zoom con la rueda fluido (${animando} animaciones de la tarjeta gráfica): tres golpes, tres niveles (${zFin})`);
   // Un solo golpe de rueda
   await pag.mouse.wheel(0, 100); await pag.waitForTimeout(1600);
   ok(await motor(() => window.__spa.mapa.getZoom()) === 15, 'Un golpe de rueda = un nivel');
@@ -745,14 +746,16 @@ im=Image.open(sys.argv[1]); a=im.getchannel('A'); print(im.mode, im.size[0]%256,
   });
   await pag.click('#btn-opord'); await pag.waitForTimeout(400);
   await pag.click('#dialogo button[value="opord-brigada"]'); await pag.waitForTimeout(600);
-  ok(await pag.isVisible('#panel-opord') && (await pag.locator('#opord-docs button[data-doc]').count()) === 3, 'OPORD: se crea con sus anexos MEDEVAC y MEDSITREP enlazados');
+  ok(await pag.isVisible('#panel-opord') && (await pag.locator('#opord-docs button[data-doc]').count()) === 1, 'OPORD: se crea sola (MEDEVAC y MEDSITREP no son parte de la OPORD)');
+  ok(await motor(() => { const b = document.getElementById('panel-opord').getBoundingClientRect(); return b.left <= 12 && b.top <= 12 && innerWidth - b.right <= 12 && innerHeight - b.bottom <= 12; }), 'OPORD: ocupa toda la pantalla');
   ok((await pag.locator('#opord-fases button').count()) === 3, 'OPORD: las fases de la operación salen como T0, T1');
   await pag.locator('.op-sec', { has: pag.locator('.op-tit', { hasText: /^MISIÓN$/ }) }).locator('.op-texto').first().click();
   await pag.keyboard.type('Tomar los pasos del río.'); await pag.waitForTimeout(600);
-  await pag.click('[data-acc="u-nueva"]'); await pag.keyboard.type('6 BLB'); await pag.keyboard.press('Enter'); await pag.keyboard.press('Tab');
+  await pag.click('[data-acc="u-nueva"]'); await pag.keyboard.press('Control+A'); await pag.keyboard.type('6 BLB'); await pag.keyboard.press('Tab');
   await pag.keyboard.type('GC'); await pag.keyboard.press('Enter'); await pag.keyboard.type('SGR'); await pag.waitForTimeout(600);
+  ok((await pag.locator('.op-org-lienzo g[data-u]').count()) === 3, 'OPORD: la organización operativa se monta en gráfico, con sus símbolos');
   await pag.locator('#opord-indice a').first().click(); await pag.waitForTimeout(400);
-  ok((await motor(() => [...document.querySelectorAll('.op-matriz tbody td.op-fija')].map((t) => t.textContent.trim()).join(','))) === 'GC,SGR', 'OPORD: organización con Intro y Tab; la matriz de misiones sale sola');
+  ok((await motor(() => [...document.querySelectorAll('.op-matriz tbody td.op-fija')].map((t) => t.textContent.trim()).join(','))) === 'GC,SGR', 'OPORD: organización con Tab (subordinada) e Intro (al lado); la matriz de misiones sale sola');
   const guardada = await motor(() => { const d = window.__spa.dibujo.plan().documentos.find((x) => x.tipo === 'opord'); return Object.values(d.nodos).find((n) => n.k === 'mision').texto; });
   ok(/Tomar los pasos/.test(guardada), 'OPORD: lo escrito queda guardado en la operación');
   ok(await motor(() => document.querySelectorAll('.vo-escala .vo-hoja').length > 0 && [...document.querySelectorAll('.vo-escala [data-nodo]')].some((e) => e.textContent.includes('Tomar los pasos'))), 'OPORD: el documento se ve al lado, rellenándose en hojas A4 (como en S1)');

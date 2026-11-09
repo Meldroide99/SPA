@@ -11,14 +11,15 @@
 // - Cada cambio queda apuntado con su autor (documento.js), listo para
 //   mandarlo a otros usuarios cuando haya servidor.
 
-import { PLANTILLAS, ANEXOS, CLASIFICACIONES, RELACIONES, TABLAS } from '../opord/plantillas.js';
+import { PLANTILLAS, ANEXOS, CLASIFICACIONES, RELACIONES, TABLAS, colorClasificacion } from '../opord/plantillas.js';
 import {
-  agregacionesAuto, anadirNodo, anadirRepetido, cambiarPlantilla, conContenido, crearAnexo, crearOpordCompleta, deshacer, editar, enlazarAnexo, esGdh, fasesDe, gdh, hijasDe, htmlALineas, letraAnexo, limpiarHtml, moverNodo, nodosVivos, normalizarGdh, numerar, padreDe, porClave, quitarNodo, recorrer, sincronizarFases, titulo, tituloDocumento, tituloFase, tocar, unidadesManiobra, uuid,
+  agregacionesAuto, anadirNodo, anadirRepetido, cambiarPlantilla, conContenido, crearAnexo, crearOpordCompleta, deshacer, editar, enlazarAnexo, esGdh, fasesDe, gdh, hijasDe, htmlALineas, letraAnexo, limpiarHtml, moverNodo, nodosVivos, normalizarGdh, numerar, padreDe, palabraFase, porClave, quitarNodo, recorrer, sincronizarFases, titulo, tituloDocumento, tituloFase, tocar, unidadesManiobra, uuid,
 } from '../opord/documento.js';
 
-const D = { agregacionesAuto, anadirNodo, anadirRepetido, cambiarPlantilla, conContenido, crearAnexo, crearOpordCompleta, deshacer, editar, enlazarAnexo, esGdh, fasesDe, gdh, hijasDe, htmlALineas, letraAnexo, limpiarHtml, moverNodo, nodosVivos, normalizarGdh, numerar, padreDe, porClave, quitarNodo, recorrer, sincronizarFases, titulo, tituloDocumento, tituloFase, tocar, unidadesManiobra, uuid };
+const D = { agregacionesAuto, anadirNodo, anadirRepetido, cambiarPlantilla, conContenido, crearAnexo, crearOpordCompleta, deshacer, editar, enlazarAnexo, esGdh, fasesDe, gdh, hijasDe, htmlALineas, letraAnexo, limpiarHtml, moverNodo, nodosVivos, normalizarGdh, numerar, padreDe, palabraFase, porClave, quitarNodo, recorrer, sincronizarFases, titulo, tituloDocumento, tituloFase, tocar, unidadesManiobra, uuid };
 import { archivosOpord, zipDe, baseArchivo, bloques as bloquesDoc, aPdf, aDocx } from '../opord/exportar.js';
 import { crearVista } from './vista-opord.js';
+import { svgOrganigrama, pngOrganigrama, ESCALONES_ORG, TIPOS_ORG, tipoDe } from './organigrama.js';
 import {
   hijos, buscarPaquete, nuevoPaquete, tocarPaquete, objetosDe, crearPaqueteSpa, documentos, paquetes, descendientes,
 } from '../plan/operaciones.js';
@@ -40,7 +41,7 @@ export function iniciarOpord({ L, mapa, dibujo, lazo, alCambiarPaneles = () => {
   try { ui = { ...ui, ...JSON.parse(localStorage.getItem(CLAVE_UI) || '{}') }; } catch { /* nada */ }
   const guardarUi = () => { try { localStorage.setItem(CLAVE_UI, JSON.stringify(ui)); } catch { /* nada */ } };
   const autor = () => ui.autor || 'Yo';
-  let st = { op: null, doc: null, fase: null, concepto: false, vistaAntes: null, activoAntes: null, sucio: false };
+  let st = { op: null, doc: null, fase: null, concepto: false, vistaAntes: null, activoAntes: null, sucio: false, orgSel: null };
   const pila = [], rehechos = []; // cambios propios (para deshacer)
 
   // ---------------------------------------------------------- datos
@@ -66,7 +67,7 @@ export function iniciarOpord({ L, mapa, dibujo, lazo, alCambiarPaneles = () => {
     const d = actual(); if (!d) return;
     const op = opord();
     const en = d.idioma === 'en';
-    const n = vista.pintar(bloquesDoc(d, contexto(op)), { titulo: D.tituloDocumento(d, op), pagina: en ? 'Page' : 'Página', de: en ? 'of' : 'de' });
+    const n = vista.pintar(bloquesDoc(d, contexto(op)), { titulo: D.tituloDocumento(d, op), pagina: en ? 'Page' : 'Página', de: en ? 'of' : 'de', cabecera: d.cabecera });
     $('ov-paginas').textContent = `${n} ${n === 1 ? 'página' : 'páginas'}`;
     const luz = panel.querySelector('.ov-luz'); luz.classList.remove('latido'); void luz.offsetWidth; luz.classList.add('latido');
   }
@@ -137,11 +138,25 @@ export function iniciarOpord({ L, mapa, dibujo, lazo, alCambiarPaneles = () => {
     const raizId = o.padre ? descendientesInverso(opId) : opId;
     let d = opordDe(raizId);
     if (!d) { d = await crearPara(raizId); if (!d) return; }
+    if (limpiarAntiguos(d)) dibujo.guardar();
     st = { ...st, op: raizId, doc: doc ?? d.id, fase: o.padre ? opId : st.op === raizId ? st.fase : null };
     if (D.sincronizarFases(d, paquetes(plan()))) guardarPronto();
     panel.hidden = false;
     pintar();
     alCambiarPaneles();
+  }
+  /** OPORD hechas con plantillas anteriores: fuera MEDEVAC y MEDSITREP (no son parte de la OPORD) y el «Comunes a todas las PLAE». */
+  function limpiarAntiguos(d) {
+    let cambio = false;
+    for (const n of Object.values(d.nodos)) if (n.k === 'sit.ene.plae' && n.intro) { delete n.intro; cambio = true; }
+    const fuera = new Set(docs().filter((x) => x.padre === d.id && (x.plantilla === 'medevac' || x.plantilla === 'medsitrep')).map((x) => x.id));
+    if (fuera.size) {
+      d.anexos = d.anexos.filter((id) => !fuera.has(id));
+      for (const n of Object.values(d.nodos)) if (n.enlaces) n.enlaces = n.enlaces.filter((id) => !fuera.has(id));
+      plan().documentos = docs().filter((x) => !fuera.has(x.id));
+      cambio = true;
+    }
+    return cambio;
   }
   const descendientesInverso = (id) => { let o = buscarPaquete(plan(), id); while (o?.padre) o = buscarPaquete(plan(), o.padre); return o?.id ?? id; };
   function cerrar() {
@@ -181,7 +196,7 @@ export function iniciarOpord({ L, mapa, dibujo, lazo, alCambiarPaneles = () => {
   }
   function pintarFases() {
     const fs = fases();
-    $('opord-fases').innerHTML = `<button type="button" data-fase="" aria-pressed="${!st.fase}">Todas</button>${fs.map((f) => `<button type="button" data-fase="${f.id}" aria-pressed="${st.fase === f.id}" title="${esc(f.nombre)}${f.inicio ? ` · ${esc(f.inicio)}` : ''}">${esc(D.tituloFase(f, idi(), { corto: true }))}</button>`).join('')}`;
+    $('opord-fases').innerHTML = `<button type="button" data-fase="" aria-pressed="${!st.fase}">Todas</button>${fs.map((f) => `<button type="button" data-fase="${f.id}" aria-pressed="${st.fase === f.id}" title="${esc(f.nombre)}${f.inicio ? ` · ${esc(f.inicio)}` : ''}">${esc(D.palabraFase(opord(), f, idi())?.replace(/^(\S)\S*\s+/, '$1') ?? D.tituloFase(f, idi(), { corto: true }))}</button>`).join('')}`;
     $('opord-fases').hidden = !fs.length;
   }
   function pintarIndice(d) {
@@ -196,7 +211,7 @@ export function iniciarOpord({ L, mapa, dibujo, lazo, alCambiarPaneles = () => {
     indice.innerHTML = out.join('');
   }
   const tituloNodo = (d, n) => {
-    if (n.fase) { const f = fases().find((x) => x.id === n.fase); return f ? D.tituloFase(f, d.idioma === 'en' ? 'en' : 'es') : (n.titulo || 'Fase eliminada'); }
+    if (n.fase) { const f = fases().find((x) => x.id === n.fase); const pf = f && D.palabraFase(opord() ?? d, f, d.idioma === 'en' ? 'en' : 'es'); return f ? (pf ? `${pf}: ${f.nombre}` : D.tituloFase(f, d.idioma === 'en' ? 'en' : 'es')) : (n.titulo || 'Fase eliminada'); }
     return D.titulo(n, d.idioma === 'en' ? 'en' : 'es') || (d.idioma === 'en' ? 'Untitled' : 'Sin título');
   };
 
@@ -224,19 +239,20 @@ export function iniciarOpord({ L, mapa, dibujo, lazo, alCambiarPaneles = () => {
       const op = opord();
       return `<div class="op-cab op-cab-anexo">
         <label class="op-c-ancho"><span>Título del anexo</span><input data-cab="titulo" value="${esc(c.titulo)}" placeholder="${esc(ANEXOS[d.plantilla]?.[idi()] ?? '')}"></label>
-        <label><span>Clasificación</span>${sel('clasificacion', CLASIFICACIONES, c.clasificacion)}</label>
+        <label class="op-c-clasif"><span>Clasificación</span><span class="op-c-par"><i class="op-clasif-cuadro" style="--c:${colorClasificacion(c.clasificacion)}"></i>${sel('clasificacion', CLASIFICACIONES, c.clasificacion)}</span></label>
         ${op ? `<button type="button" class="op-volver" data-doc="${op.id}">↩ ${esc(D.tituloDocumento(op))}</button>` : ''}
         <button type="button" class="op-quitar-anexo peligro" data-acc="quitar-anexo">Quitar el anexo</button></div>`;
     }
     const campo = (k, et, extra = '') => `<label><span>${et}</span><input data-cab="${k}" value="${esc(c[k])}" ${extra}></label>`;
     return `<div class="op-cab">
-      <label><span>Clasificación</span>${sel('clasificacion', CLASIFICACIONES, c.clasificacion)}</label>
+      <label class="op-c-clasif"><span>Clasificación</span><span class="op-c-par"><i class="op-clasif-cuadro" style="--c:${colorClasificacion(c.clasificacion)}"></i>${sel('clasificacion', CLASIFICACIONES, c.clasificacion)}</span>
+        <span class="op-c-marcar"><input type="checkbox" data-cab-marcar ${c.marcar === false ? '' : 'checked'}> En cada apartado</span></label>
       ${campo('numero', 'N.º de la orden', 'placeholder="01"')}
       ${campo('nombre', 'Nombre de la operación')}
       ${campo('emisor', 'Cuartel general', 'placeholder="6 BLB PC principal"')}
       <label class="op-c-ejemplar"><span>Ejemplar</span><span class="op-c-par"><input data-cab="copia" value="${esc(c.copia)}" placeholder="1" inputmode="numeric"> de <input data-cab="deCopias" value="${esc(c.deCopias)}" placeholder="12" inputmode="numeric"></span></label>
       ${campo('lugar', 'Lugar')}
-      <label><span>GDH de la orden</span><span class="op-c-par"><input data-cab="gdh" class="op-gdh ${c.gdh && !D.esGdh(c.gdh) ? 'mal' : ''}" value="${esc(c.gdh)}" placeholder="290930Z APR 26"><button type="button" class="op-ahora" data-acc="gdh-ahora" title="Ahora">Ahora</button></span></label>
+      <label><span>GFH de la orden</span><span class="op-c-par"><input data-cab="gdh" class="op-gdh ${c.gdh && !D.esGdh(c.gdh) ? 'mal' : ''}" value="${esc(c.gdh)}" placeholder="290930Z APR 26"><button type="button" class="op-ahora" data-acc="gdh-ahora" title="Ahora">Ahora</button></span></label>
       <label><span>Huso horario</span>${sel('huso', ['Z', 'A', 'B', 'C'], c.huso || 'Z')}</label>
       ${campo('referencia', 'Ref. del mensaje', 'placeholder="pcp.blb6"')}
       <label class="op-c-ancho"><span>Referencias</span><input data-cab="referencias" value="${esc(c.referencias)}" placeholder="Mapas y documentos"></label>
@@ -251,8 +267,8 @@ export function iniciarOpord({ L, mapa, dibujo, lazo, alCambiarPaneles = () => {
     const editable = n.propio || n.fase;
     const selFase = n.fase && st.fase === n.fase ? ' fase-sel' : '';
     let cab = `<div class="op-sec-cab"><span class="op-rot">${esc(r.rotulo)}</span><span class="op-tit${n.titulo ? ' renombrado' : ''}" data-campo="titulo" ${editable ? 'contenteditable="true" spellcheck="false"' : ''}>${esc(f ? f.nombre : tit)}</span>`;
-    if (f) cab = `<div class="op-sec-cab"><span class="op-rot">${esc(r.rotulo)}</span><span class="op-fase-pre">${en === 'en' ? 'Step' : 'Fase'} ${f.i}:</span><span class="op-tit" data-campo="fase-nombre" contenteditable="true" spellcheck="false">${esc(f.nombre)}</span>
-      <span class="op-dtg"><input data-fase-campo="inicio" data-fase="${f.id}" class="op-gdh ${f.inicio && !D.esGdh(f.inicio) ? 'mal' : ''}" value="${esc(f.inicio)}" placeholder="Inicio (GDH)"><i>–</i><input data-fase-campo="fin" data-fase="${f.id}" class="op-gdh ${f.fin && !D.esGdh(f.fin) ? 'mal' : ''}" value="${esc(f.fin)}" placeholder="Fin (GDH)"></span>
+    if (f) cab = `<div class="op-sec-cab"><span class="op-rot">${esc(r.rotulo)}</span><span class="op-fase-pre">${esc(D.palabraFase(opord() ?? d, f, en) ?? `${en === 'en' ? 'Step' : 'Fase'} ${f.i}`)}:</span><span class="op-tit" data-campo="fase-nombre" contenteditable="true" spellcheck="false">${esc(f.nombre)}</span>
+      <span class="op-dtg"><input data-fase-campo="inicio" data-fase="${f.id}" class="op-gdh ${f.inicio && !D.esGdh(f.inicio) ? 'mal' : ''}" value="${esc(f.inicio)}" placeholder="Inicio (GFH)"><i>–</i><input data-fase-campo="fin" data-fase="${f.id}" class="op-gdh ${f.fin && !D.esGdh(f.fin) ? 'mal' : ''}" value="${esc(f.fin)}" placeholder="Fin (GFH)"></span>
       <button type="button" class="op-ver-fase" data-acc="ver-fase" data-fase="${f.id}" title="Ver y editar en el mapa">${ICONO_MAPA}</button>`;
     cab += `<button type="button" class="op-sec-menu" data-acc="menu" aria-label="Opciones del apartado">⋯</button></div>`;
     let cuerpo = '';
@@ -261,6 +277,7 @@ export function iniciarOpord({ L, mapa, dibujo, lazo, alCambiarPaneles = () => {
     const conTexto = n.texto != null && !['org', 'matriz', 'matrizFases', 'permanentes', 'anexos', 'firma', 'agregaciones'].includes(n.tipo);
     if (conTexto || D.htmlALineas(n.texto).length) cuerpo += `<div class="op-texto" contenteditable="true" data-campo="texto" data-ph="Escribe aquí">${n.texto ?? ''}</div>`;
     if (n.tipo === 'org') cuerpo += htmlOrg(d, n);
+    if (n.tipo === 'imagen') cuerpo += htmlImagen(n);
     if (n.tipo === 'agregaciones') cuerpo += htmlAgregaciones(d, n);
     else if (n.tabla) cuerpo += htmlTabla(d, n);
     if (n.tipo === 'matriz') cuerpo += htmlMatriz(d, n);
@@ -299,27 +316,47 @@ export function iniciarOpord({ L, mapa, dibujo, lazo, alCambiarPaneles = () => {
       ${t.filas.some((f) => f.fija) ? '' : `<div class="op-t-pie"><button type="button" data-acc="fila">+ Fila</button>${libre ? '<button type="button" data-acc="columna">+ Columna</button>' : ''}</div>`}</div>`;
   }
 
-  // Organización operativa: lista (Intro = otra unidad, Tab = dentro de la anterior) y organigrama
+  // Organización operativa: el organigrama (pinchar una unidad la elige; arrastrarla
+  // sobre otra la hace depender de ella) y, debajo, los datos de la elegida
   function htmlOrg(d, n) {
     const us = n.org.unidades;
-    const prof = (u) => { let k = 0, x = u; while (x?.padre) { x = us.find((y) => y.id === x.padre); k++; if (k > 12) break; } return k; };
-    const orden = [];
-    const rec = (padre) => { for (const u of D.hijasDe(us, padre)) { orden.push(u); rec(u.id); } };
-    rec(null);
-    const maniobra = new Set(D.unidadesManiobra(d).map((u) => u.id));
-    const raices = D.hijasDe(us, null);
-    const nivelManiobra = (u) => (raices.length === 1 ? u.padre === raices[0].id : !u.padre);
-    const filas = orden.map((u) => `<div class="op-org-u" data-u="${u.id}" style="--p:${prof(u)}">
-        <input class="op-org-nom" data-u-campo="nombre" value="${esc(u.nombre)}" placeholder="Unidad" spellcheck="false">
-        <select data-u-campo="relacion" title="Relación de mando"><option value="">Orgánica</option>${RELACIONES.map((x) => `<option ${x === u.relacion ? 'selected' : ''}>${x}</option>`).join('')}</select>
-        <input class="op-org-de" data-u-campo="de" value="${esc(u.de)}" placeholder="Cedida por" title="Unidad que la cede (sale en «Agregaciones»)">
-        ${nivelManiobra(u) ? `<label class="op-org-mat" title="Fila en la matriz de misiones"><input type="checkbox" data-u-campo="enMatriz" ${u.enMatriz === false ? '' : 'checked'}>Matriz</label>` : '<span class="op-org-mat"></span>'}
-        <button type="button" data-acc="u-sub" title="Subunidad">+</button><button type="button" data-acc="u-quitar" title="Quitar">×</button></div>`).join('');
-    const arbol = (padre) => { const hs = D.hijasDe(us, padre); return hs.length ? `<ul>${hs.map((u) => `<li><span class="op-org-caja${maniobra.has(u.id) ? ' maniobra' : ''}"><b>${esc(u.nombre || '—')}</b>${u.relacion || u.de ? `<small>${esc([u.relacion, u.de ? `de ${u.de}` : ''].filter(Boolean).join(' · '))}</small>` : ''}</span>${arbol(u.id)}</li>`).join('')}</ul>` : ''; };
-    return `<div class="op-org" data-nodo="${n.id}">
-      <div class="op-org-lista">${filas || '<p class="op-vacio">Sin unidades todavía.</p>'}
-        <div class="op-org-pie"><button type="button" data-acc="u-nueva">+ Unidad</button><button type="button" data-acc="u-mapa" title="Las unidades dibujadas en la operación">Desde el mapa</button></div></div>
-      ${us.length ? `<div class="op-org-grafico">${arbol(null)}</div>` : ''}</div>`;
+    const pie = `<div class="op-org-pie"><button type="button" data-acc="u-nueva">+ Unidad</button><button type="button" data-acc="u-mapa" title="Las unidades dibujadas en la operación">Desde el mapa</button></div>`;
+    if (!us.length) return `<div class="op-org vacio" data-nodo="${n.id}">${pie}</div>`;
+    if (!us.some((u) => u.id === st.orgSel)) st.orgSel = null;
+    const sel = us.find((u) => u.id === st.orgSel);
+    let ins = '';
+    if (sel) {
+      const raices = D.hijasDe(us, null);
+      const maniobra = raices.length === 1 ? sel.padre === raices[0].id : !sel.padre;
+      const tipo = tipoDe(sel);
+      const grupos = [...new Set(TIPOS_ORG.map((t) => t.grupo))];
+      ins = `<div class="op-org-ins" data-u="${sel.id}">
+        <input class="op-org-nom" data-u-campo="nombre" value="${esc(sel.nombre)}" placeholder="Nombre (7, TF 8, MM…)" spellcheck="false">
+        <select data-u-campo="tipo" title="Tipo"><option value="">Sin icono</option>${grupos.map((g) => `<optgroup label="${esc(g)}">${TIPOS_ORG.filter((t) => t.grupo === g).map((t) => `<option value="${t.k}" ${t.k === tipo ? 'selected' : ''}>${esc(t.nombre)}</option>`).join('')}</optgroup>`).join('')}</select>
+        <select data-u-campo="escalon" title="Escalón">${ESCALONES_ORG.map((e) => `<option value="${e.k}" ${e.k === (sel.simbolo?.escalon ?? '') ? 'selected' : ''}>${esc(e.k ? e.nombre : 'Sin escalón')}</option>`).join('')}</select>
+        <select data-u-campo="relacion" title="Relación de mando"><option value="">Orgánica</option>${RELACIONES.map((x) => `<option ${x === sel.relacion ? 'selected' : ''}>${x}</option>`).join('')}</select>
+        <input class="op-org-de" data-u-campo="de" value="${esc(sel.de)}" placeholder="Cedida por" title="Sale en «Agregaciones»">
+        ${maniobra ? `<label class="op-org-mat"><input type="checkbox" data-u-campo="enMatriz" ${sel.enMatriz === false ? '' : 'checked'}>En la matriz</label>` : ''}
+        <span class="op-org-acc"><button type="button" data-acc="u-sub">+ Subordinada</button><button type="button" data-acc="u-hermana">+ Al lado</button><button type="button" data-acc="u-quitar" class="peligro">Quitar</button></span></div>`;
+    }
+    return `<div class="op-org" data-nodo="${n.id}"><div class="op-org-lienzo">${svgOrganigrama(us, { seleccion: st.orgSel, interactivo: true }).svg}</div>${ins}${pie}</div>`;
+  }
+  // Calco (u otra imagen): se pega o se elige; se guarda en JPEG
+  function htmlImagen(n) {
+    const im = n.imagen;
+    return `<div class="op-img" tabindex="0">${im?.datos ? `<img src="${im.datos}" alt="">` : '<div class="op-img-vacia">Calco</div>'}
+      <div class="op-t-pie"><label class="op-img-elegir"><input type="file" accept="image/*" data-img-elegir hidden>${im?.datos ? 'Cambiar' : 'Elegir imagen'}</label>${im?.datos ? '<button type="button" data-acc="img-quitar">Quitar</button>' : ''}</div></div>`;
+  }
+  async function ponerImagen(d, id, archivo) {
+    if (!archivo?.type?.startsWith('image/')) return;
+    try {
+      const bm = await createImageBitmap(archivo);
+      const k = Math.min(1, 2200 / Math.max(bm.width, bm.height));
+      const c = document.createElement('canvas'); c.width = Math.round(bm.width * k); c.height = Math.round(bm.height * k);
+      const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height); g.drawImage(bm, 0, 0, c.width, c.height);
+      editar(d, id, 'imagen', { datos: c.toDataURL('image/jpeg', 0.86), ancho: c.width, alto: c.height });
+      pintar(true); avisar('Imagen puesta');
+    } catch { avisar('No se pudo leer la imagen'); }
   }
   function htmlAgregaciones(d, n) {
     const auto = D.agregacionesAuto(d);
@@ -340,7 +377,9 @@ export function iniciarOpord({ L, mapa, dibujo, lazo, alCambiarPaneles = () => {
     const us = [...D.unidadesManiobra(d).map((u) => ({ id: u.id, nombre: u.nombre, org: true })), ...(n.matriz.filas ?? [])];
     if (!fs.length) return '<div class="op-vacio">La operación aún no tiene fases. <button type="button" data-acc="nueva-fase">+ Fase</button></div>';
     const en = idi();
-    return `<div class="op-tabla-caja op-matriz-caja"><table class="op-tabla op-matriz" data-nodo="${n.id}"><thead><tr><th>${en === 'en' ? 'Unit' : 'Unidad'}</th>${fs.map((f) => `<th class="${st.fase === f.id ? 'fase-sel' : ''}"><b>${esc(D.tituloFase(f, en, { corto: true }))}</b> ${esc(f.nombre)}${f.inicio || f.fin ? `<small>${esc([f.inicio, f.fin].filter(Boolean).join(' – '))}</small>` : ''}</th>`).join('')}<th>${en === 'en' ? 'BPT' : 'ECD'}</th><th class="op-t-acc"></th></tr></thead>
+    const pl = PLANTILLAS[opord()?.plantilla ?? d.plantilla];
+    const ultima = pl?.posterior?.[en] ?? (en === 'en' ? 'BPT' : 'ECD');
+    return `<div class="op-tabla-caja op-matriz-caja"><table class="op-tabla op-matriz" data-nodo="${n.id}"><thead><tr><th>${en === 'en' ? 'Unit' : 'Unidad'}</th>${fs.map((f) => `<th class="${st.fase === f.id ? 'fase-sel' : ''}"><b>${esc(D.palabraFase(opord() ?? d, f, en) ?? D.tituloFase(f, en, { corto: true }))}</b> ${pl?.fase ? '' : esc(f.nombre)}${f.inicio || f.fin ? `<small>${esc([f.inicio, f.fin].filter(Boolean).join(' – '))}</small>` : ''}</th>`).join('')}<th>${esc(ultima)}</th><th class="op-t-acc"></th></tr></thead>
       <tbody>${us.map((u, i) => `<tr>${u.org ? `<td class="op-fija"><b>${esc(u.nombre)}</b></td>` : `<td>${area(u.nombre, `data-ruta="matriz.filas.${i - D.unidadesManiobra(d).length}.nombre"`, 'Unidad')}</td>`}${fs.map((f) => `<td class="${st.fase === f.id ? 'fase-sel' : ''}">${area(n.matriz.celdas?.[u.id]?.[f.id], `data-ruta="matriz.celdas.${u.id}.${f.id}"`)}</td>`).join('')}<td>${area(n.matriz.bpt?.[u.id], `data-ruta="matriz.bpt.${u.id}"`)}</td><td class="op-t-acc">${u.org ? '' : `<button type="button" data-acc="quitar-fila-matriz" data-i="${i - D.unidadesManiobra(d).length}" title="Quitar">×</button>`}</td></tr>`).join('')}</tbody></table>
       <div class="op-t-pie">${us.length ? '' : '<span class="op-nota">Las filas salen de la organización operativa.</span>'}<button type="button" data-acc="fila-matriz">+ Fila</button></div></div>`;
   }
@@ -440,6 +479,8 @@ export function iniciarOpord({ L, mapa, dibujo, lazo, alCambiarPaneles = () => {
     const el = e.target;
     const d = docDe(el); if (!d) return;
     // Cabecera
+    if (el.dataset.cabMarcar !== undefined) { editar(d, '_cab', 'marcar', el.checked); return; }
+    if (el.dataset.cab === 'clasificacion') el.closest('.op-c-clasif')?.querySelector('.op-clasif-cuadro')?.style.setProperty('--c', colorClasificacion(el.value));
     if (el.dataset.cab) { const k = el.dataset.cab; programar(`cab.${k}`, () => { editar(d, '_cab', k, el.value.trim()); if (k === 'titulo' || k === 'numero' || k === 'nombre') { $('opord-tit').textContent = D.tituloDocumento(d, opord()); pintarDocs(); } }); if (el.classList.contains('op-gdh')) el.classList.toggle('mal', Boolean(el.value.trim()) && !D.esGdh(el.value)); return; }
     // Fechas de una fase (van en la operación)
     if (el.dataset.faseCampo) { el.classList.toggle('mal', Boolean(el.value.trim()) && !D.esGdh(el.value)); programar(`fase.${el.dataset.fase}.${el.dataset.faseCampo}`, () => ponerFase(el.dataset.fase, el.dataset.faseCampo, D.normalizarGdh(el.value))); return; }
@@ -453,7 +494,10 @@ export function iniciarOpord({ L, mapa, dibujo, lazo, alCambiarPaneles = () => {
       programar(`r.${id}.${el.dataset.ruta}`, () => { editar(d, id, el.dataset.ruta, v); if (el.closest('.op-tabla')?.querySelector('.op-total')) refrescarTotales(el.closest('.op-tabla'), d.nodos[id]); }, el.type === 'checkbox' || el.tagName === 'SELECT' ? 0 : 450);
     }
   });
-  hoja.addEventListener('change', (e) => { if (e.target.tagName === 'SELECT' || e.target.type === 'checkbox') e.target.dispatchEvent(new Event('input', { bubbles: true })); });
+  hoja.addEventListener('change', (e) => {
+    if (e.target.matches?.('[data-img-elegir]')) { const d = docDe(e.target); const id = nodoDe(e.target); ponerImagen(d, id, e.target.files?.[0]); return; }
+    if (e.target.tagName === 'SELECT' || e.target.type === 'checkbox') e.target.dispatchEvent(new Event('input', { bubbles: true }));
+  });
   hoja.addEventListener('focusout', (e) => {
     const el = e.target;
     // Títulos (propios) y nombre de las fases: al salir
@@ -471,6 +515,8 @@ export function iniciarOpord({ L, mapa, dibujo, lazo, alCambiarPaneles = () => {
   });
   // Pegar: solo texto con formato sencillo
   hoja.addEventListener('paste', (e) => {
+    const zona = e.target.closest?.('.op-img');
+    if (zona) { const f = [...(e.clipboardData?.files ?? [])].find((x) => x.type.startsWith('image/')); if (f) { e.preventDefault(); ponerImagen(docDe(zona), nodoDe(zona), f); } return; }
     const el = e.target.closest?.('[contenteditable="true"]'); if (!el) return;
     e.preventDefault();
     const html = e.clipboardData.getData('text/html');
@@ -512,50 +558,99 @@ export function iniciarOpord({ L, mapa, dibujo, lazo, alCambiarPaneles = () => {
   function ponerUnidades(d, us, enfocar = null) {
     const n = orgNodo(d); if (!n) return;
     editar(d, n.id, 'org.unidades', us);
-    pintar(true); // aunque se esté escribiendo: la lista cambia de forma
-    if (enfocar) { const i = hoja.querySelector(`.op-org-u[data-u="${enfocar}"] .op-org-nom`); if (i) { i.focus(); i.setSelectionRange(i.value.length, i.value.length); } }
+    if (enfocar) st.orgSel = enfocar;
+    pintar(true); // aunque se esté escribiendo: el organigrama cambia de forma
+    if (enfocar) { const i = hoja.querySelector('.op-org-ins .op-org-nom'); if (i) { i.focus({ preventScroll: true }); i.setSelectionRange(i.value.length, i.value.length); } }
   }
   function cambiarUnidad(d, uid, campo, valor) {
     const n = orgNodo(d); if (!n) return;
     const us = JSON.parse(JSON.stringify(n.org.unidades));
     const u = us.find((x) => x.id === uid); if (!u) return;
-    u[campo] = campo === 'inicio' || campo === 'fin' ? D.normalizarGdh(valor) : valor;
+    if (campo === 'tipo') { const t = TIPOS_ORG.find((x) => x.k === valor); u.simbolo = { ...(u.simbolo ?? {}), icono: t?.icono ?? '', mod1: t?.mod1 ?? '', mod2: t?.mod2 ?? '' }; }
+    else if (campo === 'escalon') u.simbolo = { ...(u.simbolo ?? {}), escalon: valor };
+    else u[campo] = campo === 'inicio' || campo === 'fin' ? D.normalizarGdh(valor) : valor;
     if (campo === 'enMatriz' && valor) delete u.enMatriz;
     editar(d, n.id, 'org.unidades', us);
     // El organigrama y las tablas que dependen de las unidades se ponen al día sin perder el cursor
-    if (campo !== 'nombre' || !escribiendo()) pintar(); else st.sucio = true;
-  }
-  function teclaOrg(e) {
-    const fila = e.target.closest('.op-org-u'); const d = actual(); const n = orgNodo(d); if (!fila || !n) return;
-    const us = JSON.parse(JSON.stringify(n.org.unidades));
-    const u = us.find((x) => x.id === fila.dataset.u); if (!u) return;
-    u.nombre = e.target.value;
-    const hermanas = D.hijasDe(us, u.padre ?? null);
-    const i = hermanas.indexOf(u);
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      const nu = { id: D.uuid(), nombre: '', padre: u.padre ?? null };
-      us.splice(us.indexOf(u) + 1, 0, nu); ponerUnidades(d, us, nu.id);
-    } else if (e.key === 'Tab' && !e.shiftKey) {
-      e.preventDefault(); if (i <= 0) return;
-      u.padre = hermanas[i - 1].id; ponerUnidades(d, us, u.id);
-    } else if (e.key === 'Tab' && e.shiftKey) {
-      e.preventDefault(); if (!u.padre) return;
-      const padre = us.find((x) => x.id === u.padre); u.padre = padre?.padre ?? null; ponerUnidades(d, us, u.id);
-    } else if (e.key === 'Backspace' && !e.target.value && us.length > 1) {
-      e.preventDefault();
-      const prev = fila.previousElementSibling?.dataset.u;
-      for (const h of us) if (h.padre === u.id) h.padre = u.padre ?? null;
-      us.splice(us.indexOf(u), 1); ponerUnidades(d, us, prev);
-    } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-      e.preventDefault();
-      const otra = e.key === 'ArrowDown' ? fila.nextElementSibling : fila.previousElementSibling;
-      otra?.querySelector('.op-org-nom')?.focus();
+    if (campo !== 'nombre' || !escribiendo()) pintar();
+    else {
+      const l = hoja.querySelector(`.op-org[data-nodo="${n.id}"] .op-org-lienzo`);
+      if (l) l.innerHTML = svgOrganigrama(us, { seleccion: st.orgSel, interactivo: true }).svg;
+      st.sucio = true;
     }
   }
+  function teclaOrg(e) {
+    const d = actual(); const n = orgNodo(d); if (!n) return;
+    const us = JSON.parse(JSON.stringify(n.org.unidades));
+    const u = us.find((x) => x.id === st.orgSel); if (!u) return;
+    u.nombre = e.target.value;
+    if (e.key === 'Enter') { e.preventDefault(); nuevaUnidad(d, us, u.padre ?? null, u.id); }
+    else if (e.key === 'Tab' && !e.shiftKey) { e.preventDefault(); nuevaUnidad(d, us, u.id); }
+    else if (e.key === 'Tab' && e.shiftKey) { e.preventDefault(); if (!u.padre) return; const p = us.find((x) => x.id === u.padre); u.padre = p?.padre ?? null; ponerUnidades(d, us, u.id); }
+    else if (e.key === 'Escape') { e.preventDefault(); st.orgSel = null; ponerUnidades(d, us); }
+  }
+  const ESCALON_DEBAJO = { division: 'brigada', brigada: 'regimiento', regimiento: 'batallon', batallon: 'compania', compania: 'seccion', seccion: 'peloton', peloton: 'escuadra', escuadra: 'equipo' };
+  /** Unidad nueva colgando de `padre` (detrás de `tras`, o al final de sus hermanas). */
+  function nuevaUnidad(d, us, padre, tras = null) {
+    const p = us.find((x) => x.id === padre);
+    const her = tras ? us.find((x) => x.id === tras) : null;
+    const escalon = her?.simbolo?.escalon ?? (p?.simbolo?.escalon ? ESCALON_DEBAJO[p.simbolo.escalon] ?? '' : '');
+    const nu = { id: D.uuid(), nombre: '', padre, simbolo: { ...(her?.simbolo ?? {}), escalon } };
+    if (!her) { nu.simbolo.icono = p?.simbolo?.icono ?? ''; nu.simbolo.mod1 = p?.simbolo?.mod1 ?? ''; nu.simbolo.mod2 = p?.simbolo?.mod2 ?? ''; }
+    // Detrás de la hermana y de todo lo que cuelga de ella (o al final de las hijas del padre)
+    const desc = (id) => us.filter((x) => x.padre === id).flatMap((x) => [x.id, ...desc(x.id)]);
+    const ancla = her ? [her.id, ...desc(her.id)] : [padre, ...desc(padre)].filter(Boolean);
+    const i = Math.max(-1, ...ancla.map((id) => us.findIndex((x) => x.id === id)));
+    us.splice(i < 0 ? us.length : i + 1, 0, nu);
+    ponerUnidades(d, us, nu.id);
+  }
+  /** Arrastrar una unidad sobre otra: pasa a depender de ella. */
+  function moverUnidad(id, padre) {
+    const d = actual(); const n = orgNodo(d); if (!n || id === padre) { pintar(true); return; }
+    const us = JSON.parse(JSON.stringify(n.org.unidades));
+    let x = us.find((y) => y.id === padre);
+    while (x) { if (x.id === id) { avisar('No puede depender de una de sus subordinadas'); pintar(true); return; } x = us.find((y) => y.id === x.padre); }
+    const u = us.find((y) => y.id === id); if (!u) return;
+    u.padre = padre;
+    us.splice(us.indexOf(u), 1);
+    const desc = (k) => us.filter((y) => y.padre === k).flatMap((y) => [y.id, ...desc(y.id)]);
+    const i = Math.max(...[padre, ...desc(padre)].map((k) => us.findIndex((y) => y.id === k)));
+    us.splice(i + 1, 0, u);
+    ponerUnidades(d, us, id);
+  }
+  let orgArrastre = null, orgSoltado = 0;
+  hoja.addEventListener('pointerdown', (e) => {
+    const g = e.target.closest('.op-org-lienzo g[data-u]'); if (!g || e.button !== 0) return;
+    const svg = g.ownerSVGElement;
+    orgArrastre = { id: g.dataset.u, x: e.clientX, y: e.clientY, g, k: svg.getBoundingClientRect().width / svg.viewBox.baseVal.width, activo: false, sobre: null };
+  });
+  window.addEventListener('pointermove', (e) => {
+    const a = orgArrastre; if (!a) return;
+    if (!a.activo && Math.hypot(e.clientX - a.x, e.clientY - a.y) < 6) return;
+    a.activo = true;
+    a.g.classList.add('arrastrando');
+    a.g.setAttribute('transform', `translate(${((e.clientX - a.x) / a.k).toFixed(1)},${((e.clientY - a.y) / a.k).toFixed(1)})`);
+    const bajo = document.elementsFromPoint(e.clientX, e.clientY).map((el) => el.closest?.('.op-org-lienzo g[data-u]')).find((x) => x && x !== a.g) ?? null;
+    if (bajo !== a.sobre) { a.sobre?.classList.remove('destino'); bajo?.classList.add('destino'); a.sobre = bajo; }
+  });
+  window.addEventListener('pointerup', () => {
+    const a = orgArrastre; orgArrastre = null;
+    if (!a?.activo) return;
+    orgSoltado = Date.now();
+    if (a.sobre) moverUnidad(a.id, a.sobre.dataset.u); else pintar(true);
+  });
 
   // ---------------------------------------------------------- botones de la hoja
   hoja.addEventListener('click', async (e) => {
+    // Organigrama: pinchar una unidad la elige; pinchar fuera, nada elegido
+    const lienzoOrg = e.target.closest('.op-org-lienzo');
+    if (lienzoOrg) {
+      if (Date.now() - orgSoltado < 300) return;
+      const g = e.target.closest('g[data-u]');
+      st.orgSel = g?.dataset.u ?? null; pintar(true);
+      if (st.orgSel) hoja.querySelector('.op-org-ins .op-org-nom')?.focus({ preventScroll: true });
+      return;
+    }
     const docB = e.target.closest('[data-doc]'); if (docB && !e.target.closest('[data-acc]')) { st.doc = docB.dataset.doc; hoja.scrollTop = 0; pintar(); return; }
     const objB = e.target.closest('.op-obj'); if (objB) { dibujo.encuadrar([objB.dataset.obj]); dibujo.seleccionar(objB.dataset.obj); return; }
     const opc = e.target.closest('.op-opciones button');
@@ -581,11 +676,22 @@ export function iniciarOpord({ L, mapa, dibujo, lazo, alCambiarPaneles = () => {
     if (acc === 'u-nueva') {
       const us = JSON.parse(JSON.stringify(n.org.unidades));
       const raices = D.hijasDe(us, null);
-      const nu = { id: D.uuid(), nombre: us.length ? '' : (d.cabecera.emisor || '').split(/\s+(PC|CP|Main|principal)\b/i)[0] || '', padre: raices.length === 1 ? raices[0].id : null };
-      us.push(nu); ponerUnidades(d, us, nu.id); return;
+      if (!us.length) { const r = { id: D.uuid(), nombre: (d.cabecera.emisor || '').split(/\s+(PC|CP|Main|principal)\b/i)[0] || '', padre: null, simbolo: { escalon: 'batallon', icono: '121100' } }; us.push(r); ponerUnidades(d, us, r.id); return; }
+      nuevaUnidad(d, us, raices.length === 1 ? raices[0].id : null); return;
     }
-    if (acc === 'u-sub') { const us = JSON.parse(JSON.stringify(n.org.unidades)); const pu = b.closest('.op-org-u').dataset.u; const nu = { id: D.uuid(), nombre: '', padre: pu }; const ult = Math.max(us.findIndex((x) => x.id === pu), ...us.map((x, k) => (x.padre === pu ? k : -1))); us.splice(ult + 1, 0, nu); ponerUnidades(d, us, nu.id); return; }
-    if (acc === 'u-quitar') { const us = JSON.parse(JSON.stringify(n.org.unidades)); const uid = b.closest('.op-org-u').dataset.u; const u = us.find((x) => x.id === uid); for (const h of us) if (h.padre === uid) h.padre = u?.padre ?? null; ponerUnidades(d, us.filter((x) => x.id !== uid)); return; }
+    if (acc === 'u-sub' || acc === 'u-hermana') {
+      const us = JSON.parse(JSON.stringify(n.org.unidades)); const u = us.find((x) => x.id === st.orgSel); if (!u) return;
+      const nom = hoja.querySelector('.op-org-ins .op-org-nom'); if (nom) u.nombre = nom.value;
+      if (acc === 'u-sub') nuevaUnidad(d, us, u.id); else nuevaUnidad(d, us, u.padre ?? null, u.id);
+      return;
+    }
+    if (acc === 'u-quitar') {
+      const us = JSON.parse(JSON.stringify(n.org.unidades)); const uid = st.orgSel; const u = us.find((x) => x.id === uid); if (!u) return;
+      for (const h of us) if (h.padre === uid) h.padre = u.padre ?? null;
+      st.orgSel = u.padre ?? null;
+      ponerUnidades(d, us.filter((x) => x.id !== uid)); avisar('Unidad quitada'); return;
+    }
+    if (acc === 'img-quitar') { editar(d, id, 'imagen', null); pintar(); return; }
     if (acc === 'u-mapa') { unidadesDelMapa(d, n); return; }
     if (acc === 'elegir-mgrs') { elegirEnMapa(d, id, b.dataset.ruta, b.closest('.op-mgrs')?.querySelector('input')); return; }
     if (acc === 'elegir-permanentes') { elegirPermanentes(b); return; }
@@ -596,13 +702,14 @@ export function iniciarOpord({ L, mapa, dibujo, lazo, alCambiarPaneles = () => {
 
   function unidadesDelMapa(d, n) {
     const ya = new Set(n.org.unidades.map((u) => u.nombre.trim().toLowerCase()));
-    const nuevas = objetosDe(plan(), st.op).filter((e) => e.simbolo?.clase === 'unidad').map((e) => dibujo.titulo(e)).filter((t) => t && !ya.has(t.trim().toLowerCase()));
+    const vistas = new Set();
+    const nuevas = objetosDe(plan(), st.op).filter((e) => e.simbolo?.clase === 'unidad').map((e) => ({ nombre: dibujo.titulo(e), simbolo: e.simbolo })).filter((x) => x.nombre && !ya.has(x.nombre.trim().toLowerCase()) && !vistas.has(x.nombre) && vistas.add(x.nombre));
     if (!nuevas.length) { avisar('No hay unidades nuevas dibujadas en la operación'); return; }
     const us = JSON.parse(JSON.stringify(n.org.unidades));
     let raices = D.hijasDe(us, null);
     if (!raices.length) { const r = { id: D.uuid(), nombre: (d.cabecera.emisor || buscarPaquete(plan(), st.op)?.nombre || 'Unidad').split(/\s+(PC|CP|Main)\b/i)[0], padre: null }; us.push(r); raices = [r]; }
     const padre = raices.length === 1 ? raices[0].id : null;
-    for (const nombre of [...new Set(nuevas)]) us.push({ id: D.uuid(), nombre, padre });
+    for (const x of nuevas) { const { clase, zoom, ...simbolo } = x.simbolo; us.push({ id: D.uuid(), nombre: x.nombre, padre, simbolo }); }
     ponerUnidades(d, us); avisar(`${nuevas.length} unidad${nuevas.length === 1 ? '' : 'es'} añadida${nuevas.length === 1 ? '' : 's'}`);
   }
 
@@ -646,10 +753,6 @@ export function iniciarOpord({ L, mapa, dibujo, lazo, alCambiarPaneles = () => {
       <button type="button" data-v="debajo">+ Apartado debajo</button>
       <div class="om-sep"></div>
       <button type="button" data-v="tabla:libre">+ Tabla</button>
-      <button type="button" data-v="tabla:fuegos">+ ${esc(TABLAS.fuegos[en])}</button>
-      <button type="button" data-v="tabla:pace">+ ${esc(TABLAS.pace[en])}</button>
-      <button type="button" data-v="tabla:pc">+ ${esc(TABLAS.pc[en])}</button>
-      <button type="button" data-v="fases">+ Tabla por fases</button>
       <button type="button" data-v="anexo">+ Anexo enlazado…</button>
       <div class="om-sep"></div>
       ${n.propio || n.fase ? '' : '<button type="button" data-v="renombrar">Cambiar el título</button>'}
@@ -729,7 +832,7 @@ export function iniciarOpord({ L, mapa, dibujo, lazo, alCambiarPaneles = () => {
     vaciarPendientes();
     const d = actual(); const op = opord(); if (!d) return;
     const ext = b.dataset.exp;
-    const ctx = { ...contexto(op), archivoDe: (x) => `${baseArchivo(x, op)}.${ext}` };
+    const ctx = { ...contexto(op), ...(await extrasExportar([d], [ext])), archivoDe: (x) => `${baseArchivo(x, op)}.${ext}` };
     const blob = ext === 'pdf' ? await aPdf(d, ctx) : await aDocx(d, ctx);
     descargar({ blob, nombre: `${baseArchivo(d, op)}.${ext}` });
     avisar(`«${baseArchivo(d, op)}.${ext}» descargado`);
@@ -776,6 +879,27 @@ export function iniciarOpord({ L, mapa, dibujo, lazo, alCambiarPaneles = () => {
   }
 
   // ---------------------------------------------------------- exportar
+  // La letra del modelo (Tahoma) se coge del ordenador, con su permiso, para meterla en el PDF;
+  // si no se puede, Helvetica. El organigrama va a Word como imagen.
+  let tahoma;
+  async function letraTahoma() {
+    if (tahoma !== undefined) return tahoma;
+    tahoma = null;
+    try {
+      if (typeof window.queryLocalFonts !== 'function') return null;
+      const fs = await window.queryLocalFonts({ postscriptNames: ['Tahoma', 'Tahoma-Bold'] });
+      const n = fs.find((f) => f.postscriptName === 'Tahoma'), b = fs.find((f) => f.postscriptName === 'Tahoma-Bold');
+      if (n && b) tahoma = { normal: new Uint8Array(await (await n.blob()).arrayBuffer()), negrita: new Uint8Array(await (await b.blob()).arrayBuffer()), nombre: 'Tahoma' };
+    } catch { tahoma = null; }
+    return tahoma;
+  }
+  async function extrasExportar(lista, formatos) {
+    const op = opord();
+    const fuentesPdf = formatos.includes('pdf') && PLANTILLAS[op?.plantilla]?.letra === 'Tahoma' ? await letraTahoma() : null;
+    const imagenes = {};
+    if (formatos.includes('docx')) for (const x of lista) for (const n of Object.values(x.nodos)) if (n.tipo === 'org' && !n.quitado && n.org?.unidades?.length) { const p = await pngOrganigrama(n.org.unidades); if (p) imagenes[n.id] = p; }
+    return { fuentesPdf, imagenes };
+  }
   async function exportar() {
     const op = opord(); if (!op) return;
     const chips = (grupo, lista, marcados) => `<div class="dlg-chips" data-grupo="${grupo}">${lista.map(([k, t, det]) => `<label title="${esc(det ?? '')}"><input type="checkbox" value="${k}" ${marcados.includes(k) ? 'checked' : ''}><span>${esc(t)}</span></label>`).join('')}</div>`;
@@ -793,7 +917,7 @@ export function iniciarOpord({ L, mapa, dibujo, lazo, alCambiarPaneles = () => {
     if (!ui.exp.docs.length && !ui.exp.concepto.length) return;
     avisar('Preparando…', 0);
     try {
-      const archivos = await archivosOpord(op, { anexos: anexos(op), paquetes: paquetes(plan()), permanentes: permanentes().map((e) => ({ nombre: dibujo.titulo(e) })), formatos: ui.exp.docs });
+      const archivos = await archivosOpord(op, { anexos: anexos(op), paquetes: paquetes(plan()), permanentes: permanentes().map((e) => ({ nombre: dibujo.titulo(e) })), formatos: ui.exp.docs, ...(await extrasExportar([op, ...anexos(op)], ui.exp.docs)) });
       const base = baseArchivo(op);
       const ids = objetosDe(plan(), st.op).map((e) => e.id);
       for (const f of ui.exp.concepto) {

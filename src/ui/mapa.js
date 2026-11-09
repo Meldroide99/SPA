@@ -123,7 +123,7 @@ let alCambiarFondo = () => {}; // la cuadrícula se pinta en blanco sobre el hí
 // eslint-disable-next-line prefer-const
 let importar = null;
 let opord = null; // editor de OPORD (más abajo)
-const VERSION = '0.10.2';
+const VERSION = '0.11.0';
 function ponerFondo(id, { automatico = false } = {}) {
   if (!capasFondo[id]) id = 'mtn';
   if (fondoActual) mapa.removeLayer(fondoActual);

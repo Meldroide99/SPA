@@ -7,10 +7,36 @@
 // un título nunca se queda solo al pie). Lo que cambia brilla un momento y el
 // apartado que se está escribiendo se resalta y se trae a la vista.
 
+import { svgOrganigrama } from './organigrama.js';
+import { celdasUnidas } from '../opord/exportar.js';
+
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 // A4 a 96 ppp: 794 × 1123 px. Márgenes como el PDF (2,5 cm arriba, 2,2 abajo, 2 y 1,8 a los lados).
 const HOJA = { ancho: 794, alto: 1123, arr: 96, aba: 84, izq: 76, der: 68 };
 const CM = 37.8;
+
+const marca = (m) => (m ? `<span class="vo-marca" style="--c:${m.color}">${esc(m.texto)}</span>` : '');
+/** Líneas de un párrafo, con la etiqueta delante («MLCOA:») y viñetas. */
+const lineasHtml = (b) => b.lineas.map((l, i) => {
+  const bala = l.startsWith('• ') || (b.vineta && i === 0);
+  const t = l.startsWith('• ') ? l.slice(2) : l;
+  const et = i === 0 && b.etiqueta ? `<b class="vo-et${b.etiqueta.negrita === false ? ' fina' : ''}"${b.etiqueta.color ? ` style="color:${b.etiqueta.color}"` : ''}>${esc(b.etiqueta.texto)}</b> ` : '';
+  return `<div class="${bala ? 'vo-bala' : b.vineta ? 'vo-sigue' : ''}">${et}${esc(t)}</div>`;
+}).join('');
+/** Tabla (con celdas iguales unidas si toca). */
+function htmlTabla(b, estilo = '') {
+  const nodo = b.nodo ? ` data-nodo="${b.nodo}"` : '';
+  const filas = b.filas.length ? b.filas : Array.from({ length: b.vacia ?? 1 }, () => b.cols.map(() => ''));
+  const cab = b.sinCabecera ? '' : `<thead><tr>${b.cols.map((c) => `<th>${esc(c)}</th>`).join('')}</tr></thead>`;
+  let cuerpo;
+  if (b.fusionar) {
+    const cs = celdasUnidas(filas, b.cols.length);
+    cuerpo = filas.map((_, f) => `<tr>${cs.filter((c) => c.f === f).map((c) => `<td${c.cs > 1 ? ` colspan="${c.cs}"` : ''}${c.fs > 1 ? ` rowspan="${c.fs}"` : ''} class="${c.c === 0 && b.primeraNegrita ? 'vo-neg' : 'vo-centro'}">${esc(c.texto)}</td>`).join('')}</tr>`).join('');
+  } else cuerpo = filas.map((f, k) => `<tr class="${b.totales && k === filas.length - 1 ? 'vo-tot' : ''}">${b.cols.map((_, j) => `<td class="${(b.primeraNegrita || b.sinCabecera) && j === 0 ? 'vo-neg' : ''}">${esc(f[j] ?? '')}</td>`).join('')}</tr>`).join('');
+  return `${b.titulo ? `<div class="vo-tabla-tit"${nodo}>${esc(b.titulo)}</div>` : ''}<table class="vo-tabla${b.fusionar ? ' vo-unida' : ''}"${nodo} style="${estilo}">${cab}<tbody>${cuerpo}</tbody></table>`;
+}
+const htmlOrg = (b, estilo = '') => `<div class="vo-org"${b.nodo ? ` data-nodo="${b.nodo}"` : ''} style="${estilo}">${svgOrganigrama(b.unidades).svg}</div>`;
+const htmlImagen = (b, estilo = '') => `<div class="vo-img"${b.nodo ? ` data-nodo="${b.nodo}"` : ''} style="${estilo}"><img src="${b.imagen.datos}" alt=""></div>`;
 
 /** HTML de un bloque (sin repartir en páginas). */
 function htmlBloque(b) {
@@ -21,20 +47,21 @@ function htmlBloque(b) {
       return `<div class="vo-cab"><div>${b.izq.map(([t, neg]) => `<div class="${neg ? 'vo-neg vo-grande' : ''}">${esc(t)}</div>`).join('')}</div><div class="vo-der">${b.der.map(([t, neg]) => `<div class="${neg ? 'vo-neg' : ''}">${esc(t)}</div>`).join('')}</div></div>`;
     case 'titulo': {
       const col = b.rotulo ? (b.nivel === 0 ? CM * 1.2 : CM) : 0;
-      return `<div class="vo-tit vo-n${Math.min(b.nivel, 2)}"${nodo} style="padding-left:${sang(b.nivel) + col}px;--col:${col}px">${b.rotulo ? `<span class="vo-rot">${esc(b.rotulo)}</span>` : ''}${esc(b.nivel === 0 ? b.texto.toUpperCase() : b.texto)}</div>`;
+      return `<div class="vo-tit vo-n${Math.min(b.nivel, 2)}"${nodo} style="padding-left:${sang(b.nivel) + col}px;--col:${col}px">${b.rotulo ? `<span class="vo-rot">${esc(b.rotulo)}</span>` : ''}${esc(b.nivel === 0 ? b.texto.toUpperCase() : b.texto)}${marca(b.marca)}${b.nota ? ` <span class="vo-nota">${esc(b.nota)}</span>` : ''}</div>`;
     }
     case 'parrafo': {
       const x = sang(b.nivel) + (b.nivel === 0 ? CM * 1.2 : CM);
-      return `<div class="vo-par${b.estilo === 'intro' ? ' vo-intro' : ''}"${nodo} style="margin-left:${x}px">${b.lineas.map((l) => (l.startsWith('• ') ? `<div class="vo-bala">${esc(l.slice(2))}</div>` : `<div>${esc(l)}</div>`)).join('')}</div>`;
+      return `<div class="vo-par${b.estilo === 'intro' ? ' vo-intro' : ''}"${nodo} style="margin-left:${x}px">${lineasHtml(b)}</div>`;
     }
+    case 'organigrama': return htmlOrg(b, `margin-left:${sang(b.nivel) + CM}px`);
+    case 'imagen': return htmlImagen(b, `margin-left:${sang(b.nivel) + CM}px`);
     case 'arbol': {
       const x = sang(b.nivel) + CM;
       return `<div class="vo-arbol"${nodo} style="margin-left:${x}px">${b.lineas.map((l) => `<div style="padding-left:${l.nivel * 16}px" class="${l.nivel ? '' : 'vo-neg'}">${l.nivel ? '<span class="vo-rama"></span>' : ''}${esc(l.texto)}</div>`).join('')}</div>`;
     }
     case 'tabla': {
       const x = Math.min(b.nivel ?? 0, 2) * CM + CM;
-      const filas = b.filas.length ? b.filas : Array.from({ length: b.vacia ?? 1 }, () => b.cols.map(() => ''));
-      return `<table class="vo-tabla"${nodo} style="margin-left:${x}px;width:calc(100% - ${x}px)">${b.sinCabecera ? '' : `<thead><tr>${b.cols.map((c) => `<th>${esc(c)}</th>`).join('')}</tr></thead>`}<tbody>${filas.map((f, k) => `<tr class="${b.totales && k === filas.length - 1 ? 'vo-tot' : ''}">${b.cols.map((_, j) => `<td class="${(b.primeraNegrita || b.sinCabecera) && j === 0 ? 'vo-neg' : ''}">${esc(f[j] ?? '')}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+      return htmlTabla(b, `margin-left:${x}px;width:calc(100% - ${x}px)`);
     }
     case 'enlace': {
       const x = (b.sangria ? sang(b.nivel) + CM : 0) + (b.nivel ? CM : CM * 1.2);
@@ -72,7 +99,58 @@ export function crearVista(cont, { alPinchar = () => {} } = {}) {
     return h;
   }
 
-  function pintar(bloques, { titulo = '', pagina = 'Página', de = 'de' } = {}) {
+  /** Bloques de una columna de la hoja en cuadrícula. */
+  function htmlColumna(cl) {
+    return cl.bloques.map((b, i) => {
+      const nodo = b.nodo ? ` data-nodo="${b.nodo}"` : '';
+      if (b.t === 'titulo') {
+        const fin = b.nivel === 0 ? (b.rotulo ? '.' : '') : ':';
+        const centro = cl.bloques[i + 1]?.t === 'organigrama';
+        return `<div class="vq-tit vq-n${Math.min(b.nivel, 1)}${centro ? ' vq-centro' : ''}"${nodo}><span>${esc(`${b.rotulo ? `${b.rotulo} ` : ''}${b.texto.toUpperCase()}${fin}`)}</span>${b.nota ? ` <i>${esc(b.nota)}</i>` : ''}</div>`;
+      }
+      if (b.t === 'parrafo') return `<div class="vq-par"${nodo}>${lineasHtml(b)}</div>`;
+      if (b.t === 'tabla') return htmlTabla(b);
+      if (b.t === 'organigrama') return htmlOrg(b);
+      if (b.t === 'imagen') return htmlImagen(b);
+      if (b.t === 'enlace') return `<div class="vq-par"${nodo}>${esc(b.texto)}</div>`;
+      if (b.t === 'firma') return `<div class="vo-firma"${nodo}>${(b.lineas.length ? b.lineas : [b.defecto]).map((l) => `<div>${esc(l)}</div>`).join('')}</div>`;
+      return '';
+    }).join('');
+  }
+  /** OPORD de una hoja: la cuadrícula del modelo, con la letra más grande que quepa. */
+  function pintarHoja(bloques, { cabecera = {} } = {}) {
+    const cla = bloques.find((b) => b.t === 'clasificacion') ?? {};
+    const c = cabecera;
+    const tit = `OPORD ${[c.numero, c.nombre ? `“${String(c.nombre).toUpperCase()}”` : ''].filter(Boolean).join(' ')}`.trim();
+    const h = nuevaHoja(); h.classList.add('vo-cuadricula');
+    h.querySelector('.vo-cla-arr').textContent = cla.texto ?? ''; h.querySelector('.vo-cla-aba').textContent = cla.texto ?? '';
+    h.style.setProperty('--cla', cla.color ?? '#000');
+    const filas = bloques.hoja.map((f) => `<div class="vq-fila">${f.map((cl) => `<div class="vq-col${cl.k.includes('ejec.calco') ? ' vq-calco' : ''}" style="flex:${cl.w} 1 0">${htmlColumna(cl)}</div>`).join('')}</div>`).join('');
+    h.querySelector('.vo-cont').innerHTML = `<div class="vq"><div class="vq-titulo">${esc(tit)}</div><div class="vq-fila vq-info"><div class="vq-col"><b>Unidad: ${esc(c.emisor ?? '')}</b></div><div class="vq-col">GFH${c.huso ? ` (${esc(c.huso)})` : ''} ${esc(c.gdh ?? '')}</div></div>${filas}</div>`;
+    const scroll = cont.scrollTop;
+    escala.innerHTML = ''; escala.append(h);
+    // La letra más grande con la que todo cabe en la hoja (como en el PDF)
+    const q = h.querySelector('.vq');
+    const max = HOJA.alto - 74 - 60;
+    let s = 14;
+    q.style.setProperty('--s', `${s}px`);
+    while (q.offsetHeight > max && s > 8) { s -= 0.5; q.style.setProperty('--s', `${s}px`); }
+    ajustar();
+    cont.scrollTop = scroll;
+    brillo();
+    return 1;
+  }
+  function brillo() {
+    const ahora = new Map();
+    for (const el of escala.querySelectorAll('[data-nodo]')) ahora.set(el.dataset.nodo, (ahora.get(el.dataset.nodo) ?? '') + el.textContent + (el.querySelector('img')?.src.length ?? ''));
+    if (previo) for (const el of escala.querySelectorAll('[data-nodo]')) if (previo.get(el.dataset.nodo) !== ahora.get(el.dataset.nodo)) el.classList.add('vo-nuevo');
+    previo = ahora;
+    if (activo) marcar(activo, false);
+  }
+
+  function pintar(bloques, { titulo = '', pagina = 'Página', de = 'de', cabecera = {} } = {}) {
+    escala.dataset.letra = bloques.letra ?? 'Arial'; medida.dataset.letra = escala.dataset.letra;
+    if (bloques.hoja) return pintarHoja(bloques, { cabecera });
     const clasif = bloques.find((b) => b.t === 'clasificacion')?.texto ?? '';
     // 1) Cada bloque en el medidor, a tamaño real
     medida.innerHTML = '';
@@ -136,11 +214,7 @@ export function crearVista(cont, { alPinchar = () => {} } = {}) {
     ajustar();
     cont.scrollTop = scroll;
     // 3) Brillo en lo que ha cambiado desde la última vez
-    const ahora = new Map();
-    for (const el of escala.querySelectorAll('[data-nodo]')) ahora.set(el.dataset.nodo, (ahora.get(el.dataset.nodo) ?? '') + el.textContent);
-    if (previo) for (const el of escala.querySelectorAll('[data-nodo]')) if (previo.get(el.dataset.nodo) !== ahora.get(el.dataset.nodo)) el.classList.add('vo-nuevo');
-    previo = ahora;
-    if (activo) marcar(activo, false);
+    brillo();
     return hojas.length;
   }
 

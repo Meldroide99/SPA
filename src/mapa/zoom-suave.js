@@ -1,77 +1,53 @@
-// Zoom con la rueda, fluido y con inercia (como Mapas de Apple):
-//   - cada golpe de rueda del ratón acerca o aleja un nivel; en el panel
-//     táctil, poco a poco: cuanto más fuerte, más
-//   - el mapa se desliza hacia el zoom pedido y va frenando poco a poco
-//   - el punto bajo el ratón se queda quieto
-//   - al terminar se asienta en un zoom entero, siguiendo el sentido del gesto
-//     (los mapas del IGN se ven nítidos en zooms enteros)
-// Durante el movimiento se usa el movimiento interno de Leaflet (_move), que
-// no dispara «zoomend» en cada fotograma: lo que es pesado (cuadrícula,
-// símbolos) se recalcula una sola vez al final.
+// Zoom con la rueda, fluido (como Google Maps o Mapas de Apple):
+//   - cada golpe de rueda del ratón acerca o aleja un nivel, con una
+//     animación suave centrada en el ratón (el punto bajo el ratón no se mueve)
+//   - varios golpes seguidos se encadenan en un solo movimiento
+//   - el panel táctil (deslizar con dos dedos o pellizcar) va sumando y salta
+//     de nivel en nivel según el gesto; al soltar, si se movió algo, un nivel más
+//   - siempre se termina en un zoom entero (los mapas del IGN se ven nítidos)
+//
+// La animación es la propia de Leaflet (transformación CSS que hace la tarjeta
+// gráfica): el mapa, los símbolos y las líneas se escalan juntos sin
+// recolocarse fotograma a fotograma, que era lo que daba tirones con muchos
+// objetos y teselas cargando.
 
 /**
  * @param {*} L
- * @param {*} mapa mapa de Leaflet (con scrollWheelZoom: false)
- * @param {{sensibilidad?:number, suavidad?:number}} [o]
+ * @param {*} mapa mapa de Leaflet (con scrollWheelZoom: false y zoomAnimation activa)
+ * @param {{sensibilidad?:number}} [o]
  */
-export function zoomSuave(L, mapa, { sensibilidad = 0.0032, suavidad = 0.2 } = {}) {
+export function zoomSuave(L, mapa, { sensibilidad = 0.0032 } = {}) {
   const cont = mapa.getContainer();
-  let objetivo = null, continuo = null, raf = 0, anclaPx = null, anclaLL = null, tQuieto = 0, moviendo = false, zInicio = 0, tPrev = 0;
+  let objetivo = null, ancla = null, acumulado = 0, tQuieto = 0;
+  const limitar = (z) => Math.max(mapa.getMinZoom(), Math.min(mapa.getMaxZoom(), z));
 
-  function asentar(z) {
-    const d = z - zInicio;
-    const r = Math.abs(d) < 0.04 ? Math.round(z) : d > 0 ? Math.ceil(z - 0.04) : Math.floor(z + 0.04);
-    return Math.max(mapa.getMinZoom(), Math.min(mapa.getMaxZoom(), r));
+  /** Lleva el mapa hacia el objetivo (si ya hay una animación en marcha, sigue al acabar ella). */
+  function ir() {
+    if (objetivo === null || mapa._animatingZoom) return;
+    if (objetivo === mapa.getZoom()) { objetivo = null; return; }
+    mapa.setZoomAround(ancla ?? mapa.getSize().divideBy(2), objetivo, { animate: true });
   }
-  function paso() {
-    raf = 0;
-    const z = mapa.getZoom();
-    // Igual de suave aunque el ordenador vaya a menos fotogramas
-    const ahora = performance.now(), dt = Math.min(100, ahora - (tPrev || ahora - 16.7)); tPrev = ahora;
-    let nz = z + (objetivo - z) * (1 - (1 - suavidad) ** (dt / 16.7));
-    const fin = Math.abs(objetivo - nz) < 0.003;
-    if (fin) nz = objetivo;
-    // Mantener quieto el punto bajo el ratón
-    const tam = mapa.getSize();
-    const desplaz = anclaPx.subtract(tam.divideBy(2));
-    const centro = mapa.unproject(mapa.project(anclaLL, nz).subtract(desplaz), nz);
-    if (!moviendo) { moviendo = true; mapa._moveStart(true, false); }
-    // {pinch:true}: como el pellizco nativo de Leaflet, las capas de teselas no se vacían ni piden teselas a mitad
-    // del gesto (solo escalan las que ya tienen); al terminar (_moveEnd) se cargan las del zoom final
-    mapa._move(centro, nz, { pinch: true, round: false });
-    if (fin && objetivo === Math.round(objetivo)) {
-      // Último paso sin «pinch»: las capas tiran los niveles de teselas viejos (si no, se acumularían)
-      mapa._move(centro, nz); moviendo = false; objetivo = null; continuo = null; tPrev = 0; mapa._moveEnd(true); return;
-    }
-    if (fin) return; // espera a que pare la rueda para asentarse en un zoom entero
-    raf = requestAnimationFrame(paso);
+  mapa.on('zoomend', () => { if (objetivo !== null) requestAnimationFrame(ir); });
+
+  function paso(sentido) {
+    objetivo = limitar(Math.round(objetivo ?? mapa.getZoom()) + sentido);
+    ir();
   }
 
   cont.addEventListener('wheel', (e) => {
-    if (e.ctrlKey && !e.deltaMode) { /* pellizco del panel táctil: también vale */ }
     e.preventDefault();
     const delta = e.deltaMode === 1 ? e.deltaY * 33 : e.deltaMode === 2 ? e.deltaY * 400 : e.deltaY;
-    if (objetivo === null) { zInicio = mapa.getZoom(); continuo = null; }
-    // Rueda de ratón (golpes de ~100): un nivel por golpe, deslizado. Panel táctil (poco a poco): continuo.
-    const golpe = !e.ctrlKey && Math.abs(delta) >= 50;
-    let nuevo;
-    if (golpe) { continuo = null; nuevo = Math.round(objetivo ?? mapa.getZoom()) - Math.sign(delta); }
-    else {
-      // El panel táctil suma sobre su propia cuenta, sin redondear: si el mapa ya se estaba asentando
-      // (ordenador lento) no se sube ni se baja un nivel de más
-      continuo = (continuo ?? objetivo ?? mapa.getZoom()) - delta * sensibilidad * (e.ctrlKey ? 3 : 1);
-      continuo = Math.max(mapa.getMinZoom(), Math.min(mapa.getMaxZoom(), continuo));
-      nuevo = continuo;
-    }
-    objetivo = Math.max(mapa.getMinZoom(), Math.min(mapa.getMaxZoom(), nuevo));
-    anclaPx = mapa.mouseEventToContainerPoint(e);
-    anclaLL = mapa.containerPointToLatLng(anclaPx);
+    if (!delta) return;
+    ancla = mapa.mouseEventToContainerPoint(e);
+    // Rueda de ratón (golpes de ~100): un nivel por golpe
+    if (!e.ctrlKey && Math.abs(delta) >= 50) { acumulado = 0; paso(-Math.sign(delta)); return; }
+    // Panel táctil: va sumando; cada «nivel» de gesto, un nivel de zoom
+    acumulado += -delta * sensibilidad * (e.ctrlKey ? 3 : 1);
+    while (Math.abs(acumulado) >= 0.6) { const s = Math.sign(acumulado); paso(s); acumulado -= s; }
     clearTimeout(tQuieto);
-    // Cuando la rueda para, se asienta en el entero siguiente en el sentido del gesto
-    tQuieto = setTimeout(() => { if (objetivo !== null) { objetivo = asentar(objetivo); if (!raf) raf = requestAnimationFrame(paso); } }, 160);
-    if (!raf) raf = requestAnimationFrame(paso);
+    tQuieto = setTimeout(() => { if (Math.abs(acumulado) >= 0.15) paso(Math.sign(acumulado)); acumulado = 0; }, 140);
   }, { passive: false });
 
-  // Si otro movimiento (arrastrar, botones, buscar) empieza, se cancela el de la rueda
-  mapa.on('movestart', () => { if (!moviendo && raf) { cancelAnimationFrame(raf); raf = 0; objetivo = null; continuo = null; } });
+  // Si otro movimiento empieza (arrastrar, botones, buscar), se olvida lo pendiente
+  mapa.on('dragstart', () => { objetivo = null; acumulado = 0; });
 }

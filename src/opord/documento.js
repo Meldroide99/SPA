@@ -44,6 +44,9 @@ function crearNodo(doc, t, { autor = '' } = {}) {
   if (t.intro) n.intro = copia(t.intro);
   if (t.plano) n.plano = true;
   if (t.sinNumero) n.sinNumero = true;
+  for (const c of ['etiqueta', 'etiquetas', 'vineta', 'color']) if (t[c]) n[c] = t[c];
+  for (const c of ['nota', 'tituloTabla']) if (t[c]) n[c] = copia(t[c]);
+  if (n.tipo === 'imagen') { n.imagen = null; delete n.texto; }
   if (n.tipo === 'tabla') { n.tabla = tablaDe(t); delete n.texto; }
   if (t.tabla && TABLAS[t.tabla]) n.tabla = tablaDe(TABLAS[t.tabla]);
   if (n.tipo === 'org') n.org = { unidades: [] };
@@ -68,8 +71,8 @@ export const COLS_AGREGACIONES = Object.freeze([
   { k: 'de', en: 'Losing unit', es: 'Unidad que cede' },
   { k: 'a', en: 'Receiving unit', es: 'Unidad que recibe' },
   { k: 'relacion', en: 'Command relationship', es: 'Relación de mando', campo: 'relacion' },
-  { k: 'inicio', en: 'Start (DTG)', es: 'Inicio (GDH)', campo: 'gdh' },
-  { k: 'fin', en: 'End (DTG)', es: 'Fin (GDH)', campo: 'gdh' },
+  { k: 'inicio', en: 'Start (DTG)', es: 'Inicio (GFH)', campo: 'gdh' },
+  { k: 'fin', en: 'End (DTG)', es: 'Fin (GFH)', campo: 'gdh' },
 ]);
 
 function docVacio(tipo, plantilla, { operacion = null, autor = '', idioma = 'es' } = {}) {
@@ -170,13 +173,15 @@ export function rotulo(nivel, i) {
  */
 export function numerar(doc) {
   const out = new Map();
+  const mayus = PLANTILLAS[doc.plantilla]?.rotulos === 'mayusculas';
+  const rot = (nivel, i) => (mayus && nivel === 1 ? rotulo(nivel, i).toUpperCase() : rotulo(nivel, i));
   const rec = (ids, nivel) => {
     let i = 0;
     const plana = [];
     for (const n of nodosVivos(doc, ids)) { if (n.plano) plana.push(...nodosVivos(doc, n.hijos).map((h) => [h, n])); else plana.push([n, null]); }
     for (const [n, contenedor] of plana) {
       if (contenedor && !out.has(contenedor.id)) out.set(contenedor.id, { rotulo: '', nivel, plano: true });
-      if (n.sinNumero) { out.set(n.id, { rotulo: '', nivel }); } else { out.set(n.id, { rotulo: rotulo(nivel, i++), nivel }); }
+      if (n.sinNumero || n.etiqueta || contenedor?.etiquetas) { out.set(n.id, { rotulo: '', nivel }); } else { out.set(n.id, { rotulo: rot(nivel, i++), nivel }); }
       rec(n.hijos, nivel + 1);
     }
     for (const n of nodosVivos(doc, ids)) if (n.plano && !nodosVivos(doc, n.hijos).length) out.set(n.id, { rotulo: '', nivel, plano: true });
@@ -193,7 +198,7 @@ export const padreDe = (doc, id) => Object.values(doc.nodos).find((n) => n.hijos
 // ---------------------------------------------------------------- fases (de la operación)
 /**
  * Fases de la operación: los paquetes que cuelgan directamente de ella, en
- * su orden. Cada una con su inicio y fin (GDH), guardados en el paquete.
+ * su orden. Cada una con su inicio y fin (GFH), guardados en el paquete.
  * `paquetes`: la lista del plan (plan.operaciones).
  */
 export function fasesDe(paquetes, operacionId) {
@@ -206,6 +211,11 @@ export function tituloFase(f, idioma = 'es', { corto = false } = {}) {
   const dtg = [f.inicio, f.fin].filter(Boolean).join(' – ');
   if (corto) return `T${f.i}`;
   return `${idioma === 'en' ? 'Step' : 'Fase'} ${f.i}: ${String(f.nombre || '').toUpperCase()}${dtg ? ` ${dtg}` : ''}`;
+}
+/** Nombre de la fase según la plantilla («Salto 1» en la OPORD de una hoja), o null si usa el normal. */
+export function palabraFase(doc, f, idioma = 'es') {
+  const p = PLANTILLAS[doc?.plantilla]?.fase; if (!p) return null;
+  return `${p[idioma] ?? p.es} ${f.i + (p.desde ?? 0)}`;
 }
 
 /**
@@ -396,6 +406,7 @@ export function conContenido(n) {
   if (tieneTexto(n.texto)) return true;
   if (n.tabla?.filas?.some((f) => !f.fija && Object.values(f.c ?? {}).some((v) => String(v ?? '').trim())) || n.tabla?.filas?.some((f) => f.fija && Object.entries(f.c ?? {}).some(([k, v]) => k !== n.tabla.cols[0]?.k && String(v ?? '').trim()))) return true;
   if (n.org?.unidades?.length) return true;
+  if (n.imagen?.datos) return true;
   if (n.matriz && (Object.values(n.matriz.celdas ?? {}).some((f) => Object.values(f).some((v) => String(v ?? '').trim())) || Object.values(n.matriz.bpt ?? {}).some((v) => String(v ?? '').trim()))) return true;
   if (n.valores && Object.values(n.valores).some((v) => (typeof v === 'object' ? Object.values(v ?? {}).some(Boolean) : String(v ?? '').trim()))) return true;
   if (n.firma && Object.values(n.firma).some((v) => String(v ?? '').trim())) return true;
@@ -442,6 +453,7 @@ export function cambiarPlantilla(doc, plantillaId, { autor = '' } = {}) {
     else if (v.tabla && !n.tabla && (v.tabla.filas ?? []).length) { n.tabla = copia(v.tabla); }
     if (v.tipo === 'agregaciones' && n.tipo === 'agregaciones') n.tabla = copia(v.tabla);
     if (v.org && n.org) n.org = copia(v.org);
+    if (v.imagen && n.tipo === 'imagen') n.imagen = copia(v.imagen);
     if (v.matriz && n.matriz) n.matriz = copia(v.matriz);
     if (v.firma && n.firma) n.firma = copia(v.firma);
     if (v.valores && n.valores) n.valores = copia(v.valores);

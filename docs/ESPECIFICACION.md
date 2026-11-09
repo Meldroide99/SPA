@@ -564,3 +564,37 @@ y 180°) y asa ↻ en el mapa que se arrastra alrededor del centro, de 5 en 5°
 - Transparencia **30 %**, desenfoque **8 px**, tamaño **100 %** y tema **automático** (VERSION de apariencia = 4: quien tenga valores guardados de antes pasa a estos, también el tema).
 - Corregido: los valores de la v0.9.4 (65 · 10 · 95) no se llegaron a aplicar en Ajustes; ahora el código y el CSS coinciden.
 - El número de los deslizadores de Ajustes ya no se parte («100 %» en una línea).
+
+## v0.11.0 — OPORD a pantalla completa, organización gráfica y OPORD de compañía en una hoja
+- **Zoom con la rueda:** usa la animación propia de Leaflet (la hace la tarjeta gráfica). Cada golpe de rueda es un nivel, centrado en el ratón; varios golpes se encadenan; el panel táctil va sumando.
+- **Desplegables legibles:** las opciones van sobre fondo claro con letra oscura (u oscuro con letra clara en el tema oscuro).
+- **Pantalla completa:** la OPORD ocupa toda la ventana, con menos margen y letra y campos más grandes. En «Concepto» vuelve a ser estrecha, junto al mapa.
+- **Clasificación con su color:**
+  - el cuadro de color va junto al desplegable de la cabecera y en cada título del documento;
+  - la casilla «En cada apartado» lo quita de los títulos;
+  - colores (provisionales, costumbre OTAN/EE. UU.): sin clasificar verde, ejercicio gris, difusión limitada/restricted rojo, confidencial azul, reservado naranja y secreto morado.
+- **Letra del modelo:**
+  - OPORD de brigada en Tahoma. El PDF coge la Tahoma del ordenador, con su permiso, y la mete dentro; si no puede, usa Helvetica. Word usa Tahoma;
+  - OPORD de compañía en Arial;
+  - la clasificación y el pie, en Arial.
+- **Fuera de la OPORD:**
+  - MEDEVAC y MEDSITREP: también se quitan de las OPORD ya hechas;
+  - «Comunes a todas las PLAE».
+- **«GDH» pasa a «GFH»** (grupo fecha-hora).
+- **Menú ⋯ de un apartado:** solo «+ Tabla».
+- **Organización operativa gráfica** (src/opord/organigrama.js y src/ui/organigrama.js), como el organigrama de los modelos:
+  - la unidad que manda arriba, sus subordinadas en fila, y lo que cuelga de cada una apilado debajo con su línea de dependencia;
+  - cada unidad es su símbolo APP-6, con su escalón y su tipo;
+  - se pincha una unidad para elegirla, y debajo salen nombre, tipo, escalón, relación de mando, cedida por y «En la matriz»;
+  - botones «+ Subordinada», «+ Al lado» y «Quitar»; con el teclado, Tab = subordinada, Intro = al lado, Mayús+Tab = sube un nivel;
+  - arrastrar una unidad sobre otra la hace depender de ella;
+  - «Desde el mapa» trae las unidades dibujadas en la operación con su símbolo;
+  - en el PDF va en vectores; en Word, como imagen; en TXT y Excel, como árbol.
+- **Plantilla «OPORD de compañía en una hoja»** (modelos OPORD_NIVEL_CIA y OPORD_NIVEL_CIA_SOLO, que tienen el mismo formato). Es una hoja A4 en cuadrícula:
+  - arriba, situación a la izquierda (FUERZAS ENEMIGAS:, MLCOA: y MDCOA: en rojo), y misión y ejecución a la derecha (A. Propósito, B. Concepto con «Salto 1:», «Salto 2:» y «Posteriormente:», y C. «(según matriz)»);
+  - en medio, el calco (imagen pegada o elegida), y al lado D. coordinación (EN ESPACIO: y EN TIEMPO:), 4. logística, 5. mando y control e ingenieros;
+  - debajo, fuegos a lo ancho;
+  - abajo, la organización operativa gráfica y la matriz de cometidos (SALTO 1 · SALTO 2 · Posteriormente), con las celdas iguales unidas;
+  - numeración 1. / A. y la clasificación en su color;
+  - PDF, Word y la vista salen en la cuadrícula. La letra se ajusta sola para que todo quepa en una hoja; lo que no tenga sitio va en una fila al final.
+- **Calco:** apartado de imagen; se pega con Ctrl+V o se elige un archivo y se guarda en JPEG.
